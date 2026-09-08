@@ -62,13 +62,21 @@ public sealed class HtmlTypograf
         while (scanner.TryRead(out Segment segment))
         {
             ReadOnlySpan<char> slice = source.Slice(segment.Start, segment.Length);
-            if (segment.Kind == SegmentKind.Text)
-            {
-                TextScanner.Run(slice, _options.Rules, ref buffer);
-            }
-            else
+            if (segment.Kind != SegmentKind.Text)
             {
                 buffer.Write(slice);
+                continue;
+            }
+
+            var scanned = new CharBuffer(slice.Length + 8, _options.MaxOutputLength);
+            try
+            {
+                TextScanner.Run(slice, _options.Rules, ref scanned);
+                Emitter.Encode(scanned.AsSpan(), _options.Entities, ref buffer);
+            }
+            finally
+            {
+                scanned.Dispose();
             }
         }
     }
