@@ -67,4 +67,28 @@ public class MarkupScannerTests
             [(SegmentKind.Markup, "<code>"), (SegmentKind.Protected, "<b>x</b>"), (SegmentKind.Markup, "</code>")],
             Scan("<code><b>x</b></code>"));
     }
+
+    [Fact]
+    public void ПохожееИмяЗакрывающегоТегаНеЗавершаетЗащиту()
+    {
+        Assert.Equal(
+            [(SegmentKind.Markup, "<code>"), (SegmentKind.Protected, "a</codex>b"), (SegmentKind.Markup, "</code>")],
+            Scan("<code>a</codex>b</code>"));
+    }
+
+    [Fact]
+    public void ЗакрывающийТегСПробеломПередУгловойСкобкой()
+    {
+        Assert.Equal(
+            [(SegmentKind.Markup, "<code>"), (SegmentKind.Protected, "a"), (SegmentKind.Markup, "</code >")],
+            Scan("<code>a</code >"));
+    }
+
+    [Fact]
+    public void РегистрТеговНеВажен()
+    {
+        Assert.Equal(
+            [(SegmentKind.Markup, "<CODE>"), (SegmentKind.Protected, "a - b"), (SegmentKind.Markup, "</Code>")],
+            Scan("<CODE>a - b</Code>"));
+    }
 }

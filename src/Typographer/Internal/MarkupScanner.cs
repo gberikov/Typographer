@@ -157,10 +157,25 @@ internal ref struct MarkupScanner
 
     private readonly int IndexOfClosingTag(int from, string tag)
     {
-        for (int i = from; i + tag.Length + 2 < _source.Length; i++)
+        for (int i = from; i + 1 < _source.Length; i++)
         {
-            if (_source[i] == '<' && _source[i + 1] == '/'
-                && _source.Slice(i + 2, tag.Length).Equals(tag.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            if (_source[i] != '<' || _source[i + 1] != '/')
+            {
+                continue;
+            }
+
+            // Имя тега сравнивается срезом фиксированной длины, поэтому "code"
+            // без проверки границы совпало бы и с началом "codex"/"codemirror".
+            // Совпадением считаем только тег, чьё имя заканчивается ровно там,
+            // где после него идёт '>', пробельный символ, либо конец входа.
+            int nameEnd = i + 2 + tag.Length;
+            if (nameEnd > _source.Length
+                || !_source.Slice(i + 2, tag.Length).Equals(tag.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (nameEnd == _source.Length || _source[nameEnd] == '>' || char.IsWhiteSpace(_source[nameEnd]))
             {
                 return i;
             }
