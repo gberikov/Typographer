@@ -11,6 +11,9 @@ internal static class TextScanner
         bool delBeforePunctuation = rules.Contains(RuleId.Common.Space.DelBeforePunctuation);
         bool afterComma = rules.Contains(RuleId.Common.Space.AfterComma);
         bool hellip = rules.Contains(RuleId.Common.Punctuation.Hellip);
+        bool quotes = rules.Contains(RuleId.Common.Punctuation.Quote);
+        bool apostrophe = rules.Contains(RuleId.Common.Punctuation.Apostrophe);
+        var quoteStack = new QuoteStack();
 
         for (int i = 0; i < source.Length; i++)
         {
@@ -20,6 +23,30 @@ internal static class TextScanner
             {
                 buffer.Write(Chars.Hellip);
                 i += 2;
+                continue;
+            }
+
+            if (quotes && c == '"')
+            {
+                char previous = i > 0 ? source[i - 1] : '\0';
+                bool inch = char.IsDigit(previous) && quoteStack.IsEmpty;
+                if (inch)
+                {
+                    buffer.Write(c);
+                    continue;
+                }
+
+                bool opening = previous is '\0' or ' ' or '(' or '[' or '\n' or Chars.Nbsp
+                    || (quoteStack.IsEmpty && previous == ':');
+                buffer.Write(opening ? quoteStack.Open() : quoteStack.Close());
+                continue;
+            }
+
+            if (apostrophe && c == '\'')
+            {
+                bool letterBefore = i > 0 && char.IsLetter(source[i - 1]);
+                bool letterAfter = i + 1 < source.Length && char.IsLetter(source[i + 1]);
+                buffer.Write(letterBefore && letterAfter ? Chars.Rsquo : c);
                 continue;
             }
 
