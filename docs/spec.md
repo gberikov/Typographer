@@ -322,7 +322,7 @@ string html = typograf.Process(source);
 
 | Пакет | Содержимое | Зависимости |
 |---|---|---|
-| `Typographer` | Ядро: HTML и plain text, правила, опции | нет |
+| `Typographer` | Ядро: HTML и plain text, правила, опции | нет на `net8.0` и `net10.0`; на `netstandard2.0` — один официальный полифил `System.Memory` |
 | `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` |
 | `Typographer.AspNetCore` | TagHelper и `IHtmlContent` | ASP.NET Core |
 | `Typographer.Markdig` | Типографика Markdown как расширение конвейера | `Markdig` |

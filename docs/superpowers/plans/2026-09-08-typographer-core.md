@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Целевые платформы ядра: `netstandard2.0;net8.0;net10.0`. Пакет `Typographer` не имеет ни одной внешней зависимости во время выполнения.
+- Целевые платформы ядра: `netstandard2.0;net8.0;net10.0`. На `net8.0` и `net10.0` пакет `Typographer` не имеет ни одной внешней зависимости. На `netstandard2.0` допускается ровно один официальный полифил Microsoft — `System.Memory`, без которого там нет ни `Span<char>`, ни `ArrayPool<char>`; подключается через `PackageReference` с `Condition` на этот TFM.
 - `SearchValues<char>` и `FrozenSet<string>` доступны только на `net8.0` и выше. Каждое их применение оборачивается в `#if NET8_0_OR_GREATER`, а для `netstandard2.0` пишется эквивалент на массиве или `HashSet<string>` с `StringComparer.Ordinal`. Поведение обеих веток обязано совпадать — это проверяется тем, что тесты гоняются на всех TFM.
 - Никаких регулярных выражений в горячем пути. `System.Text.RegularExpressions` в проекте `src/Typographer` не используется вовсе.
 - `TreatWarningsAsErrors` включён, `GenerateDocumentationFile` включён. Каждый публичный член имеет XML-комментарий **на русском языке**.
