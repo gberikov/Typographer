@@ -69,14 +69,17 @@ public sealed class HtmlTypograf
             }
 
             var scanned = new CharBuffer(slice.Length + 8, _options.MaxOutputLength);
+            var bound = new CharBuffer(slice.Length + 8, _options.MaxOutputLength);
             try
             {
                 TextScanner.Run(slice, _options.Rules, ref scanned);
-                Emitter.Encode(scanned.AsSpan(), _options.Entities, ref buffer);
+                WordBinder.Run(scanned.AsSpan(), _options.Rules, ref bound);
+                Emitter.Encode(bound.AsSpan(), _options.Entities, ref buffer);
             }
             finally
             {
                 scanned.Dispose();
+                bound.Dispose();
             }
         }
     }

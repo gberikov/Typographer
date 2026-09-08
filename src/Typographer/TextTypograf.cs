@@ -22,15 +22,18 @@ public sealed class TextTypograf
     {
         Throw.IfNull(text, nameof(text));
 
+        var scanned = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
         var buffer = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
         try
         {
-            TextScanner.Run(text.AsSpan(), _options.Rules, ref buffer);
+            TextScanner.Run(text.AsSpan(), _options.Rules, ref scanned);
+            WordBinder.Run(scanned.AsSpan(), _options.Rules, ref buffer);
             ReadOnlySpan<char> result = buffer.AsSpan();
             return result.SequenceEqual(text.AsSpan()) ? text : result.ToString();
         }
         finally
         {
+            scanned.Dispose();
             buffer.Dispose();
         }
     }
@@ -42,16 +45,19 @@ public sealed class TextTypograf
     {
         Throw.IfNull(destination, nameof(destination));
 
+        var scanned = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
         var buffer = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
         try
         {
-            TextScanner.Run(text, _options.Rules, ref buffer);
+            TextScanner.Run(text, _options.Rules, ref scanned);
+            WordBinder.Run(scanned.AsSpan(), _options.Rules, ref buffer);
             ReadOnlySpan<char> result = buffer.AsSpan();
             result.CopyTo(destination.GetSpan(result.Length));
             destination.Advance(result.Length);
         }
         finally
         {
+            scanned.Dispose();
             buffer.Dispose();
         }
     }
