@@ -137,7 +137,10 @@ internal static class LayoutWriter
         }
     }
 
-    private static bool IsBoundary(char c) => c is ' ' or '\n' or '\t';
+    // Возврат каретки не нормализуется в перевод строки — он просто ТОЖЕ считается границей
+    // слова, наравне с пробелом и переводом строки, чтобы windows-перевод строки (\r\n) не
+    // склеивал соседние слова в одну неразрывную цепочку.
+    private static bool IsBoundary(char c) => c is ' ' or '\n' or '\t' or '\r';
 
     private static void WriteBreaks(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
     {
@@ -170,7 +173,7 @@ internal static class LayoutWriter
         bool first = true;
         while (start < source.Length)
         {
-            int separator = FindDoubleNewline(source, start);
+            int separator = FindDoubleNewline(source, start, out int separatorLength);
             ReadOnlySpan<char> paragraph = separator < 0
                 ? source.Slice(start)
                 : source.Slice(start, separator - start);
@@ -207,21 +210,35 @@ internal static class LayoutWriter
                 first = false;
             }
 
-            start = separator < 0 ? source.Length : separator + 2;
+            start = separator < 0 ? source.Length : separator + separatorLength;
         }
     }
 
-    /// <summary>Индекс начала первого «\n\n» на позиции from и далее, или -1.</summary>
-    private static int FindDoubleNewline(ReadOnlySpan<char> source, int from)
+    /// <summary>
+    /// Индекс начала первой границы абзаца на позиции from и далее, или -1. Переводы строк не
+    /// нормализуются: распознаются обе формы двойного перевода строки — Unix (<c>"\n\n"</c>,
+    /// длина 2) и Windows (<c>"\r\n\r\n"</c>, длина 4) — <paramref name="separatorLength"/>
+    /// сообщает вызывающему коду, сколько символов входа занимает найденная граница.
+    /// </summary>
+    private static int FindDoubleNewline(ReadOnlySpan<char> source, int from, out int separatorLength)
     {
-        for (int i = from; i < source.Length - 1; i++)
+        for (int i = from; i < source.Length; i++)
         {
-            if (source[i] == '\n' && source[i + 1] == '\n')
+            if (source[i] == '\r' && i + 3 < source.Length
+                && source[i + 1] == '\n' && source[i + 2] == '\r' && source[i + 3] == '\n')
             {
+                separatorLength = 4;
+                return i;
+            }
+
+            if (source[i] == '\n' && i + 1 < source.Length && source[i + 1] == '\n')
+            {
+                separatorLength = 2;
                 return i;
             }
         }
 
+        separatorLength = 0;
         return -1;
     }
 }

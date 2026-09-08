@@ -20,10 +20,22 @@ public class LayoutTests
             Run("первый\n\nвторой", new HtmlOptions { Rules = RuleSet.None, UseP = true }));
 
     [Fact]
+    public void UseP_РаспознаётWindowsПереводСтроки()
+        => Assert.Equal(
+            "<p>первый</p>\n<p>второй</p>",
+            Run("первый\r\n\r\nвторой", new HtmlOptions { Rules = RuleSet.None, UseP = true }));
+
+    [Fact]
     public void БезФлаговНичегоНеДобавляется()
         => Assert.Equal(
             "первая\nвторая",
             Run("первая\nвторая", new HtmlOptions { Rules = RuleSet.None }));
+
+    [Fact]
+    public void ВозвратКаретки_СчитаетсяГраницейСловаВNobr()
+        => Assert.Equal(
+            $"<nobr>текст{Chars.Nbsp}слово</nobr>\rконец",
+            Run($"текст{Chars.Nbsp}слово\rконец", new HtmlOptions { Rules = RuleSet.None, MaxNobr = 2 }));
 
     [Fact]
     public void MaxNobr_ОборачиваетНеразрывныеГруппы()
