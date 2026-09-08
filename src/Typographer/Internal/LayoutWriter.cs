@@ -14,70 +14,127 @@ internal static class LayoutWriter
         WriteBreaks(source, options, ref buffer);
     }
 
+    /// <summary>
+    /// Разбивает текст на цепочки слов, склеенных неразрывными пробелами, и оборачивает
+    /// каждую цепочку (или её часть — см. <see cref="WriteChain"/>) в &lt;nobr&gt;.
+    /// На каждой итерации курсор <c>i</c> либо продвигается на один символ (границы,
+    /// одиночный неразрывный пробел), либо перескакивает на конец только что распознанного
+    /// слова или всей цепочки — оба варианта строго больше текущего <c>i</c>, поэтому обход
+    /// гарантированно завершается и линеен по длине входа.
+    /// </summary>
     private static void WriteWithNobr(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
     {
-        int index = 0;
-        while (index < source.Length)
+        int flushStart = 0;
+        int i = 0;
+        while (i < source.Length)
         {
-            int groupStart = FindNobrGroupStart(source, index);
-            if (groupStart < 0)
+            char c = source[i];
+            if (IsBoundary(c) || c == Chars.Nbsp)
             {
-                WriteBreaks(source.Slice(index), options, ref buffer);
-                return;
+                i++;
+                continue;
             }
 
-            WriteBreaks(source.Slice(index, groupStart - index), options, ref buffer);
+            int wordEnd = FindWordEnd(source, i);
+            if (wordEnd >= source.Length || source[wordEnd] != Chars.Nbsp || !HasWordAfter(source, wordEnd + 1))
+            {
+                // Слово не является началом цепочки — продвигаем курсор сразу за него.
+                i = wordEnd;
+                continue;
+            }
 
-            int groupEnd = FindNobrGroupEnd(source, groupStart, options.MaxNobr);
-            buffer.Write("<nobr>");
-            buffer.Write(source.Slice(groupStart, groupEnd - groupStart));
-            buffer.Write("</nobr>");
-            index = groupEnd;
+            int chainEnd = wordEnd;
+            while (chainEnd < source.Length && source[chainEnd] == Chars.Nbsp && HasWordAfter(source, chainEnd + 1))
+            {
+                chainEnd = FindWordEnd(source, chainEnd + 1);
+            }
+
+            WriteBreaks(source.Slice(flushStart, i - flushStart), options, ref buffer);
+            WriteChain(source.Slice(i, chainEnd - i), options.MaxNobr, ref buffer);
+            i = chainEnd;
+            flushStart = i;
         }
+
+        WriteBreaks(source.Slice(flushStart), options, ref buffer);
     }
 
-    /// <summary>Начало неразрывной группы — начало слова, за которым идёт неразрывный пробел.</summary>
-    private static int FindNobrGroupStart(ReadOnlySpan<char> source, int from)
+    /// <summary>Конец слова начиная с <paramref name="start"/> — первая граница или неразрывный пробел.</summary>
+    private static int FindWordEnd(ReadOnlySpan<char> source, int start)
     {
-        int nbsp = source.Slice(from).IndexOf(Chars.Nbsp);
-        if (nbsp < 0)
+        int end = start;
+        while (end < source.Length && !IsBoundary(source[end]) && source[end] != Chars.Nbsp)
         {
-            return -1;
+            end++;
         }
 
-        int position = from + nbsp;
-        while (position > from && !IsBoundary(source[position - 1]))
-        {
-            position--;
-        }
-
-        return position;
+        return end;
     }
 
-    /// <summary>Конец группы — после указанного числа слов или на первом обычном пробеле.</summary>
-    private static int FindNobrGroupEnd(ReadOnlySpan<char> source, int start, int maxWords)
-    {
-        int words = 1;
-        int position = start;
-        while (position < source.Length)
-        {
-            char c = source[position];
-            if (c == Chars.Nbsp)
-            {
-                if (++words > maxWords)
-                {
-                    return position;
-                }
-            }
-            else if (IsBoundary(c))
-            {
-                return position;
-            }
+    private static bool HasWordAfter(ReadOnlySpan<char> source, int pos)
+        => pos < source.Length && !IsBoundary(source[pos]) && source[pos] != Chars.Nbsp;
 
-            position++;
+    /// <summary>
+    /// Оборачивает цепочку слов, склеенных неразрывными пробелами, в один или несколько
+    /// блоков &lt;nobr&gt;. Блок держит не менее двух слов: при <paramref name="maxWords"/>
+    /// меньше двух блоки не создаются вовсе (цепочка копируется как есть); хвост цепочки
+    /// короче двух слов остаётся неоформленным текстом. Неразрывный пробел, разделяющий два
+    /// блока, выносится за пределы тегов — между &lt;/nobr&gt; и следующим &lt;nobr&gt; (или
+    /// хвостом), а не приклеивается к началу следующего блока. Каждый символ входа
+    /// записывается ровно один раз в исходном порядке — снятие тегов восстанавливает вход
+    /// побайтово.
+    /// </summary>
+    private static void WriteChain(ReadOnlySpan<char> chain, int maxWords, ref CharBuffer buffer)
+    {
+        if (maxWords < 2)
+        {
+            buffer.Write(chain);
+            return;
         }
 
-        return source.Length;
+        int wordsRemaining = 1;
+        for (int k = 0; k < chain.Length; k++)
+        {
+            if (chain[k] == Chars.Nbsp)
+            {
+                wordsRemaining++;
+            }
+        }
+
+        bool groupOpen = false;
+        int wordsInGroup = 0;
+        int pos = 0;
+        while (pos < chain.Length)
+        {
+            if (!groupOpen && wordsRemaining >= 2)
+            {
+                buffer.Write("<nobr>");
+                groupOpen = true;
+                wordsInGroup = 0;
+            }
+
+            int wordEnd = pos;
+            while (wordEnd < chain.Length && chain[wordEnd] != Chars.Nbsp)
+            {
+                wordEnd++;
+            }
+
+            buffer.Write(chain.Slice(pos, wordEnd - pos));
+            wordsInGroup++;
+            wordsRemaining--;
+            pos = wordEnd;
+
+            if (groupOpen && (wordsInGroup == maxWords || wordsRemaining == 0))
+            {
+                buffer.Write("</nobr>");
+                groupOpen = false;
+            }
+
+            if (pos < chain.Length)
+            {
+                buffer.Write(chain[pos]);
+                pos++;
+            }
+        }
     }
 
     private static bool IsBoundary(char c) => c is ' ' or '\n' or '\t';
@@ -118,32 +175,38 @@ internal static class LayoutWriter
                 ? source.Slice(start)
                 : source.Slice(start, separator - start);
 
-            if (!first)
+            // Пустой абзац — разметка из ничего (двойной перевод строки в начале/конце
+            // входа или три и более подряд): типограф не добавляет в чужой HTML пустых
+            // блоков, поэтому такой сегмент просто пропускается.
+            if (paragraph.Length > 0)
             {
-                buffer.Write('\n');
-            }
-
-            buffer.Write("<p>");
-            if (options.UseBr)
-            {
-                for (int i = 0; i < paragraph.Length; i++)
+                if (!first)
                 {
-                    if (paragraph[i] == '\n')
-                    {
-                        buffer.Write("<br />");
-                    }
-
-                    buffer.Write(paragraph[i]);
+                    buffer.Write('\n');
                 }
-            }
-            else
-            {
-                buffer.Write(paragraph);
+
+                buffer.Write("<p>");
+                if (options.UseBr)
+                {
+                    for (int i = 0; i < paragraph.Length; i++)
+                    {
+                        if (paragraph[i] == '\n')
+                        {
+                            buffer.Write("<br />");
+                        }
+
+                        buffer.Write(paragraph[i]);
+                    }
+                }
+                else
+                {
+                    buffer.Write(paragraph);
+                }
+
+                buffer.Write("</p>");
+                first = false;
             }
 
-            buffer.Write("</p>");
-
-            first = false;
             start = separator < 0 ? source.Length : separator + 2;
         }
     }
