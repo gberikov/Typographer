@@ -1,5 +1,6 @@
 using System.Buffers;
 using BenchmarkDotNet.Attributes;
+using Typographer.Rules;
 
 namespace Typographer.Bench;
 
@@ -12,13 +13,21 @@ public class TypografBenchmarks
 
     private string _text = string.Empty;
     private HtmlTypograf _typograf = null!;
+    private HtmlTypograf _typografNoRules = null!;
+    private TextTypograf _textTypograf = null!;
     private ArrayBufferWriter<char> _writer = null!;
+
+    /// <summary>Число символов во входном тексте — знаменатель для пропускной способности.</summary>
+    public int TextLength { get; private set; }
 
     [GlobalSetup]
     public void Setup()
     {
         _text = string.Concat(Enumerable.Repeat(Fragment, 200));
+        TextLength = _text.Length;
         _typograf = new HtmlTypograf();
+        _typografNoRules = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
+        _textTypograf = new TextTypograf();
         _writer = new ArrayBufferWriter<char>(_text.Length * 2);
     }
 
@@ -35,4 +44,12 @@ public class TypografBenchmarks
         _typograf.Process(_text.AsSpan(), _writer);
         return _writer.WrittenCount;
     }
+
+    /// <summary>Диагностика: стоимость чистого плумбинга конвейера — сегментация разметки, три буфера, копирование — без единого правила.</summary>
+    [Benchmark]
+    public string HtmlNoRules() => _typografNoRules.Process(_text);
+
+    /// <summary>Диагностика: обычный текст — без сегментации разметки и без фазы Emit.</summary>
+    [Benchmark]
+    public string Text() => _textTypograf.Process(_text);
 }
