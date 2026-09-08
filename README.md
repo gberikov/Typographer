@@ -1,16 +1,83 @@
 # Typographer
 
-Типограф для русского языка на .NET: кавычки-ёлочки, тире, неразрывные пробелы.
+Типограф для русского языка на .NET: кавычки-ёлочки, тире, неразрывные пробелы, работает
+и с обычным текстом, и с HTML-фрагментами.
 
-> Статус: каркас репозитория. Правила типографики ещё не реализованы.
+> Статус: ядро шестифазного конвейера и двенадцать правил типографики работают и покрыты
+> тестами (кавычки, тире, дефис, многоточие, апостроф, пробелы вокруг пунктуации,
+> неразрывные пробелы после коротких слов, в сокращениях и при инициалах). Ещё два
+> зарегистрированных правила (`ru/punctuation/ano`, `ru/typo/switchingKeyboardLayout`) и
+> оставшаяся часть из 107 правил спецификации придут в следующих версиях.
 
 ## Использование
+
+Быстрый старт — статический фасад с настройками по умолчанию:
 
 ```csharp
 using Typographer;
 
-var text = RussianTypographer.Format("\"Привет\" - мир");
+string html = Typograf.Html("Он сказал: \"Привет!\" - и махнул рукой.");
+string text = Typograf.PlainText("Он сказал: \"Привет!\" - и махнул рукой.");
 ```
+
+Настраиваемый вариант — свой набор правил, кодирование сущностей, перенос строк и абзацы:
+
+```csharp
+using Typographer;
+using Typographer.Rules;
+
+var typograf = new HtmlTypograf(new HtmlOptions
+{
+    Rules = RuleSet.Default.Without(RuleId.Ru.Nbsp.Initials),
+    Entities = EntityMode.Named,
+    UseBr = true,
+    MaxNobr = 3,
+});
+
+string html = typograf.Process("Он сказал: \"Привет!\" - и махнул рукой.\nВторая строка.");
+```
+
+Для обычного текста — `TextTypograf` и `TextOptions` (без `Entities`, `UseBr`, `UseP`,
+`MaxNobr`: они имеют смысл только в HTML, поэтому в `TextOptions` их физически нет):
+
+```csharp
+var typograf = new TextTypograf(new TextOptions { Rules = RuleSet.Minimal });
+string text = typograf.Process("Он сказал: \"Привет!\" - и махнул рукой.");
+```
+
+Обе точки входа умеют писать результат прямо в приёмник без промежуточной строки:
+
+```csharp
+using System.Buffers;
+
+var writer = new ArrayBufferWriter<char>();
+HtmlTypograf.Default.Process("Он сказал: \"Привет!\"".AsSpan(), writer);
+```
+
+### Наборы правил
+
+`RuleSet` — иммутабельное множество включённых правил с готовыми пресетами:
+
+| Пресет | Смысл |
+|---|---|
+| `RuleSet.Default` | безопасная типографика — пресет по умолчанию |
+| `RuleSet.Minimal` | только кавычки, тире и многоточие |
+| `RuleSet.All` | все зарегистрированные правила, включая ещё не реализованные |
+| `RuleSet.None` | ничего не менять |
+| `RuleSet.Lebedev`, `RuleSet.Gost`, `RuleSet.Typograf` | пока совпадают с `Default` — правила, которые должны их различать, ещё не реализованы (см. XML-комментарии на этих пресетах) |
+
+```csharp
+RuleSet rules = RuleSet.Default.With(RuleId.Ru.Dash.Years).Without(RuleId.Ru.Nbsp.Abbr);
+bool enabled = rules.Contains(RuleId.Ru.Dash.Years);
+```
+
+### Идемпотентность и разметка
+
+Правила `RuleSet` идемпотентны: повторный прогон ничего не меняет. Исключение — опции
+`UseBr`, `UseP` и `MaxNobr`: они рассчитаны на однократное применение к исходному тексту.
+Прогон по СОБСТВЕННОМУ ВЫВОДУ типографа с той же опцией вложит разметку в саму себя
+(`<p><p>текст</p></p>`) — типограф не распознаёт свой прошлый вывод, это намеренное
+решение (см. `docs/spec.md`, гарантия 5).
 
 ## Целевые платформы
 
@@ -24,7 +91,7 @@ var text = RussianTypographer.Format("\"Привет\" - мир");
 
 ```
 dotnet build
-dotnet test
+dotnet test tests/Typographer.Tests
 ```
 
 ## Производительность
