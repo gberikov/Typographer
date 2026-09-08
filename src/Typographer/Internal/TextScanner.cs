@@ -13,6 +13,9 @@ internal static class TextScanner
         bool hellip = rules.Contains(RuleId.Common.Punctuation.Hellip);
         bool quotes = rules.Contains(RuleId.Common.Punctuation.Quote);
         bool apostrophe = rules.Contains(RuleId.Common.Punctuation.Apostrophe);
+        bool dashMain = rules.Contains(RuleId.Ru.Dash.Main);
+        bool directSpeech = rules.Contains(RuleId.Ru.Dash.DirectSpeech);
+        bool dashYears = rules.Contains(RuleId.Ru.Dash.Years);
         var quoteStack = new QuoteStack();
 
         for (int i = 0; i < source.Length; i++)
@@ -66,6 +69,37 @@ internal static class TextScanner
                 continue;
             }
 
+            if (c == '-')
+            {
+                char previous = i > 0 ? source[i - 1] : '\0';
+                char next = i + 1 < source.Length ? source[i + 1] : '\0';
+
+                // Тире прямой речи: дефис в начале текста или строки, за ним пробел.
+                if (directSpeech && next == ' ' && previous is '\0' or '\n')
+                {
+                    buffer.Write(Chars.MDash);
+                    continue;
+                }
+
+                // Диапазон чисел: цифра с обеих сторон, без пробелов.
+                if (dashYears && char.IsDigit(previous) && char.IsDigit(next))
+                {
+                    buffer.Write(Chars.MDash);
+                    continue;
+                }
+
+                // Тире между словами: пробел с обеих сторон, справа не число.
+                if (dashMain && previous == ' ' && next == ' ' && !IsNumberAhead(source, i + 2))
+                {
+                    buffer.PatchAt(buffer.Length - 1, Chars.Nbsp);
+                    buffer.Write(Chars.MDash);
+                    continue;
+                }
+
+                buffer.Write(c);
+                continue;
+            }
+
             buffer.Write(c);
 
             if (afterComma && c == ',' && NeedsSpaceAfterComma(source, i))
@@ -76,6 +110,9 @@ internal static class TextScanner
     }
 
     private static bool IsPunctuation(char c) => c is ',' or '.' or ';' or ':' or '!' or '?';
+
+    private static bool IsNumberAhead(ReadOnlySpan<char> source, int index)
+        => index < source.Length && char.IsDigit(source[index]);
 
     private static bool NeedsSpaceAfterComma(ReadOnlySpan<char> source, int index)
     {
