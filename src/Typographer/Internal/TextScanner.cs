@@ -109,7 +109,12 @@ internal static class TextScanner
         }
     }
 
-    private static bool IsPunctuation(char c) => c is ',' or '.' or ';' or ':' or '!' or '?';
+    // Знак препинания — класс, а не только сырая форма во входном тексте: многоточие входит
+    // сюда как готовый символ (Chars.Hellip), потому что правило hellip схлопывает "..." в
+    // него ДО того, как другие правила решают, что рядом со знаком препинания. Без этого
+    // предикат путает "raw ..." и уже свёрнутый "…" — решения о пробеле расходятся между
+    // первым прогоном (видит сырые точки) и вторым (видит готовое многоточие).
+    private static bool IsPunctuation(char c) => c is ',' or '.' or ';' or ':' or '!' or '?' or Chars.Hellip;
 
     private static bool IsNumberAhead(ReadOnlySpan<char> source, int index)
         => index < source.Length && char.IsDigit(source[index]);
