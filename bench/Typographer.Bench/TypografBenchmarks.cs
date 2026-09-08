@@ -14,6 +14,7 @@ public class TypografBenchmarks
     private string _text = string.Empty;
     private HtmlTypograf _typograf = null!;
     private HtmlTypograf _typografNoRules = null!;
+    private HtmlTypograf _typografNumeric = null!;
     private TextTypograf _textTypograf = null!;
     private ArrayBufferWriter<char> _writer = null!;
 
@@ -27,6 +28,7 @@ public class TypografBenchmarks
         TextLength = _text.Length;
         _typograf = new HtmlTypograf();
         _typografNoRules = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
+        _typografNumeric = new HtmlTypograf(new HtmlOptions { Entities = EntityMode.Numeric });
         _textTypograf = new TextTypograf();
         _writer = new ArrayBufferWriter<char>(_text.Length * 2);
     }
@@ -42,6 +44,15 @@ public class TypografBenchmarks
     {
         _writer.Clear();
         _typograf.Process(_text.AsSpan(), _writer);
+        return _writer.WrittenCount;
+    }
+
+    /// <summary>Диагностика аллокаций: числовой режим кодирования на пути записи в приёмник — обязан показывать ноль.</summary>
+    [Benchmark]
+    public int HtmlNumericToBufferWriter()
+    {
+        _writer.Clear();
+        _typografNumeric.Process(_text.AsSpan(), _writer);
         return _writer.WrittenCount;
     }
 
