@@ -1,4 +1,5 @@
 using System.Collections;
+using Typographer.Internal;
 
 namespace Typographer.Rules;
 
@@ -51,8 +52,11 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
             : (_high & (1UL << (rule.Index - 64))) != 0;
 
     /// <summary>Возвращает новое множество с добавленными правилами.</summary>
+    /// <exception cref="ArgumentNullException"><paramref name="rules"/> — null.</exception>
     public RuleSet With(params RuleId[] rules)
     {
+        Throw.IfNull(rules, nameof(rules));
+
         ulong low = _low, high = _high;
         foreach (RuleId rule in rules)
         {
@@ -70,8 +74,11 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     }
 
     /// <summary>Возвращает новое множество без указанных правил.</summary>
+    /// <exception cref="ArgumentNullException"><paramref name="rules"/> — null.</exception>
     public RuleSet Without(params RuleId[] rules)
     {
+        Throw.IfNull(rules, nameof(rules));
+
         ulong low = _low, high = _high;
         foreach (RuleId rule in rules)
         {

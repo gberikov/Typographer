@@ -7,15 +7,21 @@ public readonly struct RuleId : IEquatable<RuleId>
     internal RuleId(int index, string name, RulePhase phase)
     {
         Index = index;
-        Name = name;
+        _name = name;
         Phase = phase;
     }
+
+    private readonly string? _name;
 
     /// <summary>Порядковый номер правила в реестре. Используется как позиция бита в <see cref="RuleSet"/>.</summary>
     internal int Index { get; }
 
-    /// <summary>Имя правила вида «ru/dash/main».</summary>
-    public string Name { get; }
+    /// <summary>
+    /// Имя правила вида «ru/dash/main». У <c>default(RuleId)</c> — пустая строка, а не null:
+    /// значение по умолчанию не совпадает ни с одним зарегистрированным правилом
+    /// (см. <see cref="Index"/>), но безопасно для вывода и сравнения без дополнительной проверки на null.
+    /// </summary>
+    public string Name => _name ?? string.Empty;
 
     /// <summary>Фаза конвейера, на которой правило применяется.</summary>
     public RulePhase Phase { get; }
@@ -128,20 +134,22 @@ public readonly struct RuleId : IEquatable<RuleId>
 
     internal static class Registry
     {
-        public static readonly RuleId Quote = new(0, "common/punctuation/quote", RulePhase.Scan);
-        public static readonly RuleId Hellip = new(1, "common/punctuation/hellip", RulePhase.Scan);
-        public static readonly RuleId Apostrophe = new(2, "common/punctuation/apostrophe", RulePhase.Scan);
-        public static readonly RuleId DelRepeatSpace = new(3, "common/space/delRepeatSpace", RulePhase.Scan);
-        public static readonly RuleId DelBeforePunctuation = new(4, "common/space/delBeforePunctuation", RulePhase.Scan);
-        public static readonly RuleId AfterComma = new(5, "common/space/afterComma", RulePhase.Scan);
-        public static readonly RuleId AfterShortWord = new(6, "common/nbsp/afterShortWord", RulePhase.Bind);
-        public static readonly RuleId DashMain = new(7, "ru/dash/main", RulePhase.Scan);
-        public static readonly RuleId DashDirectSpeech = new(8, "ru/dash/directSpeech", RulePhase.Scan);
-        public static readonly RuleId DashYears = new(9, "ru/dash/years", RulePhase.Scan);
-        public static readonly RuleId NbspAbbr = new(10, "ru/nbsp/abbr", RulePhase.Bind);
-        public static readonly RuleId NbspInitials = new(11, "ru/nbsp/initials", RulePhase.Bind);
-        public static readonly RuleId Ano = new(12, "ru/punctuation/ano", RulePhase.Scan);
-        public static readonly RuleId KeyboardLayout = new(13, "ru/typo/switchingKeyboardLayout", RulePhase.Bind);
+        // Индексы начинаются с единицы: ноль остаётся незанятым, чтобы default(RuleId)
+        // (Index == 0) не совпадал ни с одним настоящим правилом.
+        public static readonly RuleId Quote = new(1, "common/punctuation/quote", RulePhase.Scan);
+        public static readonly RuleId Hellip = new(2, "common/punctuation/hellip", RulePhase.Scan);
+        public static readonly RuleId Apostrophe = new(3, "common/punctuation/apostrophe", RulePhase.Scan);
+        public static readonly RuleId DelRepeatSpace = new(4, "common/space/delRepeatSpace", RulePhase.Scan);
+        public static readonly RuleId DelBeforePunctuation = new(5, "common/space/delBeforePunctuation", RulePhase.Scan);
+        public static readonly RuleId AfterComma = new(6, "common/space/afterComma", RulePhase.Scan);
+        public static readonly RuleId AfterShortWord = new(7, "common/nbsp/afterShortWord", RulePhase.Bind);
+        public static readonly RuleId DashMain = new(8, "ru/dash/main", RulePhase.Scan);
+        public static readonly RuleId DashDirectSpeech = new(9, "ru/dash/directSpeech", RulePhase.Scan);
+        public static readonly RuleId DashYears = new(10, "ru/dash/years", RulePhase.Scan);
+        public static readonly RuleId NbspAbbr = new(11, "ru/nbsp/abbr", RulePhase.Bind);
+        public static readonly RuleId NbspInitials = new(12, "ru/nbsp/initials", RulePhase.Bind);
+        public static readonly RuleId Ano = new(13, "ru/punctuation/ano", RulePhase.Scan);
+        public static readonly RuleId KeyboardLayout = new(14, "ru/typo/switchingKeyboardLayout", RulePhase.Bind);
 
         public static readonly RuleId[] All =
         [

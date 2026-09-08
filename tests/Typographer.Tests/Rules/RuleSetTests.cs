@@ -58,4 +58,42 @@ public class RuleSetTests
     {
         Assert.False(RuleId.TryParse("ru/nbsp/abr", out _));
     }
+
+    [Fact]
+    public void Default_НеПуст()
+    {
+        // Регресс на сдвиг индексов реестра: если ноль случайно снова окажется занят
+        // настоящим правилом или маска съедет, этот тест ловит эффект первым.
+        Assert.True(RuleSet.Default.Count > 0);
+    }
+
+    [Fact]
+    public void DefaultRuleId_НеСовпадаетНиСОднимПравилом()
+    {
+        var empty = default(RuleId);
+
+        Assert.False(RuleSet.All.Contains(empty));
+        Assert.NotEqual(RuleId.Common.Punctuation.Quote, empty);
+    }
+
+    [Fact]
+    public void DefaultRuleId_ИмяПустаяСтрокаАНеNull()
+    {
+        var empty = default(RuleId);
+
+        Assert.Equal(string.Empty, empty.Name);
+        Assert.Equal(string.Empty, empty.ToString());
+    }
+
+    [Fact]
+    public void With_НаNull_БросаетArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => RuleSet.Default.With(null!));
+    }
+
+    [Fact]
+    public void Without_НаNull_БросаетArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => RuleSet.Default.Without(null!));
+    }
 }
