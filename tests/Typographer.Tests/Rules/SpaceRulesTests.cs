@@ -47,6 +47,18 @@ public class SpaceRulesTests
     }
 
     [Fact]
+    public void НеСтавитПробелМеждуЗапятойИМноготочием()
+        => Assert.Equal("раз,…два", Run("раз,...два"));
+
+    [Fact]
+    public void СтабиленПриПовторномПрогонеЗапятойПередМноготочием()
+    {
+        string once = Run("раз,...два");
+
+        Assert.Equal(once, Run(once));
+    }
+
+    [Fact]
     public void ЗаменяетТриТочкиНаМноготочие()
         => Assert.Equal("вот…", Run("вот..."));
 
