@@ -120,14 +120,24 @@ public readonly struct RuleId : IEquatable<RuleId>
         /// <summary>Пунктуация русского языка.</summary>
         public static class Punctuation
         {
-            /// <summary>Расстановка запятых перед «а» и «но». По умолчанию выключено.</summary>
+            /// <summary>
+            /// Расстановка запятых перед «а» и «но». По умолчанию выключено.
+            /// Правило зарегистрировано (участвует в <see cref="RuleSet"/>, проходит <see cref="RuleId.TryParse"/>),
+            /// но пока НЕ ДЕЙСТВУЕТ: ни одна фаза конвейера его не читает, включение через
+            /// <see cref="RuleSet.With(RuleId[])"/> ничего не меняет в выводе. Реализация ждёт следующей версии.
+            /// </summary>
             public static RuleId Ano => Registry.Ano;
         }
 
         /// <summary>Исправление опечаток.</summary>
         public static class Typo
         {
-            /// <summary>Замена латинских букв на русские при ошибке раскладки. По умолчанию выключено.</summary>
+            /// <summary>
+            /// Замена латинских букв на русские при ошибке раскладки. По умолчанию выключено.
+            /// Правило зарегистрировано (участвует в <see cref="RuleSet"/>, проходит <see cref="RuleId.TryParse"/>),
+            /// но пока НЕ ДЕЙСТВУЕТ: ни одна фаза конвейера его не читает, включение через
+            /// <see cref="RuleSet.With(RuleId[])"/> ничего не меняет в выводе. Реализация ждёт следующей версии.
+            /// </summary>
             public static RuleId SwitchingKeyboardLayout => Registry.KeyboardLayout;
         }
     }

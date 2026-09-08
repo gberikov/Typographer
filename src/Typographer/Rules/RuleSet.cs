@@ -33,13 +33,28 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
         RuleId.Ru.Dash.Main,
     ]);
 
-    /// <summary>Поведение веб-сервиса Артемия Лебедева.</summary>
+    /// <summary>
+    /// Поведение веб-сервиса Артемия Лебедева. Сейчас буквально совпадает с <see cref="Default"/>:
+    /// правило, которое должно отличать этот пресет от <see cref="Gost"/> (диапазон дат с
+    /// неразрывным пробелом, «1941 — 1945» вместо «1941—1945»), в текущей версии не реализовано.
+    /// Разойдётся в следующей версии.
+    /// </summary>
     public static RuleSet Lebedev { get; } = Default;
 
-    /// <summary>Паритет дефолтов с JS-typograf.</summary>
+    /// <summary>
+    /// Паритет дефолтов с JS-typograf. Включает <see cref="RuleId.Ru.Punctuation.Ano"/> и
+    /// <see cref="RuleId.Ru.Typo.SwitchingKeyboardLayout"/> по имени, но оба правила пока не
+    /// реализованы (см. их XML-комментарии) — до тех пор вывод этого пресета буквально совпадает
+    /// с <see cref="Default"/>.
+    /// </summary>
     public static RuleSet Typograf { get; } = Default.With(RuleId.Ru.Punctuation.Ano, RuleId.Ru.Typo.SwitchingKeyboardLayout);
 
-    /// <summary>Строго по ГОСТ Р 7.0.110-2025.</summary>
+    /// <summary>
+    /// Строго по ГОСТ Р 7.0.110-2025. Сейчас буквально совпадает с <see cref="Default"/>:
+    /// правило, которое должно отличать этот пресет от <see cref="Lebedev"/> (диапазон дат без
+    /// отбивки, «1941—1945» вместо «1941 — 1945»), в текущей версии не реализовано.
+    /// Разойдётся в следующей версии.
+    /// </summary>
     public static RuleSet Gost { get; } = Default;
 
     /// <summary>Количество включённых правил.</summary>
