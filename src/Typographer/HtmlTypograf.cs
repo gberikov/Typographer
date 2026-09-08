@@ -59,6 +59,11 @@ public sealed class HtmlTypograf
     private void Run(ReadOnlySpan<char> source, ref CharBuffer buffer)
     {
         var scanner = new MarkupScanner(source);
+
+        // Состояние сканера создаётся ОДИН раз на документ и протягивается через все
+        // текстовые сегменты: тег внутри предложения не должен обнулять разбор кавычек
+        // и не должен выглядеть для правил как начало строки.
+        var state = new ScanState();
         while (scanner.TryRead(out Segment segment))
         {
             ReadOnlySpan<char> slice = source.Slice(segment.Start, segment.Length);
@@ -73,7 +78,7 @@ public sealed class HtmlTypograf
             var laidOut = new CharBuffer(slice.Length + 8, _options.MaxOutputLength);
             try
             {
-                TextScanner.Run(slice, _options.Rules, ref scanned);
+                TextScanner.Run(slice, _options.Rules, ref state, ref scanned);
                 WordBinder.Run(scanned.AsSpan(), _options.Rules, ref bound);
                 LayoutWriter.Run(bound.AsSpan(), _options, ref laidOut);
                 Emitter.Encode(laidOut.AsSpan(), _options.Entities, ref buffer);

@@ -41,6 +41,9 @@ internal struct CharBuffer
 
     public readonly void PatchAt(int index, char value) => _array[index] = value;
 
+    /// <summary>Отбрасывает хвост буфера до указанной длины. Ёмкость не меняется.</summary>
+    public void Truncate(int length) => _length = length;
+
     public void Dispose()
     {
         char[]? array = _array;

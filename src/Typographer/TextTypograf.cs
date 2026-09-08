@@ -26,7 +26,8 @@ public sealed class TextTypograf
         var buffer = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
         try
         {
-            TextScanner.Run(text.AsSpan(), _options.Rules, ref scanned);
+            var state = new ScanState();
+            TextScanner.Run(text.AsSpan(), _options.Rules, ref state, ref scanned);
             WordBinder.Run(scanned.AsSpan(), _options.Rules, ref buffer);
             ReadOnlySpan<char> result = buffer.AsSpan();
             return result.SequenceEqual(text.AsSpan()) ? text : result.ToString();
@@ -49,7 +50,8 @@ public sealed class TextTypograf
         var buffer = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
         try
         {
-            TextScanner.Run(text, _options.Rules, ref scanned);
+            var state = new ScanState();
+            TextScanner.Run(text, _options.Rules, ref state, ref scanned);
             WordBinder.Run(scanned.AsSpan(), _options.Rules, ref buffer);
             ReadOnlySpan<char> result = buffer.AsSpan();
             result.CopyTo(destination.GetSpan(result.Length));
