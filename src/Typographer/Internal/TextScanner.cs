@@ -116,7 +116,10 @@ internal static class TextScanner
 
     private static bool NeedsSpaceAfterComma(ReadOnlySpan<char> source, int index)
     {
-        if (index + 1 >= source.Length || source[index + 1] == ' ')
+        // Неразрывный пробел — уже пробел. Без этой проверки правило не узнаёт пробел,
+        // ранее превращённый в nbsp другим правилом (например, тире прямой речи после
+        // запятой), и на повторном прогоне вставляет ещё один — нарушая идемпотентность.
+        if (index + 1 >= source.Length || source[index + 1] is ' ' or Chars.Nbsp)
         {
             return false;
         }
