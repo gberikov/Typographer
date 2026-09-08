@@ -35,6 +35,18 @@ public class SpaceRulesTests
         => Assert.Equal("3,14", Run("3,14"));
 
     [Fact]
+    public void НеСтавитПробелМеждуДвумяЗнакамиПрепинания()
+        => Assert.Equal("текст,, ещё", Run("текст,,ещё"));
+
+    [Fact]
+    public void СтабиленПриПовторномПрогонеСоседнихЗнаковПрепинания()
+    {
+        string once = Run("текст,,ещё");
+
+        Assert.Equal(once, Run(once));
+    }
+
+    [Fact]
     public void ЗаменяетТриТочкиНаМноготочие()
         => Assert.Equal("вот…", Run("вот..."));
 
