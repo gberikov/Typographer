@@ -10,8 +10,12 @@ public class CharBufferTests
         var buffer = new CharBuffer(initialCapacity: 2);
         try
         {
-            buffer.Write("длинная строка");
-            Assert.Equal("длинная строка", buffer.AsSpan().ToString());
+            // Запись короткой части
+            buffer.Write("x");
+            // Запись длинной части, гарантирующей рост буфера (>16 символов)
+            buffer.Write("очень длинная строка для проверки роста");
+            // Проверка: обе части должны быть сохранены правильно
+            Assert.Equal("xочень длинная строка для проверки роста", buffer.AsSpan().ToString());
         }
         finally
         {
