@@ -221,14 +221,17 @@ public class LayoutTests
     public void NobrChainDoesNotCrossTag()
     {
         // Неразрывная цепочка живёт ВНУТРИ текстового узла: через тег она не тянется,
-        // иначе <nobr> пересечётся с <b> и разметка перестанет быть валидной.
+        // иначе <nobr> пересечётся с <b> и разметка перестанет быть валидной. Цепочку
+        // задают именно неразрывные пробелы — на обычных <nobr> не появляется вовсе, и
+        // проверять на таком входе было бы нечего.
         string result = new HtmlTypograf(new HtmlOptions
         {
             Rules = RuleSet.None,
             MaxNobr = 3,
-        }).Process("раз два <b>три</b> четыре пять");
+        }).Process($"раз{Chars.Nbsp}два{Chars.Nbsp}<b>три</b>{Chars.Nbsp}четыре");
 
-        Assert.DoesNotContain("<nobr>раз два <b>", result);
-        Assert.Contains("<b>три</b>", result);
+        Assert.Equal(
+            $"<nobr>раз{Chars.Nbsp}два</nobr>{Chars.Nbsp}<b>три</b>{Chars.Nbsp}четыре",
+            result);
     }
 }

@@ -5,7 +5,7 @@ namespace Typographer.Internal;
 /// <summary>Состояние фазы Bind, живущее сквозь текстовые сегменты документа.</summary>
 internal struct BindState
 {
-    /// <summary>Сколько букв текущего слова уже собрано.</summary>
+    /// <summary>Сколько символов текущего слова уже собрано.</summary>
     public int WordLength;
 
     /// <summary>Слово длиннее <c>MaxWord</c>: словарная проверка ему заведомо не нужна.</summary>
@@ -39,6 +39,10 @@ internal struct BindState
 /// неразрывные, поэтому правит буфер фазы Scan НА МЕСТЕ, а не переписывает его в новый.
 /// Длина при этом не меняется, и индексы уже пройденных позиций остаются валидными: на этом
 /// построена привязка фамилии к идущему следом инициалу.
+/// Точек входа две — <see cref="Run"/> для обычного текста и <see cref="RunDocument"/> для
+/// HTML, — но разбор у них общий, в <see cref="BindSegment"/>. Отличается только деление на
+/// сегменты: в обычном тексте «&lt;» — литерал, и <see cref="MarkupScanner"/> там применять
+/// нельзя. Пока разбор жил в двух телах, они разъезжались.
 /// </remarks>
 internal static class WordBinder
 {
@@ -48,112 +52,22 @@ internal static class WordBinder
     /// </summary>
     private const int MaxWord = 32;
 
+    /// <summary>Фаза Bind по обычному тексту: весь буфер — один текстовый сегмент.</summary>
+    /// <param name="buffer">Буфер фазы Scan: правится на месте.</param>
+    /// <param name="rules">Набор включённых правил.</param>
     public static void Run(ref CharBuffer buffer, RuleSet rules)
     {
-        ReadOnlySpan<char> source = buffer.AsSpan();
-
-        bool afterShortWord = rules.Contains(RuleId.Common.Nbsp.AfterShortWord);
-        bool abbr = rules.Contains(RuleId.Ru.Nbsp.Abbr);
-        bool initials = rules.Contains(RuleId.Ru.Nbsp.Initials);
-
-        int wordStart = -1;
-
-        // Индекс пробела перед текущим словом, -1 — если слова не разделены пробелом
-        // (начало строки или после другой пунктуации). Нужен, чтобы связать фамилию с инициалом,
-        // который идёт СЛЕДОМ: «Пушкин А.» — на момент обработки «Пушкин» ещё неизвестно, что
-        // дальше инициал, поэтому решение принимается при разборе «А.» задним числом.
-        int prevSpaceIndex = -1;
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            char c = source[i];
-
-            if (char.IsLetter(c))
-            {
-                if (wordStart < 0)
-                {
-                    wordStart = i;
-                }
-
-                continue;
-            }
-
-            // Точка не завершает слово: она может быть частью сокращения или инициала,
-            // решение принимает следующий за ней пробел.
-            if (c == '.')
-            {
-                continue;
-            }
-
-            if (c != ' ')
-            {
-                // Токен закончился не пробелом, а знаком препинания: «Пушкин А., автор».
-                // Вперёд связывать нечего — пробела справа нет, — но связь НАЗАД, с
-                // фамилией, инициалу по-прежнему нужна.
-                BindInitialToPreviousWord(ref buffer, source, wordStart, i, initials, prevSpaceIndex);
-                wordStart = -1;
-                prevSpaceIndex = -1;
-                continue;
-            }
-
-            if (wordStart < 0)
-            {
-                prevSpaceIndex = -1;
-                continue;
-            }
-
-            ReadOnlySpan<char> token = source.Slice(wordStart, i - wordStart);
-            bool hasDot = token[token.Length - 1] == '.';
-            ReadOnlySpan<char> letters = hasDot ? token.Slice(0, token.Length - 1) : token;
-            bool isInitial = initials && IsInitial(token);
-
-            bool bind =
-                (afterShortWord && !hasDot && Dictionaries.IsShortWord(letters))
-                || (abbr && hasDot && Dictionaries.IsAbbreviationPart(letters))
-                || isInitial;
-
-            // Инициал связывает себя не только со следующим словом, но и с предыдущим —
-            // «Пушкин А.» нуждается в неразрывном пробеле по обе стороны от «А.».
-            if (isInitial && prevSpaceIndex >= 0)
-            {
-                buffer.PatchAt(prevSpaceIndex, Chars.Nbsp);
-            }
-
-            if (bind)
-            {
-                buffer.PatchAt(i, Chars.Nbsp);
-            }
-
-            wordStart = -1;
-            prevSpaceIndex = i;
-        }
-
-        // Конец ввода тоже завершает токен: «Пушкин А.» кончается инициалом, и без этого
-        // разбор последнего слова не запускался вовсе.
-        BindInitialToPreviousWord(ref buffer, source, wordStart, source.Length, initials, prevSpaceIndex);
-    }
-
-    /// <summary>
-    /// Ставит неразрывный пробел ПЕРЕД инициалом, завершившимся на границе, за которой
-    /// пробела нет: конец ввода или знак препинания.
-    /// </summary>
-    private static void BindInitialToPreviousWord(
-        ref CharBuffer buffer,
-        ReadOnlySpan<char> source,
-        int wordStart,
-        int wordEnd,
-        bool initials,
-        int prevSpaceIndex)
-    {
-        if (!initials || wordStart < 0 || prevSpaceIndex < 0)
+        if (!Enabled(rules, out bool afterShortWord, out bool abbr, out bool initials))
         {
             return;
         }
 
-        if (IsInitial(source.Slice(wordStart, wordEnd - wordStart)))
-        {
-            buffer.PatchAt(prevSpaceIndex, Chars.Nbsp);
-        }
+        Span<char> word = stackalloc char[MaxWord];
+        var state = new BindState();
+        ReadOnlySpan<char> source = buffer.AsSpan();
+
+        BindSegment(ref buffer, source, 0, source.Length, word, ref state, afterShortWord, abbr, initials);
+        BindTrailingInitial(ref buffer, word, ref state, initials);
     }
 
     /// <summary>
@@ -171,10 +85,7 @@ internal static class WordBinder
     /// <param name="rules">Набор включённых правил.</param>
     public static void RunDocument(ref CharBuffer buffer, RuleSet rules)
     {
-        bool afterShortWord = rules.Contains(RuleId.Common.Nbsp.AfterShortWord);
-        bool abbr = rules.Contains(RuleId.Ru.Nbsp.Abbr);
-        bool initials = rules.Contains(RuleId.Ru.Nbsp.Initials);
-        if (!afterShortWord && !abbr && !initials)
+        if (!Enabled(rules, out bool afterShortWord, out bool abbr, out bool initials))
         {
             return;
         }
@@ -198,37 +109,60 @@ internal static class WordBinder
                 continue;
             }
 
-            BindSegment(ref buffer, document, segment, word, ref state, afterShortWord, abbr, initials);
+            BindSegment(
+                ref buffer,
+                document,
+                segment.Start,
+                segment.Start + segment.Length,
+                word,
+                ref state,
+                afterShortWord,
+                abbr,
+                initials);
         }
 
-        // Конец документа тоже завершает токен: «Пушкин А.» кончается инициалом.
-        if (initials && state.WordLength == 2 && state.PrevSpaceIndex >= 0
-            && IsInitial(word.Slice(0, state.WordLength)))
-        {
-            buffer.PatchAt(state.PrevSpaceIndex, Chars.Nbsp);
-        }
+        BindTrailingInitial(ref buffer, word, ref state, initials);
     }
 
-    /// <summary>Разбирает один текстовый сегмент документа, продолжая начатое слово.</summary>
+    /// <summary>Включено ли хоть одно словарное правило фазы.</summary>
+    private static bool Enabled(RuleSet rules, out bool afterShortWord, out bool abbr, out bool initials)
+    {
+        afterShortWord = rules.Contains(RuleId.Common.Nbsp.AfterShortWord);
+        abbr = rules.Contains(RuleId.Ru.Nbsp.Abbr);
+        initials = rules.Contains(RuleId.Ru.Nbsp.Initials);
+        return afterShortWord || abbr || initials;
+    }
+
+    /// <summary>
+    /// Разбирает один текстовый сегмент, продолжая слово, начатое в предыдущем.
+    /// Индексы — координаты ДОКУМЕНТА: патчится буфер, а не стековая копия слова.
+    /// </summary>
     private static void BindSegment(
         ref CharBuffer buffer,
         ReadOnlySpan<char> document,
-        Segment segment,
+        int start,
+        int end,
         Span<char> word,
         ref BindState state,
         bool afterShortWord,
         bool abbr,
         bool initials)
     {
-        int end = segment.Start + segment.Length;
-        for (int i = segment.Start; i < end; i++)
+        for (int i = start; i < end; i++)
         {
             char c = document[i];
 
+            // Точка слово не НАЧИНАЕТ: «.дом» — это «дом» с точкой слева, и словарю
+            // достаётся «дом», иначе четырёхсимвольное «.дом» перестаёт быть коротким
+            // словом. Но и не завершает: внутри слова она может быть частью сокращения
+            // или инициала, решение принимает следующий за ней пробел.
+            if (c == '.' && state.WordLength == 0)
+            {
+                continue;
+            }
+
             if (char.IsLetter(c) || c == '.')
             {
-                // Точка слово не завершает: она может быть частью сокращения или инициала,
-                // решение принимает следующий за ней пробел.
                 if (state.WordLength < word.Length)
                 {
                     word[state.WordLength++] = c;
@@ -245,12 +179,7 @@ internal static class WordBinder
             {
                 // Токен закончился знаком препинания: «Пушкин А., автор». Вперёд связывать
                 // нечего, но связь НАЗАД, с фамилией, инициалу по-прежнему нужна.
-                if (initials && !state.WordOverflow && state.PrevSpaceIndex >= 0
-                    && IsInitial(word.Slice(0, state.WordLength)))
-                {
-                    buffer.PatchAt(state.PrevSpaceIndex, Chars.Nbsp);
-                }
-
+                BindTrailingInitial(ref buffer, word, ref state, initials);
                 state.Reset();
                 continue;
             }
@@ -271,6 +200,8 @@ internal static class WordBinder
                     || (abbr && hasDot && Dictionaries.IsAbbreviationPart(letters))
                     || isInitial);
 
+            // Инициал связывает себя не только со следующим словом, но и с предыдущим —
+            // «Пушкин А.» нуждается в неразрывном пробеле по обе стороны от «А.».
             if (isInitial && state.PrevSpaceIndex >= 0)
             {
                 buffer.PatchAt(state.PrevSpaceIndex, Chars.Nbsp);
@@ -284,6 +215,20 @@ internal static class WordBinder
             state.WordLength = 0;
             state.WordOverflow = false;
             state.PrevSpaceIndex = i;
+        }
+    }
+
+    /// <summary>
+    /// Ставит неразрывный пробел ПЕРЕД инициалом, завершившимся на границе, за которой
+    /// пробела нет: конец ввода или знак препинания.
+    /// </summary>
+    private static void BindTrailingInitial(
+        ref CharBuffer buffer, ReadOnlySpan<char> word, ref BindState state, bool initials)
+    {
+        if (initials && !state.WordOverflow && state.PrevSpaceIndex >= 0
+            && IsInitial(word.Slice(0, state.WordLength)))
+        {
+            buffer.PatchAt(state.PrevSpaceIndex, Chars.Nbsp);
         }
     }
 

@@ -1,4 +1,4 @@
-using Typographer.Internal;
+﻿using Typographer.Internal;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
@@ -46,4 +46,20 @@ public class NbspRulesTests
     [Fact]
     public void SurnameBeforeInitialsToo()
         => Assert.Equal("Пушкин А. С.", Run("Пушкин А. С."));
+
+    // Точка слово не НАЧИНАЕТ. Словарные решения зависят от длины токена и от того, одна ли
+    // в нём буква, поэтому точка, приклеенная слева, меняла вердикт: «.дом» — четыре
+    // символа и уже не короткое слово, «.т» — две буквы и уже не часть сокращения, а
+    // одиночная точка становилась токеном и подставляла свой пробел под связь с инициалом.
+    [Fact]
+    public void DotDoesNotStartShortWord()
+        => Assert.Equal($"текст .дом{Chars.Nbsp}стоит", Run("текст .дом стоит"));
+
+    [Fact]
+    public void DotDoesNotStartAbbreviationPart()
+        => Assert.Equal($"а{Chars.Nbsp}.т.{Chars.Nbsp}д.", Run("а .т. д."));
+
+    [Fact]
+    public void LoneDotIsNotAToken()
+        => Assert.Equal($"дом{Chars.Nbsp}. А.{Chars.Nbsp}Пушкин", Run("дом . А. Пушкин"));
 }
