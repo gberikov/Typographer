@@ -21,6 +21,14 @@ internal struct ScanState
     public char Last;
 
     /// <summary>
+    /// Сколько ДОПОЛНИТЕЛЬНЫХ символов исходной строки проглотило последнее сработавшее
+    /// правило. Правило, собравшее знак из нескольких символов («(c)», «-&gt;», «!=»),
+    /// выставляет это поле, а диспетчер на столько же двигает курсор. Обнуляется сразу
+    /// после сдвига: значение живёт ровно один шаг цикла.
+    /// </summary>
+    public int Skip;
+
+    /// <summary>
     /// Число цифр подряд в конце предыдущего текстового сегмента. Значение ограничено
     /// пятью: для проверки четырёхзначного года важно лишь наличие лишней пятой цифры.
     /// </summary>
@@ -62,16 +70,30 @@ internal static class TextScanner
             bool handled = c switch
             {
                 '.' or ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                'C' or 'F' or Chars.Numero
+                    => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '<' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '"' or '\'' or Chars.Laquo or Chars.Raquo or Chars.Bdquo or Chars.Ldquo
                     or Chars.Lsquo or Chars.Rsquo
                     => QuoteRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                ' ' or '(' or '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                '-' => DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                ' ' or '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Скобка и дефис спорны: «(c)» — знак, а не скобка со словом; «->» — стрелка,
+                // а не тире. Правило символов спрашивается первым, и только если оно не
+                // узнало свой образец, символ достаётся правилу пробелов или тире.
+                '(' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '-' or '>' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 _ => false,
             };
 
             if (handled)
             {
+                // Правило могло проглотить не один символ, а несколько: «(c)» — три,
+                // «->» — два. Курсор двигается на съеденное, чтобы хвост знака не попал
+                // в буфер отдельными буквами.
+                i += state.Skip;
+                state.Skip = 0;
                 continue;
             }
 

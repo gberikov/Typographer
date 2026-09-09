@@ -20,4 +20,9 @@ internal static class Chars
     public const char Minus = '\u2212';
     public const char Times = '\u00D7';
     public const char Degree = '\u00B0';
+    public const char Copyright = '\u00A9';
+    public const char Registered = '\u00AE';
+    public const char Trademark = '\u2122';
+    public const char ArrowRight = '\u2192';
+    public const char ArrowLeft = '\u2190';
 }
