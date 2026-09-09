@@ -48,7 +48,7 @@ internal static class Emitter
         foreach (char c in source)
         {
             string? name = EntityTable.NameOf(c);
-            bool encode = name is not null
+            bool encode = EntityTable.IsEncodable(c)
                 && (mode != EntityMode.Mixed || EntityTable.IsInvisible(c));
 
             if (!encode)
@@ -58,7 +58,7 @@ internal static class Emitter
             }
 
             destination.Write('&');
-            if (mode == EntityMode.Numeric)
+            if (mode == EntityMode.Numeric || name is null)
             {
                 destination.Write('#');
                 WriteDecimal(ref destination, c);

@@ -66,4 +66,21 @@ public class EmitterTests
             "<a title=\"«х»\">&laquo;текст&raquo;</a><code>«код»</code>",
             result);
     }
+
+    [Theory]
+    [InlineData(EntityMode.Named, "а&#8239;б")]
+    [InlineData(EntityMode.Numeric, "а&#8239;б")]
+    [InlineData(EntityMode.Mixed, "а&#8239;б")]
+    public void NarrowNbspIsWrittenAsNumericCode(EntityMode mode, string expected)
+    {
+        // Буквенного имени нет ни в одном режиме, поэтому во всех трёх — числовой код.
+        Assert.Equal(expected, Encode($"а{Chars.NarrowNbsp}б", mode));
+    }
+
+    [Fact]
+    public void SymbolsModeKeepsNarrowNbspAsChar()
+    {
+        string input = $"а{Chars.NarrowNbsp}б";
+        Assert.Equal(input, Encode(input, EntityMode.Symbols));
+    }
 }
