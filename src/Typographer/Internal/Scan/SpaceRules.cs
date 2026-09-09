@@ -18,14 +18,7 @@ internal static class SpaceRules
             return true;
         }
 
-        // previous != '<' — единственный барьер во всём конвейере против «текст становится
-        // разметкой» (гарантия 4). Без него «< ?» и «< !--» превращались бы в «<?» и «<!--»:
-        // удалённый здесь пробел — единственный, что мешало «<» слипнуться со знаком
-        // препинания. После перехода фаз на документные проходы (Bind, Layout, Emit)
-        // пересканируют уже этот буфер через MarkupScanner и примут псевдотег за настоящий.
-        if (rules.Contains(RuleId.Common.Space.DelBeforePunctuation)
-            && index + 1 < source.Length && IsPunctuation(source[index + 1])
-            && previous != '<')
+        if (index + 1 < source.Length && ShouldDeleteBeforeNext(source, index, previous, rules))
         {
             return true;
         }
@@ -35,19 +28,134 @@ internal static class SpaceRules
     }
 
     /// <summary>
-    /// Дописывает пробел после запятой, если он там нужен. Вызывается диспетчером ПОСЛЕ
-    /// того, как обычный символ уже записан в буфер — это не самостоятельное правило со
-    /// своим символом-триггером, а довесок к записи запятой.
+    /// Пробел удаляется, потому что следующий за ним символ его не терпит: знак препинания,
+    /// точка, знак процента или второй восклицательный знак подряд.
     /// </summary>
-    public static void WriteSpaceAfterComma(
-        ReadOnlySpan<char> source, int index, char previous, RuleSet rules,
+    private static bool ShouldDeleteBeforeNext(
+        ReadOnlySpan<char> source, int index, char previous, RuleSet rules)
+    {
+        char next = source[index + 1];
+
+        // previous != '<' — единственный барьер во всём конвейере против «текст становится
+        // разметкой» (гарантия 4). Без него «< ?» и «< !--» превращались бы в «<?» и «<!--»:
+        // удалённый здесь пробел — единственный, что мешало «<» слипнуться со знаком
+        // препинания. После перехода фаз на документные проходы (Bind, Layout, Emit)
+        // пересканируют уже этот буфер через MarkupScanner и примут псевдотег за настоящий.
+        if (previous == '<')
+        {
+            return false;
+        }
+
+        // «8 != 9»: восклицательный знак здесь часть оператора, а не конец предложения.
+        // Признак — равенство сразу за ним; знак препинания перед оператором отбивается
+        // пробелом с обеих сторон, и съедать его нельзя.
+        if (index + 2 < source.Length && source[index + 2] == '=' && next is '!' or '?')
+        {
+            return false;
+        }
+
+        if (next == '!' && previous == '!')
+        {
+            return rules.Contains(RuleId.Common.Space.DelBetweenExclamationMarks)
+                || rules.Contains(RuleId.Common.Space.DelBeforePunctuation);
+        }
+
+        if (next == '%' || next == '‰' || next == '‱')
+        {
+            return rules.Contains(RuleId.Common.Space.DelBeforePercent);
+        }
+
+        if (next == '.')
+        {
+            // Четыре точки подряд — не многоточие, а обрыв цитаты или опечатка. Пробел перед
+            // ними значащий: правило многоточия эту последовательность не собирает, и
+            // приклеивать её к предыдущему слову не за что.
+            return !StartsLongDotRun(source, index + 1)
+                && rules.Contains(RuleId.Common.Space.DelBeforeDot);
+        }
+
+        return IsPunctuation(next) && rules.Contains(RuleId.Common.Space.DelBeforePunctuation);
+    }
+
+    /// <summary>Точек подряд начиная с <paramref name="start"/> четыре или больше.</summary>
+    private static bool StartsLongDotRun(ReadOnlySpan<char> source, int start)
+    {
+        int dots = 0;
+        while (start + dots < source.Length && source[start + dots] == '.' && dots < 4)
+        {
+            dots++;
+        }
+
+        return dots >= 4;
+    }
+
+    /// <summary>
+    /// Дописывает пробел после знака препинания, если он там нужен. Вызывается диспетчером
+    /// ПОСЛЕ того, как обычный символ уже записан в буфер — это не самостоятельное правило
+    /// со своим символом-триггером, а довесок к записи знака.
+    /// </summary>
+    public static void WriteSpaceAfterPunctuation(
+        ReadOnlySpan<char> source, int index, char previous, int floor, RuleSet rules,
         ref ScanState state, ref CharBuffer buffer)
     {
-        if (rules.Contains(RuleId.Common.Space.AfterComma) && source[index] == ','
-            && NeedsSpaceAfterComma(source, index, previous, !state.Quotes.IsEmpty))
+        // Точка с запятой закрывает HTML-сущность — «&amp;», «&lt;», «&#160;», — а не
+        // предложение. Пробел после неё разорвал бы сущность и превратил разметку в текст.
+        // Типографские сущности к этому месту уже раскодированы фазой Prepare, а сущности
+        // разметки остаются намеренно и доходят до правил как есть.
+        if (source[index] == ';' && EndsHtmlEntity(ref buffer, floor))
+        {
+            return;
+        }
+
+        RuleId rule = source[index] switch
+        {
+            ',' => RuleId.Common.Space.AfterComma,
+            ':' => RuleId.Common.Space.AfterColon,
+            ';' => RuleId.Common.Space.AfterSemicolon,
+            '!' => RuleId.Common.Space.AfterExclamationMark,
+            '?' => RuleId.Common.Space.AfterQuestionMark,
+            _ => default,
+        };
+
+        if (rule.Index != 0 && rules.Contains(rule)
+            && NeedsSpaceAfterPunctuation(source, index, previous, !state.Quotes.IsEmpty))
         {
             buffer.Write(' ');
         }
+    }
+
+    /// <summary>
+    /// Последний записанный символ — точка с запятой, закрывающая HTML-сущность: слева от
+    /// неё имя из букв, цифр или решётки, а перед именем амперсанд. Поиск не уходит левее
+    /// <paramref name="floor"/> — там чужой текстовый узел или разметка.
+    /// </summary>
+    private static bool EndsHtmlEntity(ref CharBuffer buffer, int floor)
+    {
+        // Самое длинное имя типографской сущности — «thinsp» (6 символов), самое длинное
+        // числовое — «#65535» (6). Десяти хватает с запасом, а ограничение не даёт правилу
+        // уползти в начало абзаца на входе вида «раз ; два».
+        const int MaxEntityName = 10;
+
+        int i = buffer.Length - 2;
+        int name = 0;
+        while (i >= floor && name < MaxEntityName)
+        {
+            char c = buffer.CharAt(i);
+            if (c == '&')
+            {
+                return name > 0;
+            }
+
+            if (!char.IsLetterOrDigit(c) && c != '#')
+            {
+                return false;
+            }
+
+            name++;
+            i--;
+        }
+
+        return false;
     }
 
     // Знак препинания — класс, а не только сырая форма во входном тексте: многоточие входит
@@ -59,7 +167,7 @@ internal static class SpaceRules
     private static bool IsClosing(char c)
         => c is ')' or ']' or '}' or Chars.Raquo or Chars.Ldquo or Chars.Rsquo;
 
-    private static bool NeedsSpaceAfterComma(
+    private static bool NeedsSpaceAfterPunctuation(
         ReadOnlySpan<char> source, int index, char previous, bool insideQuotes)
     {
         if (index + 1 >= source.Length)
@@ -78,8 +186,16 @@ internal static class SpaceRules
         }
 
         // Между двумя соседними знаками препинания пробела не бывает: «текст,,ещё» — за
-        // первой запятой сразу вторая, вставлять пробел некуда.
+        // первой запятой сразу вторая, вставлять пробел некуда. Сюда же попадают «?..»,
+        // «!..» и «?!» — сочетания, а не два предложения подряд.
         if (IsPunctuation(next))
+        {
+            return false;
+        }
+
+        // Знак препинания оказался частью оператора или адреса: «8 != 9», «http://». Пробел
+        // после него не ставится — это не конец предложения.
+        if (next is '=' or '/')
         {
             return false;
         }
@@ -93,7 +209,8 @@ internal static class SpaceRules
             return false;
         }
 
-        // Запятая внутри числа — десятичный разделитель, пробел не нужен.
+        // Цифры по обе стороны: десятичная запятая «3,14», время «10:30», счёт «2:1».
+        // Разделитель внутри числа, а не знак конца предложения.
         return !(char.IsDigit(previous) && char.IsDigit(next));
     }
 }

@@ -9,7 +9,14 @@ public class SpaceRulesTests
         Rules = RuleSet.None
             .With(RuleId.Common.Space.DelRepeatSpace)
             .With(RuleId.Common.Space.DelBeforePunctuation)
+            .With(RuleId.Common.Space.DelBeforeDot)
+            .With(RuleId.Common.Space.DelBeforePercent)
+            .With(RuleId.Common.Space.DelBetweenExclamationMarks)
             .With(RuleId.Common.Space.AfterComma)
+            .With(RuleId.Common.Space.AfterColon)
+            .With(RuleId.Common.Space.AfterSemicolon)
+            .With(RuleId.Common.Space.AfterExclamationMark)
+            .With(RuleId.Common.Space.AfterQuestionMark)
             .With(RuleId.Common.Punctuation.Hellip),
     }).Process(source);
 
@@ -99,4 +106,44 @@ public class SpaceRulesTests
 
         Assert.DoesNotContain("<!--", htmlResult);
     }
+
+    [Theory]
+    [InlineData("текст:ещё", "текст: ещё")]
+    [InlineData("раз;два", "раз; два")]
+    [InlineData("Ура!Победа", "Ура! Победа")]
+    [InlineData("Что?Как", "Что? Как")]
+    public void AddsSpaceAfterPunctuation(string source, string expected)
+        => Assert.Equal(expected, Run(source));
+
+    [Theory]
+    // Двоеточие между цифрами — время или счёт, а не конец предложения.
+    [InlineData("Время 10:30", "Время 10:30")]
+    // Двоеточие в адресе: за ним косая черта, а не текст.
+    [InlineData("http://example.com", "http://example.com")]
+    public void KeepsColonInsideTimeAndUrl(string source, string expected)
+        => Assert.Equal(expected, Run(source));
+
+    [Theory]
+    // Восклицательный знак здесь часть оператора: пробелы вокруг него значащие.
+    [InlineData("8 != 9", "8 != 9")]
+    // Четыре точки — не многоточие, правило их не собирает, и приклеивать к слову не за что.
+    [InlineData("текст ....", "текст ....")]
+    public void KeepsSpaceWhenPunctuationIsNotPunctuation(string source, string expected)
+        => Assert.Equal(expected, Run(source));
+
+    [Theory]
+    [InlineData("слово .", "слово.")]
+    [InlineData("50 %", "50%")]
+    [InlineData("Ура ! ! !", "Ура!!!")]
+    public void RemovesSpaceBeforeDotPercentAndExclamationMarks(string source, string expected)
+        => Assert.Equal(expected, Run(source));
+
+    [Theory]
+    // Точка с запятой закрывает сущность разметки: пробел разорвал бы её пополам.
+    [InlineData("текст &lt;тут&gt;", "текст &lt;тут&gt;")]
+    [InlineData("число &#160;тут", "число &#160;тут")]
+    // Обычная точка с запятой пробел получает — амперсанда слева нет.
+    [InlineData("раз ;два", "раз; два")]
+    public void KeepsHtmlEntityIntact(string source, string expected)
+        => Assert.Equal(expected, Run(source));
 }

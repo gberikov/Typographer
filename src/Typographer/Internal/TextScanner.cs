@@ -76,7 +76,7 @@ internal static class TextScanner
             }
 
             buffer.Write(c);
-            SpaceRules.WriteSpaceAfterComma(source, i, previous, rules, ref state, ref buffer);
+            SpaceRules.WriteSpaceAfterPunctuation(source, i, previous, floor, rules, ref state, ref buffer);
         }
 
         if (buffer.Length > floor)
