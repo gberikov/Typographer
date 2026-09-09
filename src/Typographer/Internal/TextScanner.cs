@@ -69,7 +69,12 @@ internal static class TextScanner
             // же символ задан порядком вызовов внутри ветки — в одном месте и явно.
             bool handled = c switch
             {
-                '.' or ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Точка спорна: между цифрами это десятичный разделитель, иначе — знак
+                // препинания или часть многоточия.
+                '.' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                'г' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 // «!=» — знак сравнения, а не конец предложения: число спрашивается первым.
                 '!' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
                     || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
@@ -98,7 +103,9 @@ internal static class TextScanner
                 // узнало свой образец, символ достаётся правилу пробелов или тире.
                 '(' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
                     || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Дефис спорен трижды: стрелка «->», наращение «25-й» и тире.
                 '-' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
                     || DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '>' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 _ => false,

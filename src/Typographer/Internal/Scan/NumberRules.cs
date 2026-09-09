@@ -37,6 +37,19 @@ internal static class NumberRules
             return true;
         }
 
+        if (c == '.' && rules.Contains(RuleId.Ru.Number.Comma)
+            && IsDecimalPoint(source, index, previous, ref buffer, floor))
+        {
+            buffer.Write(',');
+            return true;
+        }
+
+        if (c == '-' && char.IsDigit(previous) && rules.Contains(RuleId.Ru.Number.Ordinals)
+            && TryWriteOrdinal(source, index, ref state, ref buffer))
+        {
+            return true;
+        }
+
         if (char.IsDigit(c) && rules.Contains(RuleId.Common.Number.DigitGrouping)
             && TryWriteGrouped(source, index, previous, ref state, ref buffer))
         {
@@ -155,6 +168,85 @@ internal static class NumberRules
         }
 
         state.Skip = digits - 1;
+        return true;
+    }
+
+    /// <summary>
+    /// Точка между цифрами — десятичный разделитель, но только если во всём числе она одна.
+    /// «09.09.2026» — дата, «1.2.3» — номер версии: там точек несколько, и трогать их нельзя.
+    /// </summary>
+    private static bool IsDecimalPoint(
+        ReadOnlySpan<char> source, int index, char previous, ref CharBuffer buffer, int floor)
+    {
+        if (!char.IsDigit(previous) || index + 1 >= source.Length || !char.IsDigit(source[index + 1]))
+        {
+            return false;
+        }
+
+        // Слева: пропустить цифры целой части и убедиться, что перед ними не точка.
+        int back = buffer.Length - 1;
+        while (back >= floor && char.IsDigit(buffer.CharAt(back)))
+        {
+            back--;
+        }
+
+        if (back >= floor && buffer.CharAt(back) == '.')
+        {
+            return false;
+        }
+
+        // Справа: пропустить цифры дробной части и убедиться, что за ними не точка.
+        int forward = index + 1;
+        while (forward < source.Length && char.IsDigit(source[forward]))
+        {
+            forward++;
+        }
+
+        return forward >= source.Length || source[forward] != '.';
+    }
+
+    /// <summary>
+    /// Наращение порядкового числительного в краткой форме: «25-ый» становится «25-й».
+    /// Полные формы перечислены парами «как набрано — как надо».
+    /// </summary>
+    private static bool TryWriteOrdinal(
+        ReadOnlySpan<char> source, int index, ref ScanState state, ref CharBuffer buffer)
+    {
+        if (index + 2 >= source.Length)
+        {
+            return false;
+        }
+
+        char first = char.ToLowerInvariant(source[index + 1]);
+        char second = char.ToLowerInvariant(source[index + 2]);
+
+        // За наращением не должно быть буквы: «25-ая» — числительное, «25-аяя» — опечатка.
+        if (index + 3 < source.Length && char.IsLetter(source[index + 3]))
+        {
+            return false;
+        }
+
+        char shortForm = (first, second) switch
+        {
+            ('ы', 'й') => 'й',
+            ('о', 'й') => 'й',
+            ('а', 'я') => 'я',
+            ('о', 'е') => 'е',
+            ('ы', 'е') => 'е',
+            ('ы', 'м') => 'м',
+            ('о', 'м') => 'м',
+            ('ы', 'х') => 'х',
+            _ => '\0',
+        };
+
+        if (shortForm == '\0')
+        {
+            return false;
+        }
+
+        buffer.Write('-');
+        buffer.Write(shortForm);
+        state.Skip = 2;
         return true;
     }
 }

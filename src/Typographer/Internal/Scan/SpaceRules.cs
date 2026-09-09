@@ -12,6 +12,16 @@ internal static class SpaceRules
     {
         char c = source[index];
 
+        // «2026год» — числу и слову нужен пробел. Слово проверяется целиком: «2026годовой»
+        // трогать не за что.
+        if (c == 'г' && char.IsDigit(previous) && rules.Contains(RuleId.Ru.Space.Year)
+            && IsYearWord(source, index))
+        {
+            buffer.Write(' ');
+            buffer.Write(c);
+            return true;
+        }
+
         if (c is '(' or '[')
         {
             // Пробел дописывается только после буквы или цифры: после другого пробела он
@@ -23,6 +33,15 @@ internal static class SpaceRules
 
             buffer.Write(c);
             return true;
+        }
+
+        // Ниже — правила самого пробела. Сюда доходят и другие символы: диспетчер шлёт
+        // в этот файл и «г» ради пробела перед словом «год», и скобки. Если для них
+        // правила не сработали, символ обязан достаться диспетчеру нетронутым — иначе
+        // удаление «пробела» съест букву.
+        if (c != ' ')
+        {
+            return false;
         }
 
         if (rules.Contains(RuleId.Common.Space.DelRepeatSpace)
@@ -131,6 +150,15 @@ internal static class SpaceRules
             return;
         }
 
+        // Пробел после многоточия и его сочетаний со знаком конца предложения: «Что?..Как».
+        if (source[index] == '.' && rules.Contains(RuleId.Ru.Space.AfterHellip)
+            && EndsEllipsis(ref buffer, floor)
+            && index + 1 < source.Length && char.IsLetter(source[index + 1]))
+        {
+            buffer.Write(' ');
+            return;
+        }
+
         RuleId rule = source[index] switch
         {
             ',' => RuleId.Common.Space.AfterComma,
@@ -236,5 +264,49 @@ internal static class SpaceRules
         // Цифры по обе стороны: десятичная запятая «3,14», время «10:30», счёт «2:1».
         // Разделитель внутри числа, а не знак конца предложения.
         return !(char.IsDigit(previous) && char.IsDigit(next));
+    }
+
+    /// <summary>Со слова начинается «год» в любой падежной форме.</summary>
+    private static bool IsYearWord(ReadOnlySpan<char> source, int index)
+    {
+        int length = 0;
+        while (index + length < source.Length && char.IsLetter(source[index + length]))
+        {
+            length++;
+        }
+
+        ReadOnlySpan<char> word = source.Slice(index, length);
+        return Is(word, "год") || Is(word, "года") || Is(word, "году")
+               || Is(word, "годы") || Is(word, "годов") || Is(word, "годах");
+    }
+
+    private static bool Is(ReadOnlySpan<char> word, string sample)
+    {
+        if (word.Length != sample.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < sample.Length; i++)
+        {
+            if (char.ToLowerInvariant(word[i]) != sample[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Буфер оканчивается многоточием: тремя точками, «?..», «!..» или знаком.</summary>
+    private static bool EndsEllipsis(ref CharBuffer buffer, int floor)
+    {
+        int written = buffer.Length - floor;
+        if (written < 2)
+        {
+            return false;
+        }
+
+        return buffer.CharAt(buffer.Length - 1) == '.' && buffer.CharAt(buffer.Length - 2) == '.';
     }
 }
