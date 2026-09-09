@@ -112,6 +112,32 @@ internal static class DashRules
             return true;
         }
 
+        // Английское тире. Спрашивается ПОСЛЕ русского: если включены оба, побеждает
+        // русское — язык библиотеки русский, а эти правила берут осознанно.
+        if ((previous is ' ' or Chars.Nbsp) && next == ' ')
+        {
+            // Британская традиция: короткое тире с отбивкой пробелами.
+            if (rules.Contains(RuleId.EnGb.Dash.Main))
+            {
+                buffer.Write(Chars.NDash);
+                return true;
+            }
+
+            // Американская: длинное тире вплотную к словам. Пробел слева уже в буфере —
+            // он усекается, пробел справа съедается через Skip.
+            if (rules.Contains(RuleId.EnUs.Dash.Main))
+            {
+                if (buffer.Length > floor)
+                {
+                    buffer.Truncate(buffer.Length - 1);
+                }
+
+                buffer.Write(Chars.MDash);
+                state.Skip = 1;
+                return true;
+            }
+        }
+
         return false;
     }
 
