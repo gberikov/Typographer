@@ -23,7 +23,10 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     public static RuleSet All { get; } = FromRules(RuleId.Registry.All);
 
     /// <summary>Безопасная типографика: всё, что меняет только оформление. Пресет по умолчанию.</summary>
-    public static RuleSet Default { get; } = All.Without(RuleId.Registry.Unsafe);
+    public static RuleSet Default { get; } = All
+        .Without(RuleId.Registry.Unsafe)
+        .Without(RuleId.Registry.Normalization)
+        .Without(RuleId.Registry.OptIn);
 
     /// <summary>Кавычки, тире и многоточие — минимум.</summary>
     public static RuleSet Minimal { get; } = FromRules(

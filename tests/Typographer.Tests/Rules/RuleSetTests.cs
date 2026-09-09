@@ -122,4 +122,27 @@ public class RuleSetTests
             Assert.True(seen.Add(rule.Name), $"имя {rule.Name} занято дважды");
         }
     }
+
+    [Fact]
+    public void RegistryHasEveryScanRuleOfTheSpec()
+    {
+        // Реестр — источник имён для docs/rules.md и для RuleId.TryParse. Пропущенное имя
+        // означает, что правило нельзя включить по имени, даже если код его реализует.
+        Assert.Equal(65, RuleId.Registry.All.Length);
+        Assert.True(RuleId.TryParse("common/space/afterColon", out _));
+        Assert.True(RuleId.TryParse("ru/dash/kakto", out _));
+        Assert.True(RuleId.TryParse("en-GB/dash/main", out _));
+    }
+
+    [Fact]
+    public void NormalizationRulesAreOutOfDefault()
+    {
+        // Обрезка краёв и замена табов меняют текст за пределами оформления: тот, кто
+        // вызвал Typograf.Html(text), такого не ожидает.
+        foreach (RuleId rule in RuleId.Registry.Normalization)
+        {
+            Assert.False(RuleSet.Default.Contains(rule), rule.Name);
+            Assert.True(RuleSet.All.Contains(rule), rule.Name);
+        }
+    }
 }
