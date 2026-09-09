@@ -70,9 +70,17 @@ internal static class TextScanner
             bool handled = c switch
             {
                 '.' or ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // «!=» — знак сравнения, а не конец предложения: число спрашивается первым.
+                '!' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 'C' or 'F' or Chars.Numero
                     => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                '<' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Угловая скобка спорна между стрелкой и знаком сравнения: «<-» и «<=».
+                '<' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '+' or '~' or 'x' or '1' or '3'
+                    => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '0' or '2' or '4' or '5' or '6' or '7' or '8' or '9'
+                    => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '"' or '\'' or Chars.Laquo or Chars.Raquo or Chars.Bdquo or Chars.Ldquo
                     or Chars.Lsquo or Chars.Rsquo
                     => QuoteRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
@@ -82,8 +90,9 @@ internal static class TextScanner
                 // узнало свой образец, символ достаётся правилу пробелов или тире.
                 '(' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
                     || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                '-' or '>' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                '-' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
                     || DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '>' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 _ => false,
             };
 
