@@ -145,4 +145,34 @@ public class RuleSetTests
             Assert.True(RuleSet.All.Contains(rule), rule.Name);
         }
     }
+
+    [Fact]
+    public void PresetsDivergeFromDefault()
+    {
+        // Пресеты перестали быть псевдонимами Default: у каждого своё основание,
+        // записанное в XML-комментарии рядом.
+        Assert.NotEqual(RuleSet.Default.Count, RuleSet.Lebedev.Count);
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Ru.Dash.Years));
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Ru.Punctuation.Exclamation));
+        Assert.True(RuleSet.Lebedev.Contains(RuleId.Common.Number.DigitGrouping));
+
+        Assert.True(RuleSet.Gost.Contains(RuleId.Ru.Dash.Years));
+        Assert.False(RuleSet.Gost.Contains(RuleId.Common.Space.DelBeforePercent));
+
+        Assert.True(RuleSet.Typograf.Contains(RuleId.Ru.Punctuation.Ano));
+        Assert.True(RuleSet.Typograf.Contains(RuleId.Ru.Dash.To));
+    }
+
+    [Fact]
+    public void GostKeepsDashInYearRangeAndLebedevDoesNot()
+    {
+        // Расхождение снято снимком оракула: он оставляет дефис, ГОСТ 14.3 требует тире.
+        // Приоритет источников ставит ГОСТ выше практики, поэтому в Default тире.
+        Assert.Equal(
+            "1941—1945 гг.",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Gost }).Process("1941-1945 гг."));
+        Assert.Equal(
+            "1941-1945 гг.",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("1941-1945 гг."));
+    }
 }

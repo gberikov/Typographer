@@ -267,10 +267,9 @@ public readonly struct RuleId : IEquatable<RuleId>
         public static class Punctuation
         {
             /// <summary>
-            /// Расстановка запятых перед «а» и «но». По умолчанию выключено.
-            /// Правило зарегистрировано (участвует в <see cref="RuleSet"/>, проходит <see cref="RuleId.TryParse"/>),
-            /// но пока НЕ ДЕЙСТВУЕТ: ни одна фаза конвейера его не читает, включение через
-            /// <see cref="RuleSet.With(RuleId[])"/> ничего не меняет в выводе. Реализация ждёт следующей версии.
+            /// Расстановка запятых перед «а» и «но». Вне <see cref="RuleSet.Default"/>:
+            /// правило само расставляет знаки, то есть меняет текст, а не оформление.
+            /// Включается по имени или через пресет <see cref="RuleSet.Typograf"/>.
             /// </summary>
             public static RuleId Ano => Registry.Ano;
 
