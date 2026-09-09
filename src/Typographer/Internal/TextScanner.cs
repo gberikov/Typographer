@@ -61,7 +61,7 @@ internal static class TextScanner
             // же символ задан порядком вызовов внутри ветки — в одном месте и явно.
             bool handled = c switch
             {
-                '.' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '.' or ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '"' or '\'' or Chars.Laquo or Chars.Raquo or Chars.Bdquo or Chars.Ldquo
                     or Chars.Lsquo or Chars.Rsquo
                     => QuoteRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
