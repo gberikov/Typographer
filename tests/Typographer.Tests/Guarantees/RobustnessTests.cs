@@ -76,6 +76,32 @@ public class RobustnessTests
         Assert.Equal(0, writer.WrittenCount);
     }
 
+    // Предел — на РЕЗУЛЬТАТ документа. Каждый сегмент по отдельности в предел
+    // укладывается, документ целиком — нет.
+    [Fact]
+    public void LimitCountsWholeDocumentNotSegment()
+    {
+        var typograf = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None,
+            MaxOutputLength = 20,
+        });
+
+        Assert.Throws<OutputTooLargeException>(
+            () => typograf.Process("<b>раз</b><b>два</b><b>три</b><b>четыре</b>"));
+    }
+
+    // Гарантия 5 на документе из многих сегментов: документные проходы держат
+    // состояние сквозь разметку, и второй прогон обязан ничего не изменить.
+    [Fact]
+    public void MultiSegmentDocumentStaysIdempotent()
+    {
+        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
+
+        string once = typograf.Process("Он <i>сказал</i>: \"это <b>важно</b>, и т. д.\" - и ушёл");
+        Assert.Equal(once, typograf.Process(once));
+    }
+
     [Fact]
     public void NoEditsReturnsSameInstance()
     {
