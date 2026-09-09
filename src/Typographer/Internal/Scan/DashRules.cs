@@ -11,6 +11,9 @@ internal static class DashRules
     /// <summary>Самая длинная частица — «нибудь», шесть букв. Восемь взяты с запасом.</summary>
     private const int MaxParticle = 8;
 
+    /// <summary>Самое длинное словарное слово — «понедельник», одиннадцать букв.</summary>
+    private const int MaxDictionaryWord = 16;
+
     public static bool TryApply(
         ReadOnlySpan<char> source, int index, char previous, int floor, RuleSet rules,
         ref ScanState state, ref CharBuffer buffer)
@@ -64,6 +67,29 @@ internal static class DashRules
         // Интервалы времени: «10:00-11:00». С обеих сторон часы с минутами.
         if (rules.Contains(RuleId.Ru.Dash.Time)
             && IsTimeBefore(ref buffer, floor) && IsTimeAfter(source, index + 1))
+        {
+            buffer.Write(Chars.MDash);
+            return true;
+        }
+
+        // Дни одного месяца: «5-10 января». Справа число, а за ним название месяца —
+        // без него это диапазон чисел, который трогать нельзя.
+        if (rules.Contains(RuleId.Ru.Dash.DaysMonth)
+            && char.IsDigit(previous) && IsDayMonthAfter(source, index + 1))
+        {
+            buffer.Write(Chars.MDash);
+            return true;
+        }
+
+        // Месяцы и дни недели: «январь-февраль», «понедельник-среда». Слово читается слева
+        // из буфера и справа из исходной строки, оба сверяются со словарём.
+        if (rules.Contains(RuleId.Ru.Dash.Month) && IsDictionaryPair(source, index, floor, ref buffer, months: true))
+        {
+            buffer.Write(Chars.MDash);
+            return true;
+        }
+
+        if (rules.Contains(RuleId.Ru.Dash.Weekday) && IsDictionaryPair(source, index, floor, ref buffer, months: false))
         {
             buffer.Write(Chars.MDash);
             return true;
@@ -326,5 +352,52 @@ internal static class DashRules
         int colon = start + digits;
         return colon + 2 < source.Length && source[colon] == ':'
                && char.IsDigit(source[colon + 1]) && char.IsDigit(source[colon + 2]);
+    }
+
+    /// <summary>Справа от дефиса число, а за ним название месяца: «5-10 января».</summary>
+    private static bool IsDayMonthAfter(ReadOnlySpan<char> source, int start)
+    {
+        int digits = 0;
+        while (start + digits < source.Length && char.IsDigit(source[start + digits]))
+        {
+            digits++;
+        }
+
+        if (digits is 0 or > 2 || start + digits >= source.Length || source[start + digits] != ' ')
+        {
+            return false;
+        }
+
+        Span<char> month = stackalloc char[MaxDictionaryWord];
+        int length = ReadWordForward(source, start + digits + 1, month);
+        return length > 0 && Dictionaries.IsMonth(month.Slice(0, length));
+    }
+
+    /// <summary>
+    /// По обе стороны дефиса слово из одного словаря: два месяца или два дня недели.
+    /// </summary>
+    private static bool IsDictionaryPair(
+        ReadOnlySpan<char> source, int index, int floor, ref CharBuffer buffer, bool months)
+    {
+        Span<char> right = stackalloc char[MaxDictionaryWord];
+        int rightLength = ReadWordForward(source, index + 1, right);
+        if (rightLength == 0)
+        {
+            return false;
+        }
+
+        Span<char> left = stackalloc char[MaxDictionaryWord];
+        int leftLength = ReadWordBackward(ref buffer, floor, left);
+        if (leftLength == 0)
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> before = left.Slice(0, leftLength);
+        ReadOnlySpan<char> after = right.Slice(0, rightLength);
+
+        return months
+            ? Dictionaries.IsMonth(before) && Dictionaries.IsMonth(after)
+            : Dictionaries.IsWeekday(before) && Dictionaries.IsWeekday(after);
     }
 }
