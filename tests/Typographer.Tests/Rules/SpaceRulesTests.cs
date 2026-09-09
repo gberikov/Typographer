@@ -17,6 +17,9 @@ public class SpaceRulesTests
             .With(RuleId.Common.Space.AfterSemicolon)
             .With(RuleId.Common.Space.AfterExclamationMark)
             .With(RuleId.Common.Space.AfterQuestionMark)
+            .With(RuleId.Common.Space.BeforeBracket)
+            .With(RuleId.Common.Space.Bracket)
+            .With(RuleId.Common.Space.SquareBracket)
             .With(RuleId.Common.Punctuation.Hellip),
     }).Process(source);
 
@@ -145,5 +148,16 @@ public class SpaceRulesTests
     // Обычная точка с запятой пробел получает — амперсанда слева нет.
     [InlineData("раз ;два", "раз; два")]
     public void KeepsHtmlEntityIntact(string source, string expected)
+        => Assert.Equal(expected, Run(source));
+
+    [Theory]
+    [InlineData("слово(текст)", "слово (текст)")]
+    [InlineData("( текст )", "(текст)")]
+    [InlineData("[ текст ]", "[текст]")]
+    // Запятая перед закрывающей скобкой пробела не получает: слева от скобки его не бывает.
+    [InlineData("(раз,)", "(раз,)")]
+    // Пробел перед скобкой уже есть — второго не появляется.
+    [InlineData("слово (текст)", "слово (текст)")]
+    public void NormalizesSpacesAroundBrackets(string source, string expected)
         => Assert.Equal(expected, Run(source));
 }

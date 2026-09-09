@@ -65,7 +65,7 @@ internal static class TextScanner
                 '"' or '\'' or Chars.Laquo or Chars.Raquo or Chars.Bdquo or Chars.Ldquo
                     or Chars.Lsquo or Chars.Rsquo
                     => QuoteRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                ' ' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                ' ' or '(' or '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '-' => DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 _ => false,
             };

@@ -12,6 +12,19 @@ internal static class SpaceRules
     {
         char c = source[index];
 
+        if (c is '(' or '[')
+        {
+            // Пробел дописывается только после буквы или цифры: после другого пробела он
+            // был бы вторым, а после открывающей скобки или тире — лишним вовсе.
+            if (rules.Contains(RuleId.Common.Space.BeforeBracket) && char.IsLetterOrDigit(previous))
+            {
+                buffer.Write(' ');
+            }
+
+            buffer.Write(c);
+            return true;
+        }
+
         if (rules.Contains(RuleId.Common.Space.DelRepeatSpace)
             && index + 1 < source.Length && source[index + 1] == ' ')
         {
@@ -52,6 +65,17 @@ internal static class SpaceRules
         if (index + 2 < source.Length && source[index + 2] == '=' && next is '!' or '?')
         {
             return false;
+        }
+
+        // Внутри скобок пробел к их содержимому не относится: «( текст )» — это «(текст)».
+        if (previous == '(' || next == ')')
+        {
+            return rules.Contains(RuleId.Common.Space.Bracket);
+        }
+
+        if (previous == '[' || next == ']')
+        {
+            return rules.Contains(RuleId.Common.Space.SquareBracket);
         }
 
         if (next == '!' && previous == '!')
