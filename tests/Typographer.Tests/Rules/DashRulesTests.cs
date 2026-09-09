@@ -1,4 +1,4 @@
-using Typographer.Rules;
+﻿using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
 
@@ -73,4 +73,18 @@ public class DashRulesTests
     [Fact]
     public void YearRangeRecognizedAcrossInlineTag()
         => Assert.Equal("<b>1941</b>—1945", HtmlTypograf.Default.Process("<b>1941</b>-1945"));
+
+    [Fact]
+    public void SpacedHyphenAfterTagDoesNotPatchIntoMarkup()
+    {
+        // Правило тире патчит пробел слева от дефиса, а он может лежать ЗА тегом — в чужой
+        // части общего буфера. Патч левее своего текстового узла переписал бы «>» тега
+        // неразрывным пробелом и сломал разметку, которую гарантия 3 обещает байт в байт.
+        string result = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None.With(RuleId.Ru.Dash.Main),
+        }).Process("раз <b>- два</b>");
+
+        Assert.Equal("раз <b>— два</b>", result);
+    }
 }
