@@ -197,7 +197,11 @@ public readonly struct RuleId : IEquatable<RuleId>
             /// <summary>Замена дефиса на тире в годах.</summary>
             public static RuleId Years => Registry.DashYears;
 
-            /// <summary>Дефис перед «то», «либо», «нибудь».</summary>
+            /// <summary>
+            /// Дефис перед «то», «либо», «нибудь». Вне <see cref="RuleSet.Default"/>: «то»
+            /// омонимично указательному местоимению, и «Я знал, что то было ошибкой»
+            /// правило испортило бы, сменив смысл фразы.
+            /// </summary>
             public static RuleId To => Registry.DashTo;
 
             /// <summary>Дефис перед «ка» и «кась».</summary>
@@ -215,7 +219,10 @@ public readonly struct RuleId : IEquatable<RuleId>
             /// <summary>Дефис в «из-за».</summary>
             public static RuleId Izza => Registry.DashIzza;
 
-            /// <summary>Дефис в «как-то».</summary>
+            /// <summary>
+            /// Дефис в «как-то». Вне <see cref="RuleSet.Default"/> по той же причине, что и
+            /// <see cref="To"/>: «как то» бывает союзом с местоимением — «как то: раз, два».
+            /// </summary>
             public static RuleId KakTo => Registry.DashKakTo;
 
             /// <summary>
@@ -448,7 +455,7 @@ public readonly struct RuleId : IEquatable<RuleId>
         /// </summary>
         public static readonly RuleId[] OptIn =
         [
-            NumberDigitGrouping, QuoteLink, DashDe, EnGbDashMain, EnUsDashMain,
+            NumberDigitGrouping, QuoteLink, DashTo, DashKakTo, DashDe, EnGbDashMain, EnUsDashMain,
         ];
     }
 }

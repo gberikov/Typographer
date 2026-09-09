@@ -8,10 +8,21 @@ internal static class DashRules
     /// <summary>Длина года в цифрах — правило диапазона годов работает только с ней.</summary>
     internal const int YearDigits = 4;
 
+    /// <summary>Самая длинная частица — «нибудь», шесть букв. Восемь взяты с запасом.</summary>
+    private const int MaxParticle = 8;
+
     public static bool TryApply(
         ReadOnlySpan<char> source, int index, char previous, int floor, RuleSet rules,
         ref ScanState state, ref CharBuffer buffer)
     {
+        // Пробел попадает сюда ради частиц, которые автор набрал через пробел вместо дефиса:
+        // «кое что», «из под». Правило почти всегда отказывается, и символ достаётся
+        // правилу пробелов.
+        if (source[index] == ' ')
+        {
+            return TryHyphenateParticle(source, index, floor, rules, ref buffer);
+        }
+
         char next = index + 1 < source.Length ? source[index + 1] : '\0';
 
         // Тире прямой речи: дефис в начале документа или строки, за ним пробел.
@@ -107,5 +118,115 @@ internal static class DashRules
         }
 
         return start + YearDigits == source.Length || !char.IsDigit(source[start + YearDigits]);
+    }
+
+    /// <summary>
+    /// Частицы, которые пишутся через дефис, а автор набрал их через пробел. Правило не
+    /// ставит тире, а наоборот — не даёт пробелу дожить до правила тире и заодно чинит
+    /// орфографию.
+    /// </summary>
+    /// <remarks>
+    /// Слово слева читается из буфера, слово справа — из исходной строки; и то и другое
+    /// ограничено восемью буквами, длиннее ни одна частица не бывает.
+    /// </remarks>
+    private static bool TryHyphenateParticle(
+        ReadOnlySpan<char> source, int index, int floor, RuleSet rules, ref CharBuffer buffer)
+    {
+        Span<char> right = stackalloc char[MaxParticle];
+        int rightLength = ReadWordForward(source, index + 1, right);
+        if (rightLength == 0)
+        {
+            return false;
+        }
+
+        Span<char> left = stackalloc char[MaxParticle];
+        int leftLength = ReadWordBackward(ref buffer, floor, left);
+        if (leftLength == 0)
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> after = right.Slice(0, rightLength);
+        ReadOnlySpan<char> before = left.Slice(0, leftLength);
+
+        bool hyphen =
+            (rules.Contains(RuleId.Ru.Dash.To) && (Is(after, "то") || Is(after, "либо") || Is(after, "нибудь")))
+            || (rules.Contains(RuleId.Ru.Dash.Ka) && (Is(after, "ка") || Is(after, "кась")))
+            || (rules.Contains(RuleId.Ru.Dash.Taki) && Is(after, "таки"))
+            || (rules.Contains(RuleId.Ru.Dash.Koe) && (Is(before, "кое") || Is(before, "кой")))
+            || (rules.Contains(RuleId.Ru.Dash.Izpod) && Is(before, "из") && Is(after, "под"))
+            || (rules.Contains(RuleId.Ru.Dash.Izza) && Is(before, "из") && Is(after, "за"))
+            || (rules.Contains(RuleId.Ru.Dash.KakTo) && Is(before, "как") && Is(after, "то"))
+            || (rules.Contains(RuleId.Ru.Dash.De) && Is(after, "де"));
+
+        if (!hyphen)
+        {
+            return false;
+        }
+
+        buffer.Write('-');
+        return true;
+    }
+
+    /// <summary>Слово справа от позиции: буквы до первого небуквенного символа.</summary>
+    private static int ReadWordForward(ReadOnlySpan<char> source, int start, Span<char> word)
+    {
+        int length = 0;
+        while (start + length < source.Length && char.IsLetter(source[start + length]))
+        {
+            if (length == word.Length)
+            {
+                return 0;
+            }
+
+            word[length] = char.ToLowerInvariant(source[start + length]);
+            length++;
+        }
+
+        // Слово, дошедшее до конца узла, считается целым: в обычном тексте это конец
+        // ввода, а в разметке — половина слова, которая всё равно не совпадёт ни с одной
+        // частицей, и правило откажется само.
+        return length;
+    }
+
+    /// <summary>Слово слева от конца буфера: буквы назад до floor или небуквенного символа.</summary>
+    private static int ReadWordBackward(ref CharBuffer buffer, int floor, Span<char> word)
+    {
+        int end = buffer.Length;
+        int length = 0;
+        while (end - length > floor && char.IsLetter(buffer.CharAt(end - length - 1)))
+        {
+            if (length == word.Length)
+            {
+                return 0;
+            }
+
+            length++;
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            word[i] = char.ToLowerInvariant(buffer.CharAt(end - length + i));
+        }
+
+        return length;
+    }
+
+    private static bool Is(ReadOnlySpan<char> word, string particle)
+    {
+        if (word.Length != particle.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < particle.Length; i++)
+        {
+            if (word[i] != particle[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

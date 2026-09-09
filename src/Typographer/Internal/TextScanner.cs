@@ -84,7 +84,11 @@ internal static class TextScanner
                 '"' or '\'' or Chars.Laquo or Chars.Raquo or Chars.Bdquo or Chars.Ldquo
                     or Chars.Lsquo or Chars.Rsquo
                     => QuoteRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                ' ' or '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Пробел спорен: между «кое» и «что» он должен стать дефисом. Правило
+                // частиц спрашивается первым и почти всегда отказывается.
+                ' ' => DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 // Скобка и дефис спорны: «(c)» — знак, а не скобка со словом; «->» — стрелка,
                 // а не тире. Правило символов спрашивается первым, и только если оно не
                 // узнало свой образец, символ достаётся правилу пробелов или тире.
