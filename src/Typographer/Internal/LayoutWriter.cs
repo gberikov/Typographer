@@ -16,16 +16,53 @@ internal static class LayoutWriter
         "param", "source", "track", "wbr",
     ];
 
-    /// <summary>Уровень текстового узла: неразрывные блоки.</summary>
-    public static void Run(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
+    /// <summary>
+    /// Фаза Layout по документу.
+    /// </summary>
+    /// <param name="source">Документ после фаз Scan и Bind.</param>
+    /// <param name="options">Настройки HTML-режима.</param>
+    /// <param name="canWrapParagraphs">Разрешено ли оборачивать абзацы: нет блочной и незакрытой разметки.</param>
+    /// <param name="buffer">Приёмник.</param>
+    public static void Run(
+        ReadOnlySpan<char> source, HtmlOptions options, bool canWrapParagraphs, ref CharBuffer buffer)
     {
-        if (options.MaxNobr > 0)
+        // Там, где блочная разметка уже есть, абзацы не расставляются: <p> вокруг <ul> —
+        // невалидный HTML, и границы абзацев в таком документе задаёт сама разметка, а не
+        // пустые строки. Незакрытая разметка тоже запрещает обёртку: её </p> иначе окажется
+        // внутри незакрытого атрибута, комментария или script.
+        bool useP = options.UseP && canWrapParagraphs;
+        if (options.MaxNobr <= 0)
         {
-            WriteWithNobr(source, options.MaxNobr, ref buffer);
+            WriteBreaks(source, options.UseBr, useP, ref buffer);
             return;
         }
 
-        buffer.Write(source);
+        // Неразрывные цепочки ставятся ПЕРВЫМИ и только внутри текстовых узлов; переносы и
+        // абзацы считаются уже по документу с этими тегами — тот же порядок, что был при
+        // посегментной обработке, поэтому вывод не меняется.
+        var chained = new CharBuffer(source.Length + (source.Length >> 2));
+        try
+        {
+            var scanner = new MarkupScanner(source);
+            while (scanner.TryRead(out Segment segment))
+            {
+                ReadOnlySpan<char> slice = source.Slice(segment.Start, segment.Length);
+                if (segment.Kind == SegmentKind.Text)
+                {
+                    WriteWithNobr(slice, options.MaxNobr, ref chained);
+                }
+                else
+                {
+                    chained.Write(slice);
+                }
+            }
+
+            WriteBreaks(chained.AsSpan(), options.UseBr, useP, ref buffer);
+        }
+        finally
+        {
+            chained.Dispose();
+        }
     }
 
     /// <summary>
@@ -36,7 +73,7 @@ internal static class LayoutWriter
     /// <param name="useBr">Заменять перевод строки тегом переноса.</param>
     /// <param name="useP">Оборачивать абзацы в теги абзаца.</param>
     /// <param name="buffer">Приёмник.</param>
-    public static void WriteBreaks(ReadOnlySpan<char> source, bool useBr, bool useP, ref CharBuffer buffer)
+    private static void WriteBreaks(ReadOnlySpan<char> source, bool useBr, bool useP, ref CharBuffer buffer)
     {
         if (useP)
         {

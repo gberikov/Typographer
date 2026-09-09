@@ -1,4 +1,4 @@
-using Typographer.Internal;
+﻿using Typographer.Internal;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
@@ -215,5 +215,20 @@ public class LayoutTests
 
         string stripped = result.Replace("<nobr>", string.Empty).Replace("</nobr>", string.Empty);
         Assert.Equal(chain, stripped);
+    }
+
+    [Fact]
+    public void NobrChainDoesNotCrossTag()
+    {
+        // Неразрывная цепочка живёт ВНУТРИ текстового узла: через тег она не тянется,
+        // иначе <nobr> пересечётся с <b> и разметка перестанет быть валидной.
+        string result = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None,
+            MaxNobr = 3,
+        }).Process("раз два <b>три</b> четыре пять");
+
+        Assert.DoesNotContain("<nobr>раз два <b>", result);
+        Assert.Contains("<b>три</b>", result);
     }
 }

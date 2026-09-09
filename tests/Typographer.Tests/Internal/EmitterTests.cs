@@ -1,4 +1,5 @@
-using Typographer.Internal;
+﻿using Typographer.Internal;
+using Typographer.Rules;
 
 namespace Typographer.Tests.Internal;
 
@@ -49,4 +50,20 @@ public class EmitterTests
     [Fact]
     public void LeavesOrdinaryCharsAlone()
         => Assert.Equal("<b>текст</b> & ещё", Encode("<b>текст</b> & ещё", EntityMode.Named));
+
+    [Fact]
+    public void DocumentEncodingSkipsMarkupAndProtectedZones()
+    {
+        // Кавычка-ёлочка в значении атрибута и внутри <code> сущностью не становится:
+        // гарантия 3 обещает разметку и защищённые зоны байт в байт.
+        string result = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None,
+            Entities = EntityMode.Named,
+        }).Process("<a title=\"«х»\">«текст»</a><code>«код»</code>");
+
+        Assert.Equal(
+            "<a title=\"«х»\">&laquo;текст&raquo;</a><code>«код»</code>",
+            result);
+    }
 }

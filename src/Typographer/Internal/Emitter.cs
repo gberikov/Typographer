@@ -3,6 +3,40 @@ namespace Typographer.Internal;
 /// <summary>Фаза Emit: кодирование типографских символов по выбранному режиму.</summary>
 internal static class Emitter
 {
+    /// <summary>
+    /// Фаза Emit по документу: кодируются только текстовые узлы.
+    /// </summary>
+    /// <remarks>
+    /// Разметка не кодируется ни в одном режиме. Кавычка в значении атрибута и неразрывный
+    /// пробел внутри &lt;code&gt; — часть разметки и защищённой зоны, а гарантия 3 обещает их
+    /// байт в байт.
+    /// </remarks>
+    /// <param name="html">Документ после фазы Layout.</param>
+    /// <param name="mode">Режим вывода сущностей.</param>
+    /// <param name="destination">Приёмник.</param>
+    public static void EncodeDocument(ReadOnlySpan<char> html, EntityMode mode, ref CharBuffer destination)
+    {
+        if (mode == EntityMode.Symbols)
+        {
+            destination.Write(html);
+            return;
+        }
+
+        var scanner = new MarkupScanner(html);
+        while (scanner.TryRead(out Segment segment))
+        {
+            ReadOnlySpan<char> slice = html.Slice(segment.Start, segment.Length);
+            if (segment.Kind == SegmentKind.Text)
+            {
+                Encode(slice, mode, ref destination);
+            }
+            else
+            {
+                destination.Write(slice);
+            }
+        }
+    }
+
     public static void Encode(ReadOnlySpan<char> source, EntityMode mode, ref CharBuffer destination)
     {
         if (mode == EntityMode.Symbols)

@@ -38,8 +38,18 @@ internal static class TextScanner
     /// <summary>Длина года в цифрах — правило диапазона годов работает только с ней.</summary>
     private const int YearDigits = 4;
 
+    /// <summary>Фаза Scan для одного текстового узла.</summary>
+    /// <param name="source">Текстовый узел после фазы Prepare.</param>
+    /// <param name="rules">Набор включённых правил.</param>
+    /// <param name="state">Состояние, живущее сквозь все узлы документа.</param>
+    /// <param name="buffer">Приёмник; узел дописывается в конец уже накопленного.</param>
     public static void Run(ReadOnlySpan<char> source, RuleSet rules, ref ScanState state, ref CharBuffer buffer)
     {
+        // Буфер общий на документ, и всё, что записано до этой позиции, — чужая разметка
+        // или прошлые узлы. Левый контекст правила читается только из своей части буфера;
+        // дальше слово о соседе даёт state.Last, а не последний символ тега («>»).
+        int floor = buffer.Length;
+
         bool delRepeatSpace = rules.Contains(RuleId.Common.Space.DelRepeatSpace);
         bool delBeforePunctuation = rules.Contains(RuleId.Common.Space.DelBeforePunctuation);
         bool afterComma = rules.Contains(RuleId.Common.Space.AfterComma);
@@ -53,14 +63,14 @@ internal static class TextScanner
         for (int i = 0; i < source.Length; i++)
         {
             char c = source[i];
-            char previous = buffer.Length > 0 ? buffer.CharAt(buffer.Length - 1) : state.Last;
+            char previous = buffer.Length > floor ? buffer.CharAt(buffer.Length - 1) : state.Last;
 
             // Многоточие схлопывается ЗАДНИМ ЧИСЛОМ: третья подряд точка в буфере забирает
             // две предыдущие. По исходной строке это не решается — точки становятся соседями
             // уже в буфере, после того как удалён пробел между ними («текст. ..»).
             if (hellip && c == '.'
                 && (i + 1 >= source.Length || source[i + 1] != '.')
-                && ClosesEllipsis(ref buffer, state.Last))
+                && ClosesEllipsis(ref buffer, floor, state.Last))
             {
                 buffer.Truncate(buffer.Length - 2);
                 buffer.Write(Chars.Hellip);
@@ -147,7 +157,7 @@ internal static class TextScanner
                 // цифры рядом. Без счёта цифр правило срабатывало на любой паре «цифра —
                 // дефис — цифра» и рвало телефоны (+7-999-123-45-67), даты (01-01-2020) и
                 // пути в ссылках (/2024-01-15/).
-                if (dashYears && IsYearBefore(ref buffer, state.TrailingDigits) && IsYearAfter(source, i + 1))
+                if (dashYears && IsYearBefore(ref buffer, floor, state.TrailingDigits) && IsYearAfter(source, i + 1))
                 {
                     buffer.Write(Chars.MDash);
                     continue;
@@ -158,9 +168,9 @@ internal static class TextScanner
                 // классу это тот же пробел — иначе тире молча не ставится.
                 if (dashMain && (previous is ' ' or Chars.Nbsp) && next == ' ' && !IsNumberAhead(source, i + 2))
                 {
-                    // Патчится ровно та позиция, по которой принято решение. Если буфер пуст,
-                    // пробел уехал в вывод с предыдущим сегментом и патчу уже недоступен.
-                    if (buffer.Length > 0)
+                    // Патчится ровно та позиция, по которой принято решение. Если сегмент
+                    // пуст, пробел уехал в вывод с предыдущим сегментом и патчу недоступен.
+                    if (buffer.Length > floor)
                     {
                         buffer.PatchAt(buffer.Length - 1, Chars.Nbsp);
                     }
@@ -181,11 +191,58 @@ internal static class TextScanner
             }
         }
 
-        if (buffer.Length > 0)
+        if (buffer.Length > floor)
         {
             state.Last = buffer.CharAt(buffer.Length - 1);
-            state.TrailingDigits = CountTrailingDigits(ref buffer, state.TrailingDigits);
+            state.TrailingDigits = CountTrailingDigits(ref buffer, floor, state.TrailingDigits);
         }
+    }
+
+    /// <summary>
+    /// Фаза Scan по документу: правила применяются к текстовым узлам, разметка копируется.
+    /// </summary>
+    /// <param name="html">Документ после фазы Prepare.</param>
+    /// <param name="rules">Набор включённых правил.</param>
+    /// <param name="buffer">Приёмник.</param>
+    /// <returns>Можно ли оборачивать документ в абзацы: нет блочной и незакрытой разметки.</returns>
+    public static bool RunDocument(ReadOnlySpan<char> html, RuleSet rules, ref CharBuffer buffer)
+    {
+        var scanner = new MarkupScanner(html);
+
+        // Состояние сканера создаётся ОДИН раз на документ и протягивается через все
+        // текстовые сегменты: тег внутри предложения не должен обнулять разбор кавычек
+        // и не должен выглядеть для правил как начало строки.
+        var state = new ScanState();
+        bool hasBlockMarkup = false;
+
+        while (scanner.TryRead(out Segment segment))
+        {
+            ReadOnlySpan<char> slice = html.Slice(segment.Start, segment.Length);
+            if (segment.Kind != SegmentKind.Text)
+            {
+                // Блочный тег разрывает предложение: за </p> начинается новая строка, и
+                // правила обязаны видеть её начало, а не последний символ прошлого абзаца.
+                if (segment.IsBlock)
+                {
+                    state.Last = '\n';
+                    state.TrailingDigits = 0;
+                }
+                else if (segment.Kind == SegmentKind.Protected && segment.Length > 0)
+                {
+                    // Содержимое защищённой зоны не анализируется и потому не может
+                    // прозрачно соединять числовой контекст по обе стороны от неё.
+                    state.TrailingDigits = 0;
+                }
+
+                hasBlockMarkup |= segment.PreventsParagraphWrapping;
+                buffer.Write(slice);
+                continue;
+            }
+
+            Run(slice, rules, ref state, ref buffer);
+        }
+
+        return !hasBlockMarkup && !scanner.HasUnclosedMarkup;
     }
 
     /// <summary>
@@ -193,17 +250,18 @@ internal static class TextScanner
     /// Третий с конца символ проверяется по КЛАССУ: готовое многоточие — те же точки,
     /// иначе «……» получалось бы из шести точек за два прогона.
     /// </summary>
-    /// <param name="buffer">Буфер сегмента.</param>
-    /// <param name="beforeBuffer">Символ слева от буфера — последний символ прошлого сегмента.</param>
-    private static bool ClosesEllipsis(ref CharBuffer buffer, char beforeBuffer)
+    /// <param name="buffer">Буфер документа.</param>
+    /// <param name="floor">Позиция в буфере, с которой начинается текущий сегмент.</param>
+    /// <param name="beforeBuffer">Символ слева от сегмента — последний символ прошлого сегмента.</param>
+    private static bool ClosesEllipsis(ref CharBuffer buffer, int floor, char beforeBuffer)
     {
-        int length = buffer.Length;
-        if (length < 2 || buffer.CharAt(length - 1) != '.' || buffer.CharAt(length - 2) != '.')
+        int written = buffer.Length - floor;
+        if (written < 2 || buffer.CharAt(buffer.Length - 1) != '.' || buffer.CharAt(buffer.Length - 2) != '.')
         {
             return false;
         }
 
-        char third = length >= 3 ? buffer.CharAt(length - 3) : beforeBuffer;
+        char third = written >= 3 ? buffer.CharAt(buffer.Length - 3) : beforeBuffer;
         return third is not ('.' or Chars.Hellip);
     }
 
@@ -289,17 +347,17 @@ internal static class TextScanner
     }
 
     /// <summary>Четыре цифры подряд перед дефисом и ни одной пятой — это год.</summary>
-    private static bool IsYearBefore(ref CharBuffer buffer, int beforeBuffer)
+    private static bool IsYearBefore(ref CharBuffer buffer, int floor, int beforeBuffer)
     {
-        int length = buffer.Length;
+        int written = buffer.Length - floor;
         int digits = 0;
-        while (digits < length && digits <= YearDigits
-               && char.IsDigit(buffer.CharAt(length - digits - 1)))
+        while (digits < written && digits <= YearDigits
+               && char.IsDigit(buffer.CharAt(buffer.Length - digits - 1)))
         {
             digits++;
         }
 
-        if (digits == length)
+        if (digits == written)
         {
             digits = Math.Min(YearDigits + 1, digits + beforeBuffer);
         }
@@ -307,17 +365,17 @@ internal static class TextScanner
         return digits == YearDigits;
     }
 
-    private static int CountTrailingDigits(ref CharBuffer buffer, int beforeBuffer)
+    private static int CountTrailingDigits(ref CharBuffer buffer, int floor, int beforeBuffer)
     {
-        int length = buffer.Length;
+        int written = buffer.Length - floor;
         int digits = 0;
-        while (digits < length && digits <= YearDigits
-               && char.IsDigit(buffer.CharAt(length - digits - 1)))
+        while (digits < written && digits <= YearDigits
+               && char.IsDigit(buffer.CharAt(buffer.Length - digits - 1)))
         {
             digits++;
         }
 
-        return digits == length
+        return digits == written
             ? Math.Min(YearDigits + 1, digits + beforeBuffer)
             : Math.Min(YearDigits + 1, digits);
     }
