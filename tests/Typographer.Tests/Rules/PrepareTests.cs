@@ -86,4 +86,32 @@ public class PrepareTests
 
         Assert.Equal(source, new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None }).Process(source));
     }
+
+    [Fact]
+    public void EntityDecodedInEverySegmentNotOnlyTheFirst()
+    {
+        // Сущность во ВТОРОМ текстовом узле доходит до правила тире так же, как в первом:
+        // документный проход не должен зависеть от номера сегмента.
+        string result = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None.With(RuleId.Ru.Dash.Main),
+        }).Process("<b>раз</b> два&nbsp;- три");
+
+        // Правило тире отбивает левый пробел неразрывным — им и оказывается
+        // раскодированный &nbsp;.
+        Assert.Equal($"<b>раз</b> два{Chars.Nbsp}{Chars.MDash} три", result);
+    }
+
+    [Fact]
+    public void BomInsideSecondSegmentIsKept()
+    {
+        // Метка порядка байт снимается только в начале ДОКУМЕНТА: внутри текста её
+        // удаление могло бы склеить соседние символы в тег или сущность.
+        string result = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.Default,
+        }).Process($"<b>раз</b>{Chars.Bom}два");
+
+        Assert.Contains(Chars.Bom, result);
+    }
 }

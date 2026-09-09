@@ -63,6 +63,26 @@ public sealed class HtmlTypograf
 
     private void Run(ReadOnlySpan<char> source, ref CharBuffer buffer)
     {
+        // Prepare идёт по ДОКУМЕНТУ отдельным проходом: тогда декодирование сущностей
+        // не зависит от номера текстового узла, а метка порядка байт снимается ровно
+        // один раз — в начале входа, а не в начале каждого сегмента.
+        var prepared = new CharBuffer(source.Length + (source.Length >> 2));
+        try
+        {
+            Preparer.RunDocument(source, _options.Rules, ref prepared);
+            RunPipeline(prepared.AsSpan(), ref buffer);
+        }
+        finally
+        {
+            prepared.Dispose();
+        }
+    }
+
+    // Временная форма: тело прежнего Run до переноса фазы Prepare на документный проход.
+    // Следующая задача плана 2a переводит на документные проходы остальные фазы и этот
+    // метод исчезает — RunSegments перестанет быть единственным, кто ходит по сегментам.
+    private void RunPipeline(ReadOnlySpan<char> source, ref CharBuffer buffer)
+    {
         // Переносы строк и абзацы расставляются по ГОТОВОМУ телу документа, а не по каждому
         // текстовому узлу: тег абзаца блочный, и обёртка вокруг узла клала бы его внутрь
         // <b> и делала абзац из пробела между двумя тегами. Ради этого нужен ещё один
@@ -131,20 +151,20 @@ public sealed class HtmlTypograf
                 continue;
             }
 
-            var prepared = new CharBuffer(slice.Length + 8);
             var scanned = new CharBuffer(slice.Length + 8);
             var laidOut = new CharBuffer(slice.Length + 8);
             try
             {
-                Preparer.Run(slice, decodeEntities: true, _options.Rules, ref prepared, isDocumentStart: segment.Start == 0);
-                TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref scanned);
+                // Фаза Prepare уже отработала по ДОКУМЕНТУ в Run: этот сегмент вырезан
+                // из её результата, а не из исходного текста, и готовить его второй раз
+                // незачем — сущности здесь уже раскодированы.
+                TextScanner.Run(slice, _options.Rules, ref state, ref scanned);
                 WordBinder.Run(ref scanned, _options.Rules);
                 LayoutWriter.Run(scanned.AsSpan(), _options, ref laidOut);
                 Emitter.Encode(laidOut.AsSpan(), _options.Entities, ref buffer);
             }
             finally
             {
-                prepared.Dispose();
                 scanned.Dispose();
                 laidOut.Dispose();
             }

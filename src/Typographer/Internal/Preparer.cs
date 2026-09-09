@@ -64,4 +64,29 @@ internal static class Preparer
             buffer.Write(c);
         }
     }
+
+    /// <summary>
+    /// Фаза Prepare по документу: текстовые узлы приводятся к одному представлению,
+    /// разметка и защищённые зоны копируются байт в байт.
+    /// </summary>
+    /// <param name="html">Исходный документ.</param>
+    /// <param name="rules">Набор включённых правил.</param>
+    /// <param name="buffer">Приёмник.</param>
+    public static void RunDocument(ReadOnlySpan<char> html, RuleSet rules, ref CharBuffer buffer)
+    {
+        var scanner = new MarkupScanner(html);
+        while (scanner.TryRead(out Segment segment))
+        {
+            ReadOnlySpan<char> slice = html.Slice(segment.Start, segment.Length);
+            if (segment.Kind != SegmentKind.Text)
+            {
+                buffer.Write(slice);
+                continue;
+            }
+
+            // Начало документа — свойство ДОКУМЕНТА, а не сегмента: метка порядка байт
+            // допустима только в самом начале входа, внутри текста она остаётся символом.
+            Run(slice, decodeEntities: true, rules, ref buffer, isDocumentStart: segment.Start == 0);
+        }
+    }
 }
