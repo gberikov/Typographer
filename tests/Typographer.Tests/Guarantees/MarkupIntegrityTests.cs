@@ -31,6 +31,21 @@ public class MarkupIntegrityTests
         Assert.Contains("title=\"Не трогать - тире\"", typograf.Process("<a title=\"Не трогать - тире\">x</a>"));
     }
 
+    // Правило delBeforePunctuation удаляет пробел перед «?»/«!». Если слева от пробела стоит
+    // «<», результат — «<?»/«<!--» — псевдотег: сама фаза Scan работает по исходной строке, где
+    // тега ещё нет, но следующие проходы пересканируют уже изменённый буфер и поверят ему.
+    // CountTags псевдотег не ловит (он ищет «<буква» и «</»), поэтому проверяется явно.
+    [Theory]
+    [InlineData("дом < ? и лес", "<?")]
+    [InlineData("текст < !-- не комментарий", "<!--")]
+    public void SpaceRuleDoesNotCreateTagStart(string source, string forbidden)
+    {
+        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
+        string result = typograf.Process(source);
+
+        Assert.DoesNotContain(forbidden, result);
+    }
+
     private static int CountTags(string value)
     {
         int count = 0;

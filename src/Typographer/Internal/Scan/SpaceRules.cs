@@ -17,8 +17,14 @@ internal static class SpaceRules
             return true;
         }
 
+        // previous != '<' — единственный барьер во всём конвейере против «текст становится
+        // разметкой» (гарантия 4). Без него «< ?» и «< !--» превращались бы в «<?» и «<!--»:
+        // удалённый здесь пробел — единственный, что мешало «<» слипнуться со знаком
+        // препинания. После перехода фаз на документные проходы (Bind, Layout, Emit)
+        // пересканируют уже этот буфер через MarkupScanner и примут псевдотег за настоящий.
         if (rules.Contains(RuleId.Common.Space.DelBeforePunctuation)
-            && index + 1 < source.Length && IsPunctuation(source[index + 1]))
+            && index + 1 < source.Length && IsPunctuation(source[index + 1])
+            && previous != '<')
         {
             return true;
         }

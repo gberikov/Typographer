@@ -75,4 +75,28 @@ public class SpaceRulesTests
     [Fact]
     public void LeavesFourDotsAlone()
         => Assert.Equal("вот....", Run("вот...."));
+
+    // Гарантия 4 спецификации: текст никогда не становится разметкой. Пробел перед «?» и «!»
+    // удаляется правилом delBeforePunctuation, и если слева от пробела стоит «<», результат —
+    // «<?» или «<!» — псевдотег, который последующие проходы (Bind, Layout, Emit) примут за
+    // настоящий тег. В текстовом режиме разметки нет вовсе, поэтому его вывод — эталон.
+    [Fact]
+    public void DoesNotTurnLessThanIntoTagStart()
+    {
+        string textResult = TextTypograf.Default.Process("дом < ? и лес");
+        string htmlResult = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default })
+            .Process("дом < ? и лес");
+
+        Assert.Equal(textResult, htmlResult);
+        Assert.DoesNotContain("<?", htmlResult);
+    }
+
+    [Fact]
+    public void DoesNotTurnLessThanIntoCommentStart()
+    {
+        string htmlResult = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default })
+            .Process("текст < !-- не комментарий");
+
+        Assert.DoesNotContain("<!--", htmlResult);
+    }
 }
