@@ -43,6 +43,32 @@ internal static class DashRules
             return true;
         }
 
+        // Века римскими цифрами: «XIX-XX вв.». Тире длинное и без отбивки — как и в
+        // диапазоне годов; разнобой между интервалами хуже, чем строгость ГОСТа.
+        if (rules.Contains(RuleId.Ru.Dash.Centuries)
+            && IsRomanBefore(ref buffer, floor) && IsRomanAfter(source, index + 1))
+        {
+            buffer.Write(Chars.MDash);
+            return true;
+        }
+
+        // Десятилетия: «80-90-е гг.». Признак — цифры с обеих сторон и наращение через
+        // дефис за правым числом, иначе это диапазон чисел, а не десятилетий.
+        if (rules.Contains(RuleId.Ru.Dash.Decade)
+            && char.IsDigit(previous) && IsDecadeAfter(source, index + 1))
+        {
+            buffer.Write(Chars.MDash);
+            return true;
+        }
+
+        // Интервалы времени: «10:00-11:00». С обеих сторон часы с минутами.
+        if (rules.Contains(RuleId.Ru.Dash.Time)
+            && IsTimeBefore(ref buffer, floor) && IsTimeAfter(source, index + 1))
+        {
+            buffer.Write(Chars.MDash);
+            return true;
+        }
+
         // Тире между словами: пробел с обеих сторон, справа не число. Слева годится и
         // неразрывный пробел: в буфере он мог оказаться от предыдущего правила, и по
         // классу это тот же пробел — иначе тире молча не ставится.
@@ -228,5 +254,77 @@ internal static class DashRules
         }
 
         return true;
+    }
+
+    /// <summary>Символ — римская цифра.</summary>
+    private static bool IsRoman(char c) => c is 'I' or 'V' or 'X' or 'L' or 'C' or 'D' or 'M';
+
+    /// <summary>Слева от дефиса римское число.</summary>
+    private static bool IsRomanBefore(ref CharBuffer buffer, int floor)
+        => buffer.Length > floor && IsRoman(buffer.CharAt(buffer.Length - 1));
+
+    /// <summary>Справа от дефиса римское число, а за ним не буква кириллицы.</summary>
+    private static bool IsRomanAfter(ReadOnlySpan<char> source, int start)
+    {
+        int length = 0;
+        while (start + length < source.Length && IsRoman(source[start + length]))
+        {
+            length++;
+        }
+
+        return length > 0;
+    }
+
+    /// <summary>Справа от дефиса число с наращением: «90-е», «90-х».</summary>
+    private static bool IsDecadeAfter(ReadOnlySpan<char> source, int start)
+    {
+        int digits = 0;
+        while (start + digits < source.Length && char.IsDigit(source[start + digits]))
+        {
+            digits++;
+        }
+
+        if (digits == 0)
+        {
+            return false;
+        }
+
+        int tail = start + digits;
+        return tail + 1 < source.Length && source[tail] == '-' && char.IsLetter(source[tail + 1]);
+    }
+
+    /// <summary>Слева от дефиса время вида «10:00»: минуты, двоеточие, часы.</summary>
+    private static bool IsTimeBefore(ref CharBuffer buffer, int floor)
+    {
+        int written = buffer.Length - floor;
+        if (written < 4)
+        {
+            return false;
+        }
+
+        int last = buffer.Length - 1;
+        return char.IsDigit(buffer.CharAt(last))
+               && char.IsDigit(buffer.CharAt(last - 1))
+               && buffer.CharAt(last - 2) == ':'
+               && char.IsDigit(buffer.CharAt(last - 3));
+    }
+
+    /// <summary>Справа от дефиса время вида «11:00».</summary>
+    private static bool IsTimeAfter(ReadOnlySpan<char> source, int start)
+    {
+        int digits = 0;
+        while (start + digits < source.Length && char.IsDigit(source[start + digits]))
+        {
+            digits++;
+        }
+
+        if (digits is 0 or > 2)
+        {
+            return false;
+        }
+
+        int colon = start + digits;
+        return colon + 2 < source.Length && source[colon] == ':'
+               && char.IsDigit(source[colon + 1]) && char.IsDigit(source[colon + 2]);
     }
 }
