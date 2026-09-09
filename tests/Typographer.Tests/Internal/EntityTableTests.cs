@@ -64,4 +64,14 @@ public class EntityTableTests
         Assert.True(EntityTable.IsInvisible('\u202F'));
         Assert.False(EntityTable.IsInvisible('\u00AB'));
     }
+
+    [Fact]
+    public void NarrowNbspHasNoNameButIsEncodable()
+    {
+        // Стандартного буквенного имени у U+202F нет, а невидимым символом в выводе
+        // он остаться не должен: режим Named обязан дать числовой код.
+        Assert.Null(EntityTable.NameOf(Chars.NarrowNbsp));
+        Assert.True(EntityTable.IsEncodable(Chars.NarrowNbsp));
+        Assert.True(EntityTable.IsInvisible(Chars.NarrowNbsp));
+    }
 }

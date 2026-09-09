@@ -84,4 +84,17 @@ public class ScannerContextTests
         => Assert.Equal(
             $"<li>раз</li><li>{Chars.Laquo}два{Chars.Raquo}</li>",
             Html("<li>раз</li><li>\"два\"</li>"));
+
+    [Fact]
+    public void ScanStateSurvivesManySegments()
+    {
+        // Стек кавычек и последний символ живут сквозь ВСЕ сегменты: закрывающая
+        // кавычка в четвёртом узле обязана закрыть уровень, открытый в первом.
+        string result = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote),
+        }).Process("<i>\"</i>а<b>б</b>\"");
+
+        Assert.Equal("<i>«</i>а<b>б</b>»", result);
+    }
 }

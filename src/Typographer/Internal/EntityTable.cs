@@ -110,6 +110,13 @@ internal static class EntityTable
         return null;
     }
 
+    /// <summary>
+    /// Символ кодируется сущностью. Буквенное имя есть не у всех: у узкого неразрывного
+    /// пробела U+202F стандартного имени нет, но оставлять его в выводе невидимым символом
+    /// нельзя — он пишется числовым кодом.
+    /// </summary>
+    public static bool IsEncodable(char c) => NameOf(c) is not null || c == Chars.NarrowNbsp;
+
     public static bool IsInvisible(char value)
         => value is Chars.Nbsp or Chars.NarrowNbsp or Chars.ThinSpace;
 
