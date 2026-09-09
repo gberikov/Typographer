@@ -96,4 +96,30 @@ public class RuleSetTests
     {
         Assert.Throws<ArgumentNullException>(() => RuleSet.Default.Without(null!));
     }
+
+    [Fact]
+    public void RegistryIndicesAreUniqueAndFitTheMask()
+    {
+        // Индекс правила — позиция бита в маске RuleSet: два ulong, 128 бит, индекс 0
+        // зарезервирован за default(RuleId). Дубликат индекса молча склеил бы два правила
+        // в одно, а индекс за пределом маски — включил бы чужое правило.
+        var seen = new HashSet<int>();
+        foreach (RuleId rule in RuleId.Registry.All)
+        {
+            Assert.InRange(rule.Index, 1, 127);
+            Assert.True(seen.Add(rule.Index), $"индекс {rule.Index} занят дважды: {rule.Name}");
+        }
+
+        Assert.Equal(RuleId.Registry.All.Length, seen.Count);
+    }
+
+    [Fact]
+    public void RegistryNamesAreUnique()
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (RuleId rule in RuleId.Registry.All)
+        {
+            Assert.True(seen.Add(rule.Name), $"имя {rule.Name} занято дважды");
+        }
+    }
 }
