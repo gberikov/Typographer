@@ -71,7 +71,10 @@ internal static class TextScanner
             {
                 '.' or ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 // «!=» — знак сравнения, а не конец предложения: число спрашивается первым.
-                '!' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '!' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '?' or Chars.Hellip
+                    => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 'C' or 'F' or Chars.Numero
                     => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 // Угловая скобка спорна между стрелкой и знаком сравнения: «<-» и «<=».
@@ -87,6 +90,7 @@ internal static class TextScanner
                 // Пробел спорен: между «кое» и «что» он должен стать дефисом. Правило
                 // частиц спрашивается первым и почти всегда отказывается.
                 ' ' => DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
                     || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 // Скобка и дефис спорны: «(c)» — знак, а не скобка со словом; «->» — стрелка,
