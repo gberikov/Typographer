@@ -68,8 +68,8 @@ public class EntityTableTests
     [Fact]
     public void NarrowNbspHasNoNameButIsEncodable()
     {
-        // \u0421\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E\u0433\u043E \u0431\u0443\u043A\u0432\u0435\u043D\u043D\u043E\u0433\u043E \u0438\u043C\u0435\u043D\u0438 \u0443 U+202F \u043D\u0435\u0442, \u0430 \u043D\u0435\u0432\u0438\u0434\u0438\u043C\u044B\u043C \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u043C \u0432 \u0432\u044B\u0432\u043E\u0434\u0435
-        // \u043E\u043D \u043E\u0441\u0442\u0430\u0442\u044C\u0441\u044F \u043D\u0435 \u0434\u043E\u043B\u0436\u0435\u043D: \u0440\u0435\u0436\u0438\u043C Named \u043E\u0431\u044F\u0437\u0430\u043D \u0434\u0430\u0442\u044C \u0447\u0438\u0441\u043B\u043E\u0432\u043E\u0439 \u043A\u043E\u0434.
+        // Стандартного буквенного имени у U+202F нет, а невидимым символом в выводе
+        // он остаться не должен: режим Named обязан дать числовой код.
         Assert.Null(EntityTable.NameOf(Chars.NarrowNbsp));
         Assert.True(EntityTable.IsEncodable(Chars.NarrowNbsp));
         Assert.True(EntityTable.IsInvisible(Chars.NarrowNbsp));

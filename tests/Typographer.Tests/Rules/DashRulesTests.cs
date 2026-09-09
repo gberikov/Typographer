@@ -1,4 +1,4 @@
-﻿using Typographer.Rules;
+using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
 

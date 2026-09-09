@@ -5,6 +5,7 @@ namespace Typographer.Internal.Scan;
 /// <summary>Правила кавычек и апострофа фазы Scan.</summary>
 internal static class QuoteRules
 {
+    // floor этим правилам не нужен — они не патчят буфер задним числом, параметр в сигнатуре ради единообразия.
     public static bool TryApply(
         ReadOnlySpan<char> source, int index, char previous, int floor, RuleSet rules,
         ref ScanState state, ref CharBuffer buffer)
