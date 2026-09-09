@@ -135,7 +135,7 @@ public readonly struct RuleId : IEquatable<RuleId>
             /// <summary>Удаление пробелов в конце строки. Вне <see cref="RuleSet.Default"/>.</summary>
             public static RuleId DelTrailingBlanks => Registry.SpaceDelTrailingBlanks;
 
-            /// <summary>Удаление повторяющихся переводов строки.</summary>
+            /// <summary>Удаление повторяющихся переводов строки. Вне <see cref="RuleSet.Default"/>.</summary>
             public static RuleId DelRepeatN => Registry.SpaceDelRepeatN;
 
             /// <summary>Замена табуляции на четыре пробела. Вне <see cref="RuleSet.Default"/>.</summary>
@@ -437,7 +437,7 @@ public readonly struct RuleId : IEquatable<RuleId>
         public static readonly RuleId[] Normalization =
         [
             SpaceTrimLeft, SpaceTrimRight, SpaceDelLeadingBlanks, SpaceDelTrailingBlanks,
-            SpaceReplaceTab, SpaceInsertFinalNewline,
+            SpaceDelRepeatN, SpaceReplaceTab, SpaceInsertFinalNewline,
         ];
 
         /// <summary>

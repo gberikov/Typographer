@@ -1,5 +1,6 @@
 using System.Buffers;
 using Typographer.Internal;
+using Typographer.Internal.Scan;
 
 namespace Typographer;
 
@@ -72,8 +73,27 @@ public sealed class TextTypograf
             Preparer.Run(text, decodeEntities: false, _options.Rules, ref prepared, isDocumentStart: true);
 
             var state = new ScanState();
-            TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref buffer);
-            WordBinder.Run(ref buffer, _options.Rules);
+            if (DocumentSpaceRules.IsEnabled(_options.Rules))
+            {
+                // Нормализация читает готовый текст целиком, поэтому ей нужен свой проход и
+                // свой буфер. Все её правила вне Default — обычный вызов за них не платит.
+                var scanned = new CharBuffer(text.Length + 8);
+                try
+                {
+                    TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref scanned);
+                    WordBinder.Run(ref scanned, _options.Rules);
+                    DocumentSpaceRules.Run(scanned.AsSpan(), _options.Rules, ref buffer);
+                }
+                finally
+                {
+                    scanned.Dispose();
+                }
+            }
+            else
+            {
+                TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref buffer);
+                WordBinder.Run(ref buffer, _options.Rules);
+            }
         }
         finally
         {

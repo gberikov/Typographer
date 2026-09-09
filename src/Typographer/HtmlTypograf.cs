@@ -1,5 +1,6 @@
 using System.Buffers;
 using Typographer.Internal;
+using Typographer.Internal.Scan;
 
 namespace Typographer;
 
@@ -76,7 +77,26 @@ public sealed class HtmlTypograf
             Preparer.RunDocument(source, _options.Rules, ref prepared);
             bool canWrapParagraphs = TextScanner.RunDocument(prepared.AsSpan(), _options.Rules, ref scanned);
             WordBinder.RunDocument(ref scanned, _options.Rules);
-            LayoutWriter.Run(scanned.AsSpan(), _options, canWrapParagraphs, ref laidOut);
+            // Нормализация пробельного письма — отдельный документный проход, и он стоит
+            // ещё одного буфера. Поэтому запускается, только если хоть одно её правило
+            // включено: все они вне Default, и обычный вызов за них не платит.
+            if (DocumentSpaceRules.IsEnabled(_options.Rules))
+            {
+                var normalized = new CharBuffer(scanned.Length + 8);
+                try
+                {
+                    DocumentSpaceRules.RunDocument(scanned.AsSpan(), _options.Rules, ref normalized);
+                    LayoutWriter.Run(normalized.AsSpan(), _options, canWrapParagraphs, ref laidOut);
+                }
+                finally
+                {
+                    normalized.Dispose();
+                }
+            }
+            else
+            {
+                LayoutWriter.Run(scanned.AsSpan(), _options, canWrapParagraphs, ref laidOut);
+            }
             Emitter.EncodeDocument(laidOut.AsSpan(), _options.Entities, ref output);
         }
         finally
