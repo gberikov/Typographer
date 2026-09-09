@@ -1,3 +1,4 @@
+using Typographer.Internal;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
@@ -13,22 +14,36 @@ public class NbspRulesTests
     }).Process(source);
 
     [Fact]
-    public void ПослеКороткогоСловаНеразрывныйПробел()
+    public void NonBreakingSpaceAfterShortWord()
         => Assert.Equal("в доме на горе", Run("в доме на горе"));
 
     [Fact]
-    public void ДлинноеСловоНеТрогаем()
+    public void LongWordUntouched()
         => Assert.Equal("дерево стоит", Run("дерево стоит"));
 
     [Fact]
-    public void СокращениеТДСклеивается()
+    public void AbbreviationTDIsGlued()
         => Assert.Equal("и т. д.", Run("и т. д."));
 
     [Fact]
-    public void ИнициалыПривязываютсяКФамилии()
+    public void InitialsBindToSurname()
         => Assert.Equal("А. С. Пушкин", Run("А. С. Пушкин"));
 
+    // Разбор токена запускался только по идущему за ним обычному пробелу, поэтому инициал
+    // в конце ввода или перед знаком препинания с фамилией не связывался вовсе.
     [Fact]
-    public void ФамилияПередИнициаламиТоже()
+    public void InitialAtEndOfInput()
+        => Assert.Equal($"Пушкин{Chars.Nbsp}А.", Run("Пушкин А."));
+
+    [Fact]
+    public void InitialBeforeComma()
+        => Assert.Equal($"Пушкин{Chars.Nbsp}А., автор", Run("Пушкин А., автор"));
+
+    [Fact]
+    public void InitialBeforeLineBreak()
+        => Assert.Equal($"Пушкин{Chars.Nbsp}А.\nдалее", Run("Пушкин А.\nдалее"));
+
+    [Fact]
+    public void SurnameBeforeInitialsToo()
         => Assert.Equal("Пушкин А. С.", Run("Пушкин А. С."));
 }

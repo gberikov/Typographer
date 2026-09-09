@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Typographer.Internal;
 
 /// <summary>Декодирование и кодирование типографских HTML-сущностей.</summary>
@@ -117,11 +115,27 @@ internal static class EntityTable
 
     private static bool TryParseCode(ReadOnlySpan<char> digits, bool hex, out int code)
     {
-        NumberStyles styles = hex ? NumberStyles.HexNumber : NumberStyles.Integer;
-#if NET8_0_OR_GREATER
-        return int.TryParse(digits, styles, CultureInfo.InvariantCulture, out code);
-#else
-        return int.TryParse(digits.ToString(), styles, CultureInfo.InvariantCulture, out code);
-#endif
+        code = 0;
+        int radix = hex ? 16 : 10;
+        foreach (char c in digits)
+        {
+            int digit = c switch
+            {
+                >= '0' and <= '9' => c - '0',
+                >= 'a' and <= 'f' when hex => c - 'a' + 10,
+                >= 'A' and <= 'F' when hex => c - 'A' + 10,
+                _ => -1,
+            };
+
+            if (digit < 0 || code > (int.MaxValue - digit) / radix)
+            {
+                code = 0;
+                return false;
+            }
+
+            code = (code * radix) + digit;
+        }
+
+        return true;
     }
 }

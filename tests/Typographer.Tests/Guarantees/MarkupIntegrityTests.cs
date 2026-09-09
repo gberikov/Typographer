@@ -7,7 +7,7 @@ public class MarkupIntegrityTests
 {
     [Theory]
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
-    public void КоличествоТеговНеМеняется(string source)
+    public void TagCountUnchanged(string source)
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
         string result = typograf.Process(source);
@@ -16,7 +16,7 @@ public class MarkupIntegrityTests
     }
 
     [Fact]
-    public void СодержимоеCodeНеТрогается()
+    public void CodeContentUntouched()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
 
@@ -24,7 +24,7 @@ public class MarkupIntegrityTests
     }
 
     [Fact]
-    public void ЗначенияАтрибутовНеТрогаются()
+    public void AttributeValuesUntouched()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
 

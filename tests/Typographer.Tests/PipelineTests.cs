@@ -7,7 +7,7 @@ namespace Typographer.Tests;
 public class PipelineTests
 {
     [Fact]
-    public void БезПравилВозвращаетТотЖеЭкземплярСтроки()
+    public void NoRulesReturnsSameStringInstance()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
         string source = "<p>Он - человек</p>";
@@ -16,7 +16,7 @@ public class PipelineTests
     }
 
     [Fact]
-    public void БезПравилРазметкаКопируетсяБайтВБайт()
+    public void NoRulesMarkupCopiedByteForByte()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
         string source = "<a title=\"a>b\">x</a><code>a - b</code><!-- c -->";
@@ -25,7 +25,7 @@ public class PipelineTests
     }
 
     [Fact]
-    public void ПишетВBufferWriter()
+    public void WritesToBufferWriter()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
         var writer = new ArrayBufferWriter<char>();
@@ -36,20 +36,20 @@ public class PipelineTests
     }
 
     [Fact]
-    public void ФасадРаботаетБезНастроек()
+    public void FacadeWorksWithoutOptions()
     {
         Assert.NotNull(Typograf.Html("текст"));
         Assert.NotNull(Typograf.PlainText("текст"));
     }
 
     [Fact]
-    public void NullБросаетArgumentNullException()
+    public void NullThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => Typograf.Html(null!));
     }
 
     [Fact]
-    public void КодированиеТолькоВТекстовыхСегментахНamedМодус()
+    public void NamedModeEncodesOnlyTextSegments()
     {
         // Тест проверяет, что кодирование применяется ТОЛЬКО к текстовым сегментам,
         // и не трогает разметку и защищённые зоны. Это критично для корректности.
@@ -70,7 +70,7 @@ public class PipelineTests
     }
 
     [Fact]
-    public void СимволыРежимНеМенятРазметкуИЗащиту()
+    public void SymbolsModeLeavesMarkupAndProtectionIntact()
     {
         // Режим Symbols не должен ничего менять, даже если есть типографские символы.
         var typograf = new HtmlTypograf(new HtmlOptions

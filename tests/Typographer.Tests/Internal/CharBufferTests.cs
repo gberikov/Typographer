@@ -24,7 +24,7 @@ public class CharBufferTests
     }
 
     [Fact]
-    public void PatchAt_ЗаменяетУжеЗаписанныйСимвол()
+    public void PatchAt_ReplacesAlreadyWrittenChar()
     {
         var buffer = new CharBuffer(initialCapacity: 8);
         try
@@ -39,17 +39,4 @@ public class CharBufferTests
         }
     }
 
-    [Fact]
-    public void Write_БросаетПриПревышенииПредела()
-    {
-        var buffer = new CharBuffer(initialCapacity: 4, maxLength: 5);
-        try
-        {
-            Assert.Throws<OutputTooLargeException>(() => buffer.Write("шесть!"));
-        }
-        finally
-        {
-            buffer.Dispose();
-        }
-    }
 }

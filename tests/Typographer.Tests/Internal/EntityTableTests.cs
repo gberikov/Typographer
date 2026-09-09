@@ -12,7 +12,7 @@ public class EntityTableTests
     [InlineData("&#x00AB;", '\u00AB', 8)]
     [InlineData("&ldquo;", '\u201C', 7)]
     [InlineData("&bdquo;", '\u201E', 7)]
-    public void TryDecode_РаспознаётТипографскиеСущности(string source, char expected, int expectedConsumed)
+    public void TryDecode_RecognizesTypographicEntities(string source, char expected, int expectedConsumed)
     {
         Assert.True(EntityTable.TryDecode(source.AsSpan(), out char value, out int consumed));
         Assert.Equal(expected, value);
@@ -33,13 +33,18 @@ public class EntityTableTests
     [InlineData("&#x26;")]
     [InlineData("&#x3C;")]
     [InlineData("&#x3E;")]
-    public void TryDecode_ОтклоняетНетипографскиеИНезавершённые(string source)
+    [InlineData("&#+160;")]
+    [InlineData("&#-160;")]
+    [InlineData("&# 160;")]
+    [InlineData("&#160 ;")]
+    [InlineData("&#x A0;")]
+    public void TryDecode_RejectsNonTypographicAndIncomplete(string source)
     {
         Assert.False(EntityTable.TryDecode(source.AsSpan(), out _, out _));
     }
 
     [Fact]
-    public void NameOf_ВозвращаетИмяДляТипографскогоСимвола()
+    public void NameOf_ReturnsNameForTypographicChar()
     {
         Assert.Equal("nbsp", EntityTable.NameOf('\u00A0'));
         Assert.Equal("laquo", EntityTable.NameOf('\u00AB'));
@@ -53,7 +58,7 @@ public class EntityTableTests
     }
 
     [Fact]
-    public void IsInvisible_ТолькоПробельныеСимволы()
+    public void IsInvisible_OnlyWhitespaceChars()
     {
         Assert.True(EntityTable.IsInvisible('\u00A0'));
         Assert.True(EntityTable.IsInvisible('\u202F'));

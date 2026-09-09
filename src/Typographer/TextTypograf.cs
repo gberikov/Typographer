@@ -22,19 +22,16 @@ public sealed class TextTypograf
     {
         Throw.IfNull(text, nameof(text));
 
-        var scanned = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
-        var buffer = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
+        var buffer = new CharBuffer(text.Length + (text.Length >> 2));
         try
         {
-            var state = new ScanState();
-            TextScanner.Run(text.AsSpan(), _options.Rules, ref state, ref scanned);
-            WordBinder.Run(scanned.AsSpan(), _options.Rules, ref buffer);
+            Run(text.AsSpan(), ref buffer);
             ReadOnlySpan<char> result = buffer.AsSpan();
+            Throw.IfTooLong(result.Length, _options.MaxOutputLength);
             return result.SequenceEqual(text.AsSpan()) ? text : result.ToString();
         }
         finally
         {
-            scanned.Dispose();
             buffer.Dispose();
         }
     }
@@ -46,21 +43,41 @@ public sealed class TextTypograf
     {
         Throw.IfNull(destination, nameof(destination));
 
-        var scanned = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
-        var buffer = new CharBuffer(text.Length + (text.Length >> 2), _options.MaxOutputLength);
+        var buffer = new CharBuffer(text.Length + (text.Length >> 2));
         try
         {
-            var state = new ScanState();
-            TextScanner.Run(text, _options.Rules, ref state, ref scanned);
-            WordBinder.Run(scanned.AsSpan(), _options.Rules, ref buffer);
+            Run(text, ref buffer);
             ReadOnlySpan<char> result = buffer.AsSpan();
+
+            // Предел проверяется ДО записи в приёмник: приёмник не должен получить
+            // половину результата, за которой следует исключение.
+            Throw.IfTooLong(result.Length, _options.MaxOutputLength);
             result.CopyTo(destination.GetSpan(result.Length));
             destination.Advance(result.Length);
         }
         finally
         {
-            scanned.Dispose();
             buffer.Dispose();
+        }
+    }
+
+    private void Run(ReadOnlySpan<char> text, ref CharBuffer buffer)
+    {
+        // Сущности в обычном тексте не декодируются: «&nbsp;» здесь — просто шесть символов,
+        // а не неразрывный пробел. Фаза Prepare нужна ради метки порядка байт, которая
+        // иначе встаёт слева от первого слова и лишает его контекста «начало документа».
+        var prepared = new CharBuffer(text.Length + 8);
+        try
+        {
+            Preparer.Run(text, decodeEntities: false, _options.Rules, ref prepared, isDocumentStart: true);
+
+            var state = new ScanState();
+            TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref buffer);
+            WordBinder.Run(ref buffer, _options.Rules);
+        }
+        finally
+        {
+            prepared.Dispose();
         }
     }
 }

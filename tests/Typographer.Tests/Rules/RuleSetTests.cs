@@ -5,21 +5,21 @@ namespace Typographer.Tests.Rules;
 public class RuleSetTests
 {
     [Fact]
-    public void Default_ВключаетТиреИКавычки()
+    public void Default_IncludesDashesAndQuotes()
     {
         Assert.True(RuleSet.Default.Contains(RuleId.Ru.Dash.Main));
         Assert.True(RuleSet.Default.Contains(RuleId.Common.Punctuation.Quote));
     }
 
     [Fact]
-    public void Default_ИсключаетРискованныеПравила()
+    public void Default_ExcludesRiskyRules()
     {
         Assert.False(RuleSet.Default.Contains(RuleId.Ru.Typo.SwitchingKeyboardLayout));
         Assert.False(RuleSet.Default.Contains(RuleId.Ru.Punctuation.Ano));
     }
 
     [Fact]
-    public void Without_НеМеняетИсходноеМножество()
+    public void Without_DoesNotMutateSourceSet()
     {
         RuleSet reduced = RuleSet.Default.Without(RuleId.Ru.Dash.Main);
 
@@ -28,7 +28,7 @@ public class RuleSetTests
     }
 
     [Fact]
-    public void With_ДобавляетВыключенноеПравило()
+    public void With_AddsDisabledRule()
     {
         RuleSet extended = RuleSet.Default.With(RuleId.Ru.Typo.SwitchingKeyboardLayout);
 
@@ -36,7 +36,7 @@ public class RuleSetTests
     }
 
     [Fact]
-    public void None_Пусто_All_Полно()
+    public void None_IsEmpty_All_IsFull()
     {
 #pragma warning disable xUnit2013
         Assert.Equal(0, RuleSet.None.Count);
@@ -47,20 +47,20 @@ public class RuleSetTests
     [Theory]
     [InlineData("ru/dash/main")]
     [InlineData("common/punctuation/quote")]
-    public void TryParse_РазбираетИмяКакВJsTypograf(string name)
+    public void TryParse_ParsesJsTypografStyleName(string name)
     {
         Assert.True(RuleId.TryParse(name, out RuleId rule));
         Assert.Equal(name, rule.Name);
     }
 
     [Fact]
-    public void TryParse_ОтклоняетНеизвестноеИмя()
+    public void TryParse_RejectsUnknownName()
     {
         Assert.False(RuleId.TryParse("ru/nbsp/abr", out _));
     }
 
     [Fact]
-    public void Default_НеПуст()
+    public void Default_IsNotEmpty()
     {
         // Регресс на сдвиг индексов реестра: если ноль случайно снова окажется занят
         // настоящим правилом или маска съедет, этот тест ловит эффект первым.
@@ -68,7 +68,7 @@ public class RuleSetTests
     }
 
     [Fact]
-    public void DefaultRuleId_НеСовпадаетНиСОднимПравилом()
+    public void DefaultRuleId_MatchesNoRule()
     {
         var empty = default(RuleId);
 
@@ -77,7 +77,7 @@ public class RuleSetTests
     }
 
     [Fact]
-    public void DefaultRuleId_ИмяПустаяСтрокаАНеNull()
+    public void DefaultRuleId_NameIsEmptyStringNotNull()
     {
         var empty = default(RuleId);
 
@@ -86,13 +86,13 @@ public class RuleSetTests
     }
 
     [Fact]
-    public void With_НаNull_БросаетArgumentNullException()
+    public void With_OnNull_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => RuleSet.Default.With(null!));
     }
 
     [Fact]
-    public void Without_НаNull_БросаетArgumentNullException()
+    public void Without_OnNull_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => RuleSet.Default.Without(null!));
     }

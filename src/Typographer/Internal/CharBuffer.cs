@@ -11,13 +11,11 @@ internal struct CharBuffer
 {
     private char[] _array;
     private int _length;
-    private readonly int _maxLength;
 
-    public CharBuffer(int initialCapacity, int maxLength = 0)
+    public CharBuffer(int initialCapacity)
     {
         _array = ArrayPool<char>.Shared.Rent(Math.Max(initialCapacity, 16));
         _length = 0;
-        _maxLength = maxLength;
     }
 
     public readonly int Length => _length;
@@ -58,11 +56,6 @@ internal struct CharBuffer
     private void EnsureCapacity(int additional)
     {
         int required = _length + additional;
-        if (_maxLength > 0 && required > _maxLength)
-        {
-            throw new OutputTooLargeException(_maxLength);
-        }
-
         if (required <= _array.Length)
         {
             return;

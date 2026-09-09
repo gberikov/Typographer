@@ -3,6 +3,7 @@ namespace Typographer.Internal;
 /// <summary>Символы, которыми оперирует типограф.</summary>
 internal static class Chars
 {
+    public const char Bom = '\uFEFF';
     public const char Nbsp = '\u00A0';
     public const char NarrowNbsp = '\u202F';
     public const char ThinSpace = '\u2009';

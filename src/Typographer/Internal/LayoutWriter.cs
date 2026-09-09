@@ -1,17 +1,56 @@
 namespace Typographer.Internal;
 
 /// <summary>Фаза Layout: неразрывные блоки, переносы строк и абзацы.</summary>
+/// <remarks>
+/// Фаза работает на двух разных уровнях, и путать их нельзя. Неразрывные блоки живут ВНУТРИ
+/// текстового узла: цепочка слов через тег не тянется. Абзацы и переносы строк, наоборот,
+/// живут на уровне ДОКУМЕНТА: <c>&lt;p&gt;</c> — блочный тег, и обёртка вокруг каждого
+/// текстового узла порождала бы абзац внутри <c>&lt;b&gt;</c> и абзац из одного пробела
+/// между двумя тегами.
+/// </remarks>
 internal static class LayoutWriter
 {
+    private static readonly string[] VoidTags =
+    [
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+        "param", "source", "track", "wbr",
+    ];
+
+    /// <summary>Уровень текстового узла: неразрывные блоки.</summary>
     public static void Run(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
     {
         if (options.MaxNobr > 0)
         {
-            WriteWithNobr(source, options, ref buffer);
+            WriteWithNobr(source, options.MaxNobr, ref buffer);
             return;
         }
 
-        WriteBreaks(source, options, ref buffer);
+        buffer.Write(source);
+    }
+
+    /// <summary>
+    /// Уровень документа: переносы строк и абзацы по готовому телу документа.
+    /// Переводы строк внутри разметки и защищённых зон остаются без изменений.
+    /// </summary>
+    /// <param name="source">Тело документа: текстовые узлы уже обработаны, разметка на месте.</param>
+    /// <param name="useBr">Заменять перевод строки тегом переноса.</param>
+    /// <param name="useP">Оборачивать абзацы в теги абзаца.</param>
+    /// <param name="buffer">Приёмник.</param>
+    public static void WriteBreaks(ReadOnlySpan<char> source, bool useBr, bool useP, ref CharBuffer buffer)
+    {
+        if (useP)
+        {
+            WriteParagraphs(source, useBr, ref buffer);
+            return;
+        }
+
+        if (useBr)
+        {
+            WriteWithBr(source, ref buffer);
+            return;
+        }
+
+        buffer.Write(source);
     }
 
     /// <summary>
@@ -22,7 +61,7 @@ internal static class LayoutWriter
     /// слова или всей цепочки — оба варианта строго больше текущего <c>i</c>, поэтому обход
     /// гарантированно завершается и линеен по длине входа.
     /// </summary>
-    private static void WriteWithNobr(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
+    private static void WriteWithNobr(ReadOnlySpan<char> source, int maxWords, ref CharBuffer buffer)
     {
         int flushStart = 0;
         int i = 0;
@@ -49,13 +88,13 @@ internal static class LayoutWriter
                 chainEnd = FindWordEnd(source, chainEnd + 1);
             }
 
-            WriteBreaks(source.Slice(flushStart, i - flushStart), options, ref buffer);
-            WriteChain(source.Slice(i, chainEnd - i), options.MaxNobr, ref buffer);
+            buffer.Write(source.Slice(flushStart, i - flushStart));
+            WriteChain(source.Slice(i, chainEnd - i), maxWords, ref buffer);
             i = chainEnd;
             flushStart = i;
         }
 
-        WriteBreaks(source.Slice(flushStart), options, ref buffer);
+        buffer.Write(source.Slice(flushStart));
     }
 
     /// <summary>Конец слова начиная с <paramref name="start"/> — первая граница или неразрывный пробел.</summary>
@@ -142,100 +181,262 @@ internal static class LayoutWriter
     // склеивал соседние слова в одну неразрывную цепочку.
     private static bool IsBoundary(char c) => c is ' ' or '\n' or '\t' or '\r';
 
-    private static void WriteBreaks(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
+    /// <summary>
+    /// Пишет текст, ставя тег переноса ПЕРЕД каждым переводом строки целиком.
+    /// Windows-перевод (<c>\r\n</c>) — один перенос, а не два: тег, вставленный между
+    /// <c>\r</c> и <c>\n</c>, разорвал бы пару и оставил в выводе одинокий возврат каретки.
+    /// </summary>
+    private static void WriteWithBr(ReadOnlySpan<char> source, ref CharBuffer buffer)
     {
-        if (!options.UseBr && !options.UseP)
+        var scanner = new MarkupScanner(source);
+        while (scanner.TryRead(out Segment segment))
         {
-            buffer.Write(source);
-            return;
-        }
-
-        if (options.UseP)
-        {
-            WriteParagraphs(source, options, ref buffer);
-            return;
-        }
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            if (source[i] == '\n')
+            ReadOnlySpan<char> slice = source.Slice(segment.Start, segment.Length);
+            if (segment.Kind == SegmentKind.Text)
             {
-                buffer.Write("<br />");
+                WriteTextWithBr(slice, ref buffer);
             }
-
-            buffer.Write(source[i]);
+            else
+            {
+                buffer.Write(slice);
+            }
         }
     }
 
-    private static void WriteParagraphs(ReadOnlySpan<char> source, HtmlOptions options, ref CharBuffer buffer)
+    private static void WriteTextWithBr(ReadOnlySpan<char> source, ref CharBuffer buffer)
     {
-        int start = 0;
-        bool first = true;
-        while (start < source.Length)
+        for (int i = 0; i < source.Length; i++)
         {
-            int separator = FindDoubleNewline(source, start, out int separatorLength);
-            ReadOnlySpan<char> paragraph = separator < 0
-                ? source.Slice(start)
-                : source.Slice(start, separator - start);
-
-            // Пустой абзац — разметка из ничего (двойной перевод строки в начале/конце
-            // входа или три и более подряд): типограф не добавляет в чужой HTML пустых
-            // блоков, поэтому такой сегмент просто пропускается.
-            if (paragraph.Length > 0)
+            int length = NewlineLength(source, i);
+            if (length == 0)
             {
-                if (!first)
-                {
-                    buffer.Write('\n');
-                }
-
-                buffer.Write("<p>");
-                if (options.UseBr)
-                {
-                    for (int i = 0; i < paragraph.Length; i++)
-                    {
-                        if (paragraph[i] == '\n')
-                        {
-                            buffer.Write("<br />");
-                        }
-
-                        buffer.Write(paragraph[i]);
-                    }
-                }
-                else
-                {
-                    buffer.Write(paragraph);
-                }
-
-                buffer.Write("</p>");
-                first = false;
+                buffer.Write(source[i]);
+                continue;
             }
 
-            start = separator < 0 ? source.Length : separator + separatorLength;
+            buffer.Write("<br />");
+            buffer.Write(source.Slice(i, length));
+            i += length - 1;
         }
+    }
+
+    /// <summary>Длина перевода строки на позиции <paramref name="index"/>, или ноль.</summary>
+    private static int NewlineLength(ReadOnlySpan<char> source, int index)
+    {
+        if (source[index] == '\r' && index + 1 < source.Length && source[index + 1] == '\n')
+        {
+            return 2;
+        }
+
+        return source[index] == '\n' ? 1 : 0;
+    }
+
+    private static void WriteParagraphs(ReadOnlySpan<char> source, bool useBr, ref CharBuffer buffer)
+    {
+        // Добавленные <p> не должны пересекать существующую разметку. Если пустая строка
+        // находится внутри открытого inline-элемента, безопасно разделить его на абзацы
+        // без переписывания исходных тегов невозможно. В таком случае UseP пропускается,
+        // а независимая опция UseBr продолжает работать.
+        if (ParagraphSeparatorCrossesElement(source))
+        {
+            if (useBr)
+            {
+                WriteWithBr(source, ref buffer);
+            }
+            else
+            {
+                buffer.Write(source);
+            }
+
+            return;
+        }
+
+        var scanner = new MarkupScanner(source);
+        int paragraphStart = 0;
+        bool first = true;
+        while (scanner.TryRead(out Segment segment))
+        {
+            if (segment.Kind != SegmentKind.Text)
+            {
+                continue;
+            }
+
+            ReadOnlySpan<char> text = source.Slice(segment.Start, segment.Length);
+            int offset = 0;
+            while (offset < text.Length)
+            {
+                int separator = FindDoubleNewline(text, offset, out int separatorLength);
+                if (separator < 0)
+                {
+                    break;
+                }
+
+                // Ищем границу только в тексте, но оборачиваем весь абзац вместе с
+                // инлайновыми тегами и защищёнными элементами между его границами.
+                int end = segment.Start + separator;
+                WriteParagraph(source.Slice(paragraphStart, end - paragraphStart), useBr, ref first, ref buffer);
+                offset = separator + separatorLength;
+                paragraphStart = segment.Start + offset;
+            }
+        }
+
+        WriteParagraph(source.Slice(paragraphStart), useBr, ref first, ref buffer);
+    }
+
+    private static bool ParagraphSeparatorCrossesElement(ReadOnlySpan<char> source)
+    {
+        var scanner = new MarkupScanner(source);
+        int depth = 0;
+        while (scanner.TryRead(out Segment segment))
+        {
+            ReadOnlySpan<char> slice = source.Slice(segment.Start, segment.Length);
+            if (segment.Kind == SegmentKind.Text)
+            {
+                if (depth > 0 && FindDoubleNewline(slice, 0, out _) >= 0)
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (segment.Kind == SegmentKind.Markup)
+            {
+                UpdateElementDepth(slice, ref depth);
+            }
+        }
+
+        return false;
+    }
+
+    private static void UpdateElementDepth(ReadOnlySpan<char> tag, ref int depth)
+    {
+        if (tag.Length < 3 || tag[0] != '<' || tag[1] is '!' or '?')
+        {
+            return;
+        }
+
+        bool closing = tag[1] == '/';
+        int nameStart = closing ? 2 : 1;
+        int nameEnd = nameStart;
+        while (nameEnd < tag.Length
+               && !char.IsWhiteSpace(tag[nameEnd])
+               && tag[nameEnd] is not ('/' or '>'))
+        {
+            nameEnd++;
+        }
+
+        if (nameEnd == nameStart)
+        {
+            return;
+        }
+
+        if (closing)
+        {
+            depth = Math.Max(0, depth - 1);
+            return;
+        }
+
+        ReadOnlySpan<char> name = tag.Slice(nameStart, nameEnd - nameStart);
+        if (!IsSelfClosing(tag) && !IsVoidTag(name))
+        {
+            depth++;
+        }
+    }
+
+    private static bool IsSelfClosing(ReadOnlySpan<char> tag)
+    {
+        int index = tag.Length - 2;
+        while (index >= 0 && char.IsWhiteSpace(tag[index]))
+        {
+            index--;
+        }
+
+        return index >= 0 && tag[index] == '/';
+    }
+
+    private static bool IsVoidTag(ReadOnlySpan<char> name)
+    {
+        foreach (string tag in VoidTags)
+        {
+            if (name.Equals(tag.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void WriteParagraph(ReadOnlySpan<char> paragraph, bool useBr, ref bool first, ref CharBuffer buffer)
+    {
+        // Двойные переводы строк в начале и конце документа не создают пустых абзацев.
+        if (paragraph.IsEmpty)
+        {
+            return;
+        }
+
+        if (!first)
+        {
+            buffer.Write('\n');
+        }
+
+        buffer.Write("<p>");
+        if (useBr)
+        {
+            WriteWithBr(paragraph, ref buffer);
+        }
+        else
+        {
+            buffer.Write(paragraph);
+        }
+
+        buffer.Write("</p>");
+        first = false;
     }
 
     /// <summary>
-    /// Индекс начала первой границы абзаца на позиции from и далее, или -1. Переводы строк не
-    /// нормализуются: распознаются обе формы двойного перевода строки — Unix (<c>"\n\n"</c>,
-    /// длина 2) и Windows (<c>"\r\n\r\n"</c>, длина 4) — <paramref name="separatorLength"/>
-    /// сообщает вызывающему коду, сколько символов входа занимает найденная граница.
+    /// Индекс начала первой границы абзаца на позиции from и далее, или -1. Переводы строк
+    /// не нормализуются: распознаются обе формы — Unix (<c>"\n"</c>) и Windows
+    /// (<c>"\r\n"</c>), — а <paramref name="separatorLength"/> сообщает вызывающему коду,
+    /// сколько символов входа занимает найденная граница.
     /// </summary>
+    /// <remarks>
+    /// Граница съедается ЦЕЛИКОМ: три и более переводов строки подряд — всё ещё одна
+    /// граница. Иначе лишний перевод строки оставался бы в начале следующего абзаца и при
+    /// включённом переносе превращался бы там в тег переноса из ниоткуда.
+    /// </remarks>
     private static int FindDoubleNewline(ReadOnlySpan<char> source, int from, out int separatorLength)
     {
         for (int i = from; i < source.Length; i++)
         {
-            if (source[i] == '\r' && i + 3 < source.Length
-                && source[i + 1] == '\n' && source[i + 2] == '\r' && source[i + 3] == '\n')
+            int first = NewlineLength(source, i);
+            if (first == 0)
             {
-                separatorLength = 4;
-                return i;
+                continue;
             }
 
-            if (source[i] == '\n' && i + 1 < source.Length && source[i + 1] == '\n')
+            int second = i + first < source.Length ? NewlineLength(source, i + first) : 0;
+            if (second == 0)
             {
-                separatorLength = 2;
-                return i;
+                i += first - 1;
+                continue;
             }
+
+            int end = i + first + second;
+            while (end < source.Length)
+            {
+                int more = NewlineLength(source, end);
+                if (more == 0)
+                {
+                    break;
+                }
+
+                end += more;
+            }
+
+            separatorLength = end - i;
+            return i;
         }
 
         separatorLength = 0;

@@ -1,3 +1,4 @@
+using System.Buffers;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Guarantees;
@@ -11,7 +12,7 @@ public class RobustnessTests
     [InlineData("<a href=\"")]
     [InlineData("&&&&&")]
     [InlineData("\"\"\"\"\"\"\"\"\"\"")]
-    public void НеБросаетНаБитомВводе(string source)
+    public void DoesNotThrowOnMalformedInput(string source)
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
 
@@ -19,7 +20,7 @@ public class RobustnessTests
     }
 
     [Fact]
-    public void СлучайныеДанныеНеЛомаютТипограф()
+    public void RandomDataDoesNotBreakTypograf()
     {
         var random = new Random(20260908);
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
@@ -37,15 +38,46 @@ public class RobustnessTests
     }
 
     [Fact]
-    public void ПревышениеПределаДаётПонятноеИсключение()
+    public void ExceedingLimitThrowsClearException()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default, MaxOutputLength = 10 });
 
         Assert.Throws<OutputTooLargeException>(() => typograf.Process(new string('а', 100)));
     }
 
+    // Предел — это предел РЕЗУЛЬТАТА, а не промежуточного состояния конвейера. Сканер
+    // пишет две точки, прежде чем свернуть их в многоточие вместе с третьей, и предел,
+    // применённый к этой записи, срабатывал на входе, который в него укладывается.
     [Fact]
-    public void БезПравокВозвращаетТотЖеЭкземпляр()
+    public void ShrinkingInputWithinLimitDoesNotThrow()
+        => Assert.Equal("…", new TextTypograf(new TextOptions { MaxOutputLength = 1 }).Process("..."));
+
+    [Fact]
+    public void ShrinkingInputWithinLimitDoesNotThrowInHtml()
+        => Assert.Equal("…", new HtmlTypograf(new HtmlOptions { MaxOutputLength = 1 }).Process("..."));
+
+    [Fact]
+    public void ExceedingLimitInTextTypograf()
+    {
+        var typograf = new TextTypograf(new TextOptions { MaxOutputLength = 3 });
+
+        Assert.Throws<OutputTooLargeException>(() => typograf.Process("абвгд"));
+    }
+
+    // Предел проверяется до записи в приёмник: приёмник не должен получить половину
+    // результата, за которой следует исключение.
+    [Fact]
+    public void SinkGetsNoPartialResultOnOverflow()
+    {
+        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None, MaxOutputLength = 3 });
+        var writer = new ArrayBufferWriter<char>();
+
+        Assert.Throws<OutputTooLargeException>(() => typograf.Process("абвгд".AsSpan(), writer));
+        Assert.Equal(0, writer.WrittenCount);
+    }
+
+    [Fact]
+    public void NoEditsReturnsSameInstance()
     {
         var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
         // Ни одного слова короче четырёх букв, ни кавычек, ни дефисов, ни многоточий,
