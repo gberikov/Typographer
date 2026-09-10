@@ -8,6 +8,7 @@
   <Folder Name="/src/">
     <Project Path="src/Typographer/Typographer.csproj" />
     <Project Path="src/Typographer.DependencyInjection/Typographer.DependencyInjection.csproj" />
+    <Project Path="src/Typographer.AspNetCore/Typographer.AspNetCore.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Typographer.Tests/Typographer.Tests.csproj" />

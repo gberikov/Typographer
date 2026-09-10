@@ -9,13 +9,15 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" Version="3.2.0" />
-    <!-- Абстракции есть у самого пакета; здесь нужна реализация контейнера, чтобы
-         в тесте было что построить. -->
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <!-- Тест собирает TagHelperOutput сам, значит типы ASP.NET Core нужны ему напрямую.
+         Отсюда же берётся реализация контейнера: она входит в общую среду выполнения,
+         и явная ссылка на Microsoft.Extensions.DependencyInjection была бы ошибкой NU1510. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/Typographer.DependencyInjection/Typographer.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/Typographer.AspNetCore/Typographer.AspNetCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
