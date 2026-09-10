@@ -67,7 +67,7 @@ public class ScannerContextTests
     [Fact]
     public void ClosingQuoteAfterCommaGetsNoSpace()
         => Assert.Equal(
-            $"{Chars.Laquo}Да,{Chars.Raquo} сказал он. {Chars.Laquo}Второй{Chars.Raquo}",
+            $"{Chars.Laquo}Да,{Chars.Raquo} сказал{Chars.Nbsp}он. {Chars.Laquo}Второй{Chars.Raquo}",
             Text("\"Да,\" сказал он. \"Второй\""));
 
     // Блочный тег — граница строки: за ним начинается новый абзац, даже если перевода

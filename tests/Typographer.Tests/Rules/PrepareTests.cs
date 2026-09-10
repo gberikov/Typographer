@@ -47,7 +47,7 @@ public class PrepareTests
     [Fact]
     public void BomIsRemovedAndDoesNotHideDocumentStart()
         => Assert.Equal(
-            $"{Chars.MDash} Привет,{Chars.Nbsp}{Chars.MDash} сказал он.",
+            $"{Chars.MDash} Привет,{Chars.Nbsp}{Chars.MDash} сказал{Chars.Nbsp}он.",
             Text(Chars.Bom + "- Привет, - сказал он."));
 
     [Fact]

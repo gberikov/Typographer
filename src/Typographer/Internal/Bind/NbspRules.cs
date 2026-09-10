@@ -34,7 +34,8 @@ internal static class NbspRules
         ReadOnlySpan<char> letters = hasDot ? token.Slice(0, token.Length - 1) : token;
         bool initial = rules.Contains(RuleId.Ru.Nbsp.Initials) && !state.TokenOverflow && IsInitial(token);
 
-        if (state.SpaceIndex >= 0 && (initial || BindsBackward(token, letters, rules, ref state)))
+        if (state.SpaceIndex >= 0
+            && (initial || BindsBackward(token, letters, hasDot, boundary, rules, ref state)))
         {
             buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
         }
@@ -51,11 +52,29 @@ internal static class NbspRules
     /// в обе стороны и решается отдельно.
     /// </summary>
     private static bool BindsBackward(
-        ReadOnlySpan<char> token, ReadOnlySpan<char> letters, RuleSet rules, ref BindState state)
+        ReadOnlySpan<char> token, ReadOnlySpan<char> letters, bool hasDot, char boundary,
+        RuleSet rules, ref BindState state)
     {
         if (state.TokenOverflow)
         {
             return false;
+        }
+
+        // Последнее слово предложения не отрывается от предпоследнего. Точка входит в сам
+        // токен, поэтому «там.» — признак конца предложения, а запятая — нет.
+        if (IsSentenceEnd(boundary, hasDot))
+        {
+            if (rules.Contains(RuleId.Common.Nbsp.BeforeShortLastWord)
+                && state.Kind == TokenKind.Word && Dictionaries.IsShortWord(letters))
+            {
+                return true;
+            }
+
+            if (rules.Contains(RuleId.Common.Nbsp.BeforeShortLastNumber)
+                && state.Kind == TokenKind.Number && IsShortNumber(letters))
+            {
+                return true;
+            }
         }
 
         // Частица не отрывается от предшествующего слова: «так ли», «он же», «если бы».
@@ -100,6 +119,32 @@ internal static class NbspRules
                 && !hasDot && state.Kind == TokenKind.Word && Dictionaries.IsShortWord(letters))
             || (rules.Contains(RuleId.Ru.Nbsp.Abbr)
                 && hasDot && Dictionaries.IsAbbreviationPart(letters));
+    }
+
+    /// <summary>
+    /// Токен закрыт концом предложения: знаком «!», «?», многоточием, точкой внутри самого
+    /// токена или концом документа. Запятая и точка с запятой границей предложения не являются.
+    /// </summary>
+    private static bool IsSentenceEnd(char boundary, bool hasDot)
+        => hasDot || boundary is '!' or '?' or Chars.Hellip or '\0';
+
+    /// <summary>Число не длиннее двух цифр.</summary>
+    private static bool IsShortNumber(ReadOnlySpan<char> word)
+    {
+        if (word.Length is 0 or > 2)
+        {
+            return false;
+        }
+
+        foreach (char c in word)
+        {
+            if (!char.IsDigit(c))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
