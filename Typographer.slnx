@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Typographer.Tests/Typographer.Tests.csproj" />
+    <Project Path="tests/Typographer.Oracle/Typographer.Oracle.csproj" />
   </Folder>
 </Solution>

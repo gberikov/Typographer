@@ -1,4 +1,5 @@
 using System.Reflection;
+using Typographer.Internal;
 
 namespace Typographer.Tests.Oracle;
 
@@ -71,7 +72,7 @@ public static class OracleSnapshot
     private static string Unescape(string cell) => cell
         .Trim()
         .Replace("\\|", "|")
-        .Replace("_", " ")
+        .Replace("_", Chars.Nbsp.ToString())
         .Replace("&lt;", "<")
         .Replace("&gt;", ">")
         .Replace("&amp;", "&");
