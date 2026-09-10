@@ -2,6 +2,9 @@
   <Folder Name="/bench/">
     <Project Path="bench/Typographer.Bench/Typographer.Bench.csproj" />
   </Folder>
+  <Folder Name="/fuzz/">
+    <Project Path="fuzz/Typographer.Fuzz/Typographer.Fuzz.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Typographer/Typographer.csproj" />
   </Folder>

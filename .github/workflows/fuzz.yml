@@ -1,0 +1,68 @@
+name: Fuzz
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Сколько секунд фаззить
+        required: false
+        default: '600'
+  schedule:
+    # Раз в неделю, в ночь на понедельник. Фаззинг долгий, и в каждом PR он не нужен.
+    - cron: '0 3 * * 1'
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Установить sharpfuzz
+        run: dotnet tool install --global SharpFuzz.CommandLine
+
+      - name: Собрать цель
+        run: dotnet publish fuzz/Typographer.Fuzz -c Release -o fuzz/bin
+
+      # Инструментируется ЯДРО, а не проект-цель: покрытие libFuzzer собирает по коду,
+      # который фаззится. Скрипт из репозитория SharpFuzz делает то же самое, обходя
+      # каталог сборки; здесь список короткий и записан явно.
+      - name: Инструментировать ядро
+        run: sharpfuzz fuzz/bin/Typographer.dll
+
+      - name: Скачать драйвер libFuzzer
+        run: |
+          curl -sSL -o libfuzzer-dotnet \
+            https://github.com/Metalnem/libfuzzer-dotnet/releases/latest/download/libfuzzer-dotnet-ubuntu
+          chmod +x libfuzzer-dotnet
+
+      # Затравка — входы golden-корпуса: фаззер мутирует настоящие предложения с кавычками,
+      # тире и разметкой, а не случайный шум, и до интересных состояний доходит быстрее.
+      - name: Подготовить затравку
+        run: |
+          mkdir -p fuzz/corpus fuzz/crashes
+          cp tests/Typographer.Corpus/*.in.txt fuzz/corpus/
+
+      - name: Фаззить
+        run: |
+          ./libfuzzer-dotnet \
+            -timeout=10 \
+            -max_total_time=${{ inputs.seconds || 600 }} \
+            -artifact_prefix=fuzz/crashes/ \
+            --target_path=$(which dotnet) \
+            --target_arg=fuzz/bin/Typographer.Fuzz.dll \
+            fuzz/corpus
+
+      # Падение — баг ядра. Вход из артефакта добавляется в HardCases отдельным тестом,
+      # и только потом чинится правило.
+      - name: Сохранить падения
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes
+          path: fuzz/crashes/
+          if-no-files-found: ignore

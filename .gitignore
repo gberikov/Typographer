@@ -483,3 +483,9 @@ $RECYCLE.BIN/
 
 # rtk
 *.binlog
+
+# Фаззинг: сборка цели, затравка и сохранённые падения — всё локальное.
+fuzz/bin/
+fuzz/corpus/
+fuzz/crashes/
+libfuzzer-dotnet
