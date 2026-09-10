@@ -1,3 +1,4 @@
+using Typographer.Internal;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
@@ -87,4 +88,15 @@ public class DashRulesTests
 
         Assert.Equal("раз <b>— два</b>", result);
     }
+
+    // Тире в конце строки: в тексте, свёрстанном по ширине, дефис регулярно оказывается
+    // последним символом строки. Это то же самое тире, и неразрывный пробел перед ним
+    // так же обязателен — иначе тире уедет в начало следующей строки.
+    [Fact]
+    public void DashAtEndOfLineBecomesDash()
+        => Assert.Equal($"измерения{Chars.Nbsp}—\nпробел", Run("измерения -\nпробел"));
+
+    [Fact]
+    public void DashAtEndOfCarriageReturnLineBecomesDash()
+        => Assert.Equal($"измерения{Chars.Nbsp}—\r\nпробел", Run("измерения -\r\nпробел"));
 }
