@@ -16,6 +16,9 @@ internal static class Chars
     public const char MDash = '\u2014';
     public const char NDash = '\u2013';
     public const char Hellip = '\u2026';
+
+    /// <summary>Комбинирующий акут: ставится ПОСЛЕ ударной гласной.</summary>
+    public const char Acute = '\u0301';
     public const char Numero = '\u2116';
     public const char Section = '\u00A7';
     public const char Pilcrow = '\u00B6';

@@ -63,11 +63,84 @@ internal static class RewriteRules
             return;
         }
 
-        if (rules.Contains(RuleId.Ru.Nbsp.M))
+        if (rules.Contains(RuleId.Ru.Nbsp.M) && TryMeters(token, ref state, ref buffer))
         {
-            TryMeters(token, ref state, ref buffer);
+            return;
+        }
+
+        if (rules.Contains(RuleId.Common.Other.RepeatWord)
+            && TryRepeatWord(token, previous, ref state, ref buffer))
+        {
+            return;
+        }
+
+        if (rules.Contains(RuleId.Ru.Other.Accent))
+        {
+            TryAccent(token, ref state, ref buffer);
         }
     }
+
+    /// <summary>
+    /// Повтор слова: второе из двух одинаковых подряд стирается вместе с пробелом перед ним.
+    /// Остаётся ПЕРВОЕ — вместе с его регистром: «Повтор повтор» даёт «Повтор».
+    /// </summary>
+    private static bool TryRepeatWord(
+        Span<char> token, ReadOnlySpan<char> previous, ref BindState state, ref CharBuffer buffer)
+    {
+        return state.Kind == TokenKind.Word
+            && state.PrevKind == TokenKind.Word
+            && state.PrevLength > 0
+            && Same(token.Slice(0, state.TokenLength), previous)
+            && Merge(previous, token, ref state, ref buffer);
+    }
+
+    /// <summary>
+    /// Ударение: единственная прописная буква ВНУТРИ слова становится строчной, и за ней
+    /// ставится комбинирующий акут. Буква обязана быть гласной — ударение на согласной
+    /// бессмысленно, а прописная согласная внутри слова бывает в сокращениях и марках.
+    /// </summary>
+    private static bool TryAccent(Span<char> token, ref BindState state, ref CharBuffer buffer)
+    {
+        ReadOnlySpan<char> current = token.Slice(0, state.TokenLength);
+        if (state.Kind != TokenKind.Word || current.Length < 2 || current.Length + 1 > token.Length)
+        {
+            return false;
+        }
+
+        int stressed = -1;
+        for (int i = 0; i < current.Length; i++)
+        {
+            if (!char.IsUpper(current[i]))
+            {
+                continue;
+            }
+
+            // Прописная первая — начало предложения; вторая прописная — аббревиатура.
+            if (i == 0 || stressed >= 0)
+            {
+                return false;
+            }
+
+            stressed = i;
+        }
+
+        if (stressed < 0 || !IsVowel(current[stressed]))
+        {
+            return false;
+        }
+
+        Span<char> accented = stackalloc char[current.Length + 1];
+        current.Slice(0, stressed).CopyTo(accented);
+        accented[stressed] = char.ToLowerInvariant(current[stressed]);
+        accented[stressed + 1] = Chars.Acute;
+        current.Slice(stressed + 1).CopyTo(accented.Slice(stressed + 2));
+
+        return Replace(accented, token, state.TokenStart, ref state, ref buffer);
+    }
+
+    /// <summary>Буква — гласная русского алфавита.</summary>
+    private static bool IsVowel(char c)
+        => char.ToLowerInvariant(c) is 'а' or 'е' or 'ё' or 'и' or 'о' or 'у' or 'ы' or 'э' or 'ю' or 'я';
 
     /// <summary>
     /// Сдвоенное сокращение: «г.г.» и «г. г.» сводятся к «гг.», «в.в.» и «в. в.» — к «вв.».

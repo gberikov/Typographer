@@ -72,4 +72,40 @@ public class RewriteRulesTests
         // Не единица, а часть слова.
         Assert.Equal("м2м", Run("м2м", RuleId.Ru.Nbsp.M));
     }
+
+    [Fact]
+    public void AccentReplacesInnerCapital()
+    {
+        Assert.Equal($"за{Chars.Acute}мок", Run("зАмок", RuleId.Ru.Other.Accent));
+        Assert.Equal($"коро{Chars.Acute}ва", Run("корОва", RuleId.Ru.Other.Accent));
+    }
+
+    [Theory]
+    // Прописная первая — начало предложения.
+    [InlineData("Москва")]
+    // Прописные все — аббревиатура.
+    [InlineData("СССР")]
+    // Прописная согласная внутри слова ударением не бывает.
+    [InlineData("иПод")]
+    public void AccentLeavesOtherWords(string source)
+        => Assert.Equal(source, Run(source, RuleId.Ru.Other.Accent));
+
+    [Theory]
+    [InlineData("повтор повтор слова", "повтор слова")]
+    // Остаётся первое слово вместе с его регистром.
+    [InlineData("Повтор повтор", "Повтор")]
+    [InlineData("все все же", "все же")]
+    [InlineData("дом дома", "дом дома")]
+    [InlineData("так так-то", "так так-то")]
+    // Запятая между повторами — не пробел, стирать нечего.
+    [InlineData("раз, раз", "раз, раз")]
+    public void RepeatedWordIsRemoved(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Other.RepeatWord));
+
+    // Повтор через тег не удаляется: стирание съело бы байты тега.
+    [Fact]
+    public void RepeatedWordAcrossMarkupStays()
+        => Assert.Equal(
+            "раз <b>раз</b>",
+            Html("раз <b>раз</b>", RuleId.Common.Other.RepeatWord));
 }
