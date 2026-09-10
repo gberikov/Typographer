@@ -122,4 +122,57 @@ public class RuleSetTests
             Assert.True(seen.Add(rule.Name), $"имя {rule.Name} занято дважды");
         }
     }
+
+    [Fact]
+    public void RegistryHasEveryScanRuleOfTheSpec()
+    {
+        // Реестр — источник имён для docs/rules.md и для RuleId.TryParse. Пропущенное имя
+        // означает, что правило нельзя включить по имени, даже если код его реализует.
+        Assert.Equal(65, RuleId.Registry.All.Length);
+        Assert.True(RuleId.TryParse("common/space/afterColon", out _));
+        Assert.True(RuleId.TryParse("ru/dash/kakto", out _));
+        Assert.True(RuleId.TryParse("en-GB/dash/main", out _));
+    }
+
+    [Fact]
+    public void NormalizationRulesAreOutOfDefault()
+    {
+        // Обрезка краёв и замена табов меняют текст за пределами оформления: тот, кто
+        // вызвал Typograf.Html(text), такого не ожидает.
+        foreach (RuleId rule in RuleId.Registry.Normalization)
+        {
+            Assert.False(RuleSet.Default.Contains(rule), rule.Name);
+            Assert.True(RuleSet.All.Contains(rule), rule.Name);
+        }
+    }
+
+    [Fact]
+    public void PresetsDivergeFromDefault()
+    {
+        // Пресеты перестали быть псевдонимами Default: у каждого своё основание,
+        // записанное в XML-комментарии рядом.
+        Assert.NotEqual(RuleSet.Default.Count, RuleSet.Lebedev.Count);
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Ru.Dash.Years));
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Ru.Punctuation.Exclamation));
+        Assert.True(RuleSet.Lebedev.Contains(RuleId.Common.Number.DigitGrouping));
+
+        Assert.True(RuleSet.Gost.Contains(RuleId.Ru.Dash.Years));
+        Assert.False(RuleSet.Gost.Contains(RuleId.Common.Space.DelBeforePercent));
+
+        Assert.True(RuleSet.Typograf.Contains(RuleId.Ru.Punctuation.Ano));
+        Assert.True(RuleSet.Typograf.Contains(RuleId.Ru.Dash.To));
+    }
+
+    [Fact]
+    public void GostKeepsDashInYearRangeAndLebedevDoesNot()
+    {
+        // Расхождение снято снимком оракула: он оставляет дефис, ГОСТ 14.3 требует тире.
+        // Приоритет источников ставит ГОСТ выше практики, поэтому в Default тире.
+        Assert.Equal(
+            "1941—1945 гг.",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Gost }).Process("1941-1945 гг."));
+        Assert.Equal(
+            "1941-1945 гг.",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("1941-1945 гг."));
+    }
 }

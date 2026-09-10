@@ -62,10 +62,21 @@ public class PrepareTests
     [InlineData("text\uFEFFword")]
     public void InnerBomCreatesNoMarkupOrEntities(string source)
     {
-        Assert.Equal(source, Html(source));
-        Assert.Equal(source, Html(Html(source)));
-        Assert.Equal(source, Text(source));
-        Assert.Equal($"<p>{source}</p>", new HtmlTypograf(new HtmlOptions { UseP = true }).Process(source));
+        // Набор правил намеренно узкий. Предмет теста — метка порядка байт: она не должна
+        // склеить соседние символы в тег или сущность. Полный Default сюда не годится: на
+        // этих патологических входах есть что менять и другим правилам (например, «alert(1)»
+        // законно получает пробел перед скобкой), и тест перестал бы говорить о метке.
+        // Пустой набор тоже не годится: фаза Prepare при нулевом наборе не запускается вовсе.
+        RuleSet rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote);
+        var html = new HtmlTypograf(new HtmlOptions { Rules = rules });
+        var text = new TextTypograf(new TextOptions { Rules = rules });
+
+        Assert.Equal(source, html.Process(source));
+        Assert.Equal(source, html.Process(html.Process(source)));
+        Assert.Equal(source, text.Process(source));
+        Assert.Equal(
+            $"<p>{source}</p>",
+            new HtmlTypograf(new HtmlOptions { Rules = rules, UseP = true }).Process(source));
     }
 
     [Fact]

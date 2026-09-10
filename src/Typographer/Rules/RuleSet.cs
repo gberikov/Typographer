@@ -23,7 +23,10 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     public static RuleSet All { get; } = FromRules(RuleId.Registry.All);
 
     /// <summary>Безопасная типографика: всё, что меняет только оформление. Пресет по умолчанию.</summary>
-    public static RuleSet Default { get; } = All.Without(RuleId.Registry.Unsafe);
+    public static RuleSet Default { get; } = All
+        .Without(RuleId.Registry.Unsafe)
+        .Without(RuleId.Registry.Normalization)
+        .Without(RuleId.Registry.OptIn);
 
     /// <summary>Кавычки, тире и многоточие — минимум.</summary>
     public static RuleSet Minimal { get; } = FromRules(
@@ -34,28 +37,34 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     ]);
 
     /// <summary>
-    /// Поведение веб-сервиса Артемия Лебедева. Сейчас буквально совпадает с <see cref="Default"/>:
-    /// правило, которое должно отличать этот пресет от <see cref="Gost"/> (диапазон дат с
-    /// неразрывным пробелом, «1941 — 1945» вместо «1941—1945»), в текущей версии не реализовано.
-    /// Разойдётся в следующей версии.
+    /// Поведение веб-сервиса Артемия Лебедева. Отличия от <see cref="Default"/> сняты
+    /// снимком сервиса (<c>docs/oracle/lebedev.md</c>): диапазон лет он оставляет с дефисом,
+    /// удвоенный восклицательный знак не трогает, длинные числа разбивает по разрядам.
     /// </summary>
-    public static RuleSet Lebedev { get; } = Default;
+    public static RuleSet Lebedev { get; } = Default
+        .Without(RuleId.Ru.Dash.Years, RuleId.Ru.Punctuation.Exclamation)
+        .With(RuleId.Common.Number.DigitGrouping);
 
     /// <summary>
-    /// Паритет дефолтов с JS-typograf. Включает <see cref="RuleId.Ru.Punctuation.Ano"/> и
-    /// <see cref="RuleId.Ru.Typo.SwitchingKeyboardLayout"/> по имени, но оба правила пока не
-    /// реализованы (см. их XML-комментарии) — до тех пор вывод этого пресета буквально совпадает
-    /// с <see cref="Default"/>.
+    /// Паритет дефолтов с JS-typograf: к <see cref="Default"/> добавлены правила, которые
+    /// там включены по умолчанию, а у нас признаны меняющими смысл, — расстановка запятых
+    /// перед «а» и «но», исправление раскладки, дефис в омонимичных частицах и разбиение
+    /// разрядов.
     /// </summary>
-    public static RuleSet Typograf { get; } = Default.With(RuleId.Ru.Punctuation.Ano, RuleId.Ru.Typo.SwitchingKeyboardLayout);
+    public static RuleSet Typograf { get; } = Default.With(
+        RuleId.Ru.Punctuation.Ano,
+        RuleId.Ru.Typo.SwitchingKeyboardLayout,
+        RuleId.Ru.Dash.To,
+        RuleId.Ru.Dash.KakTo,
+        RuleId.Common.Number.DigitGrouping);
 
     /// <summary>
-    /// Строго по ГОСТ Р 7.0.110-2025. Сейчас буквально совпадает с <see cref="Default"/>:
-    /// правило, которое должно отличать этот пресет от <see cref="Lebedev"/> (диапазон дат без
-    /// отбивки, «1941—1945» вместо «1941 — 1945»), в текущей версии не реализовано.
-    /// Разойдётся в следующей версии.
+    /// Строго по ГОСТ Р 7.0.110-2025. Отличие от <see cref="Default"/> одно: пробел перед
+    /// знаком процента не удаляется. ГОСТ 9.6 требует там неразрывный пробел, а правило
+    /// <see cref="RuleId.Common.Space.DelBeforePercent"/> пришло из JS-typograf и пробел
+    /// съедает; при конфликте источников побеждает ГОСТ.
     /// </summary>
-    public static RuleSet Gost { get; } = Default;
+    public static RuleSet Gost { get; } = Default.Without(RuleId.Common.Space.DelBeforePercent);
 
     /// <summary>Количество включённых правил.</summary>
     public int Count => BitCount(_low) + BitCount(_high);

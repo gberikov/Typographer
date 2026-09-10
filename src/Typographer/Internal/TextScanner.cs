@@ -21,6 +21,14 @@ internal struct ScanState
     public char Last;
 
     /// <summary>
+    /// Сколько ДОПОЛНИТЕЛЬНЫХ символов исходной строки проглотило последнее сработавшее
+    /// правило. Правило, собравшее знак из нескольких символов («(c)», «-&gt;», «!=»),
+    /// выставляет это поле, а диспетчер на столько же двигает курсор. Обнуляется сразу
+    /// после сдвига: значение живёт ровно один шаг цикла.
+    /// </summary>
+    public int Skip;
+
+    /// <summary>
     /// Число цифр подряд в конце предыдущего текстового сегмента. Значение ограничено
     /// пятью: для проверки четырёхзначного года важно лишь наличие лишней пятой цифры.
     /// </summary>
@@ -61,22 +69,60 @@ internal static class TextScanner
             // же символ задан порядком вызовов внутри ветки — в одном месте и явно.
             bool handled = c switch
             {
-                '.' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Точка спорна: между цифрами это десятичный разделитель, иначе — знак
+                // препинания или часть многоточия.
+                '.' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                ',' or ';' or ':' => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                'г' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // «!=» — знак сравнения, а не конец предложения: число спрашивается первым.
+                '!' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '?' or Chars.Hellip
+                    => PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                'C' or 'F' or Chars.Numero
+                    => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Угловая скобка спорна между стрелкой и знаком сравнения: «<-» и «<=».
+                '<' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '+' or '~' or 'x' or '1' or '3'
+                    => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '0' or '2' or '4' or '5' or '6' or '7' or '8' or '9'
+                    => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 '"' or '\'' or Chars.Laquo or Chars.Raquo or Chars.Bdquo or Chars.Ldquo
                     or Chars.Lsquo or Chars.Rsquo
                     => QuoteRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                ' ' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
-                '-' => DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Пробел спорен: между «кое» и «что» он должен стать дефисом. Правило
+                // частиц спрашивается первым и почти всегда отказывается.
+                ' ' => DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || PunctuationRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '[' => SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Скобка и дефис спорны: «(c)» — знак, а не скобка со словом; «->» — стрелка,
+                // а не тире. Правило символов спрашивается первым, и только если оно не
+                // узнало свой образец, символ достаётся правилу пробелов или тире.
+                '(' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || SpaceRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                // Дефис спорен трижды: стрелка «->», наращение «25-й» и тире.
+                '-' => SymbolRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer)
+                    || DashRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
+                '>' => NumberRules.TryApply(source, i, previous, floor, rules, ref state, ref buffer),
                 _ => false,
             };
 
             if (handled)
             {
+                // Правило могло проглотить не один символ, а несколько: «(c)» — три,
+                // «->» — два. Курсор двигается на съеденное, чтобы хвост знака не попал
+                // в буфер отдельными буквами.
+                i += state.Skip;
+                state.Skip = 0;
                 continue;
             }
 
             buffer.Write(c);
-            SpaceRules.WriteSpaceAfterComma(source, i, previous, rules, ref state, ref buffer);
+            SpaceRules.WriteSpaceAfterPunctuation(source, i, previous, floor, rules, ref state, ref buffer);
         }
 
         if (buffer.Length > floor)

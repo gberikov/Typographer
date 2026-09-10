@@ -20,4 +20,17 @@ internal static class Chars
     public const char Minus = '\u2212';
     public const char Times = '\u00D7';
     public const char Degree = '\u00B0';
+    public const char Copyright = '\u00A9';
+    public const char Registered = '\u00AE';
+    public const char Trademark = '\u2122';
+    public const char ArrowRight = '\u2192';
+    public const char ArrowLeft = '\u2190';
+    public const char NotEqual = '\u2260';
+    public const char LessOrEqual = '\u2264';
+    public const char GreaterOrEqual = '\u2265';
+    public const char ApproxEqual = '\u2245';
+    public const char PlusMinus = '\u00B1';
+    public const char Half = '\u00BD';
+    public const char Quarter = '\u00BC';
+    public const char ThreeQuarters = '\u00BE';
 }
