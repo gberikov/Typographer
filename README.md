@@ -1,5 +1,7 @@
 # Typographer
 
+[![CI](https://github.com/gberikov/Typographer/actions/workflows/ci.yml/badge.svg)](https://github.com/gberikov/Typographer/actions/workflows/ci.yml)
+
 Типограф для русского языка на .NET: кавычки-ёлочки, тире, неразрывные пробелы, работает
 и с обычным текстом, и с HTML-фрагментами.
 
