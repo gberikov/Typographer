@@ -93,6 +93,17 @@ internal static class NbspRules
             return true;
         }
 
+        // Разряды числа, разбитые пробелами автором: «1 000 000». Число внутри себя рвать
+        // нельзя (ГОСТ 9.5), а разбивать его заново правилу разбиения уже нечего — остаётся
+        // сделать неразрывными пробелы, которые в тексте стоят. Признак разряда строгий:
+        // ровно три цифры справа и число слева, иначе «в 1941 1945» слиплось бы в одно.
+        if (rules.Contains(RuleId.Common.Number.DigitGrouping)
+            && state.PrevKind == TokenKind.Number && state.PrevLength > 0
+            && state.Kind == TokenKind.Number && IsDigitGroup(token))
+        {
+            return true;
+        }
+
         // Число слева, не число справа. «2026 2027» остаётся с обычным пробелом:
         // перечисление чисел рвать можно, а число и слово — нет (ГОСТ 9.4).
         if (state.PrevLength == 0 || state.PrevKind != TokenKind.Number || state.Kind == TokenKind.Number)
@@ -106,6 +117,25 @@ internal static class NbspRules
             || (rules.Contains(RuleId.Ru.Nbsp.Mln) && Dictionaries.IsMagnitude(token))
             || (rules.Contains(RuleId.Ru.Nbsp.RubleKopek) && Dictionaries.IsMoneyAbbreviation(token))
             || (rules.Contains(RuleId.Common.Nbsp.Dpi) && Dictionaries.IsResolution(token));
+    }
+
+    /// <summary>Токен — разряд числа: ровно три цифры и ничего кроме них.</summary>
+    private static bool IsDigitGroup(ReadOnlySpan<char> token)
+    {
+        if (token.Length != 3)
+        {
+            return false;
+        }
+
+        foreach (char c in token)
+        {
+            if (!char.IsDigit(c))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>Пробел ПОСЛЕ токена становится неразрывным.</summary>

@@ -146,6 +146,10 @@ internal static class WordBinder
     /// </summary>
     private const int MaxToken = 32;
 
+    /// <summary>Промилле и продецимилле — единицы, стоящие после числа через пробел.</summary>
+    private const char Permille = '\u2030';
+    private const char PerTenThousand = '\u2031';
+
     /// <summary>Хоть одно правило фазы включено, и проход имеет смысл запускать.</summary>
     public static bool IsEnabled(RuleSet rules) => rules.Overlaps(RuleSet.BindPhase);
 
@@ -319,6 +323,25 @@ internal static class WordBinder
                 buffer.Write(state.NoWrap ? ' ' : state.GlueForward ? Chars.Nbsp : c);
                 state.GlueForward = false;
                 continue;
+            }
+
+            // Знак единицы измерения после числа: «25 °C», «50 %», «10 ‰». ГОСТ 9.6 требует
+            // между числом и единицей неразрывный пробел. Обычная склейка этого не делает:
+            // знак не буква и не цифра, токеном он не становится, а следующая за ним буква
+            // («C» в «°C») от числа уже отрезана самим знаком. Решение принимается здесь,
+            // пока позиция пробела перед знаком ещё известна.
+            // Пробел обязан стоять ВПЛОТНУЮ к знаку: SpaceIndex указывает на пробел перед
+            // текущим токеном, и в «угле 30°15» это пробел перед «30», к градусу отношения
+            // не имеющий. Условие «последний записанный символ и есть тот пробел» отделяет
+            // «25 °C» от «30°15».
+            if (c is Chars.Degree or '%' or Permille or PerTenThousand
+                && state.SpaceIndex == buffer.Length - 1
+                && state.SpaceIndex >= state.SafeFrom
+                && state.PrevKind == TokenKind.Number && state.PrevLength > 0
+                && !state.NoWrap
+                && rules.Contains(RuleId.Common.Nbsp.AfterNumber))
+            {
+                buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
             }
 
             buffer.Write(c);
