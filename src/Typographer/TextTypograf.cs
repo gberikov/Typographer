@@ -73,26 +73,38 @@ public sealed class TextTypograf
             Preparer.Run(text, decodeEntities: false, _options.Rules, ref prepared, isDocumentStart: true);
 
             var state = new ScanState();
-            if (DocumentSpaceRules.IsEnabled(_options.Rules))
+            bool bind = WordBinder.IsEnabled(_options.Rules);
+            bool normalize = DocumentSpaceRules.IsEnabled(_options.Rules);
+
+            // Промежуточный буфер нужен, только если после фазы Scan есть кому работать.
+            // Каждая фаза пишет в свой буфер, а последняя — сразу в приёмник, поэтому лишней
+            // копии в конце нет ни при одном сочетании включённых правил. Фаза Bind пишет в
+            // буфер фазы Prepare: после фазы Scan он мёртв, и третий буфер не нужен.
+            var scanned = bind || normalize ? new CharBuffer(text.Length + 8) : default;
+            try
             {
-                // Нормализация читает готовый текст целиком, поэтому ей нужен свой проход и
-                // свой буфер. Все её правила вне Default — обычный вызов за них не платит.
-                var scanned = new CharBuffer(text.Length + 8);
-                try
+                ref CharBuffer afterScan = ref bind || normalize ? ref scanned : ref buffer;
+                TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref afterScan);
+
+                if (bind)
                 {
-                    TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref scanned);
-                    WordBinder.Run(ref scanned, _options.Rules);
+                    prepared.Truncate(0);
+                    ref CharBuffer afterBind = ref normalize ? ref prepared : ref buffer;
+                    WordBinder.Run(scanned.AsSpan(), _options.Rules, ref afterBind);
+
+                    if (normalize)
+                    {
+                        DocumentSpaceRules.Run(prepared.AsSpan(), _options.Rules, ref buffer);
+                    }
+                }
+                else if (normalize)
+                {
                     DocumentSpaceRules.Run(scanned.AsSpan(), _options.Rules, ref buffer);
                 }
-                finally
-                {
-                    scanned.Dispose();
-                }
             }
-            else
+            finally
             {
-                TextScanner.Run(prepared.AsSpan(), _options.Rules, ref state, ref buffer);
-                WordBinder.Run(ref buffer, _options.Rules);
+                scanned.Dispose();
             }
         }
         finally

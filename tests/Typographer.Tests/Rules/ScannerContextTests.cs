@@ -50,13 +50,16 @@ public class ScannerContextTests
             $"{Chars.Laquo}<a href=\"#\">Ссылка</a>{Chars.Raquo}",
             Html("\"<a href=\"#\">Ссылка</a>\""));
 
+    // Неразрывный пробел перед «б» ставит ru/nbsp/beforeParticle: одиночное «б» — краткая
+    // форма частицы «бы», и отрывать её от предыдущего слова нельзя. К спору о тире прямой
+    // речи это отношения не имеет, проверяется здесь именно дефис.
     [Fact]
     public void TagDoesNotLookLikeLineStart()
-        => Assert.Equal("<b>А</b>- б", Html("<b>А</b>- б"));
+        => Assert.Equal($"<b>А</b>-{Chars.Nbsp}б", Html("<b>А</b>- б"));
 
     [Fact]
     public void TextAndHtmlModesAgreeOnDash()
-        => Assert.Equal("А- б", Text("А- б"));
+        => Assert.Equal($"А-{Chars.Nbsp}б", Text("А- б"));
 
     // Кавычка сразу за запятой закрывающая, если уровень уже открыт: дописанный перед ней
     // пробел сделал бы её открывающей, и дальше уровни кавычек не сходятся до конца
@@ -64,7 +67,7 @@ public class ScannerContextTests
     [Fact]
     public void ClosingQuoteAfterCommaGetsNoSpace()
         => Assert.Equal(
-            $"{Chars.Laquo}Да,{Chars.Raquo} сказал он. {Chars.Laquo}Второй{Chars.Raquo}",
+            $"{Chars.Laquo}Да,{Chars.Raquo} сказал{Chars.Nbsp}он. {Chars.Laquo}Второй{Chars.Raquo}",
             Text("\"Да,\" сказал он. \"Второй\""));
 
     // Блочный тег — граница строки: за ним начинается новый абзац, даже если перевода

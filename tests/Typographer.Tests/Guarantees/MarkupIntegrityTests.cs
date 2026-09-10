@@ -15,6 +15,34 @@ public class MarkupIntegrityTests
         Assert.Equal(CountTags(source), CountTags(result));
     }
 
+    // Правила фазы Bind УСЕКАЮТ буфер («г.г.» в «гг.», повтор слова, знак рубля), и усечение
+    // мимо границы съело бы байты тега. Набор All включает их все разом — именно на нём
+    // нарушение гарантии 3 вероятнее всего.
+    [Theory]
+    [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
+    public void TagCountUnchanged_AllRules(string source)
+    {
+        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.All });
+        string result = typograf.Process(source);
+
+        Assert.Equal(CountTags(source), CountTags(result));
+    }
+
+    // Токен, разорванный тегом, правилу-перезаписи недоступен вовсе: усечение до его начала
+    // прошло бы сквозь разметку.
+    [Theory]
+    // Проверяется именно НЕИЗМЕННОСТЬ отрезка вокруг тега: пробелы снаружи правила
+    // склейки трогают законно, а вот слить «г.» и «г.» через тег или стереть повтор
+    // они не имеют права.
+    [InlineData("1990 г.<b>г.</b>", "г.<b>г.</b>")]
+    [InlineData("раз <b>раз</b>", "<b>раз</b>")]
+    [InlineData("P.<b>S.</b> текст", "P.<b>S.</b> текст")]
+    public void RewriteRulesStopAtMarkup(string source, string untouched)
+        => Assert.Contains(
+            untouched,
+            new HtmlTypograf(new HtmlOptions { Rules = RuleSet.All }).Process(source),
+            StringComparison.Ordinal);
+
     [Fact]
     public void CodeContentUntouched()
     {

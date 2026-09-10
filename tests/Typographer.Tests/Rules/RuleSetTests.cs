@@ -1,3 +1,4 @@
+using Typographer.Internal;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
@@ -128,10 +129,60 @@ public class RuleSetTests
     {
         // Реестр — источник имён для docs/rules.md и для RuleId.TryParse. Пропущенное имя
         // означает, что правило нельзя включить по имени, даже если код его реализует.
-        Assert.Equal(65, RuleId.Registry.All.Length);
+        Assert.Equal(96, RuleId.Registry.All.Length);
         Assert.True(RuleId.TryParse("common/space/afterColon", out _));
         Assert.True(RuleId.TryParse("ru/dash/kakto", out _));
         Assert.True(RuleId.TryParse("en-GB/dash/main", out _));
+        Assert.True(RuleId.TryParse("ru/nbsp/rubleKopek", out _));
+        Assert.True(RuleId.TryParse("ru/other/phone-number", out _));
+        Assert.True(RuleId.TryParse("common/other/delBOM", out _));
+    }
+
+    [Fact]
+    public void EveryRuleNameParsesBack()
+    {
+        foreach (RuleId rule in RuleSet.All)
+        {
+            Assert.True(RuleId.TryParse(rule.Name, out RuleId parsed), rule.Name);
+            Assert.Equal(rule, parsed);
+        }
+    }
+
+    [Fact]
+    public void BindPhaseMaskMatchesRegistry()
+    {
+        int bind = 0;
+        foreach (RuleId rule in RuleId.Registry.All)
+        {
+            if (rule.Phase == RulePhase.Bind)
+            {
+                bind++;
+            }
+        }
+
+        Assert.Equal(bind, RuleSet.BindPhase.Count);
+        Assert.True(RuleSet.Default.Overlaps(RuleSet.BindPhase));
+        Assert.False(RuleSet.None.Overlaps(RuleSet.BindPhase));
+    }
+
+    [Fact]
+    public void Overlaps_OnNull_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => RuleSet.Default.Overlaps(null!));
+    }
+
+    [Fact]
+    public void MoneyAndAccentAreOutOfDefault()
+    {
+        Assert.False(RuleSet.Default.Contains(RuleId.Ru.Money.Ruble));
+        Assert.False(RuleSet.Default.Contains(RuleId.Ru.Money.Currency));
+        Assert.False(RuleSet.Default.Contains(RuleId.Ru.Other.Accent));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Other.RepeatWord));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Nbsp.ReplaceNbsp));
+        Assert.True(RuleSet.Default.Contains(RuleId.Ru.Other.PhoneNumber));
+        Assert.True(RuleSet.Default.Contains(RuleId.Common.Other.DelBom));
+        Assert.True(RuleSet.Default.Contains(RuleId.Ru.Nbsp.Addr));
+        Assert.True(RuleSet.Default.Contains(RuleId.Ru.Date.FromIso));
     }
 
     [Fact]
@@ -164,15 +215,41 @@ public class RuleSetTests
     }
 
     [Fact]
+    public void PresetsDivergeOnBindRules()
+    {
+        // Оракул не отбивает адресное сокращение от следующего слова и оставляет пробел
+        // перед знаком процента; JS-typograf не связывает число со следующим словом.
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Ru.Nbsp.Addr));
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Common.Space.DelBeforePercent));
+        Assert.True(RuleSet.Default.Contains(RuleId.Ru.Nbsp.Addr));
+
+        Assert.False(RuleSet.Typograf.Contains(RuleId.Common.Nbsp.AfterNumber));
+        Assert.True(RuleSet.Default.Contains(RuleId.Common.Nbsp.AfterNumber));
+    }
+
+    [Fact]
+    public void LebedevKeepsAddressAbbreviationLoose()
+    {
+        Assert.Equal(
+            "ул. Ленина",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("ул. Ленина"));
+        Assert.Equal(
+            $"ул.{Chars.Nbsp}Ленина",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Default }).Process("ул. Ленина"));
+    }
+
+    [Fact]
     public void GostKeepsDashInYearRangeAndLebedevDoesNot()
     {
         // Расхождение снято снимком оракула: он оставляет дефис, ГОСТ 14.3 требует тире.
         // Приоритет источников ставит ГОСТ выше практики, поэтому в Default тире.
+        // Неразрывный пробел перед «гг.» ставит ru/nbsp/year, он включён в обоих пресетах и
+        // к спору о тире отношения не имеет — оракул ставит его там же.
         Assert.Equal(
-            "1941—1945 гг.",
+            $"1941—1945{Chars.Nbsp}гг.",
             new TextTypograf(new TextOptions { Rules = RuleSet.Gost }).Process("1941-1945 гг."));
         Assert.Equal(
-            "1941-1945 гг.",
+            $"1941-1945{Chars.Nbsp}гг.",
             new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("1941-1945 гг."));
     }
 }

@@ -7,7 +7,27 @@ internal static class Dictionaries
     /// Короткое слово — предлог, союз или частица длиной до трёх букв,
     /// после которого перенос строки нежелателен. ГОСТ Р 7.0.110-2025, 9.4.
     /// </summary>
-    public static bool IsShortWord(ReadOnlySpan<char> word) => word.Length is > 0 and <= 3;
+    /// <remarks>
+    /// Проверяются именно БУКВЫ, а не длина: токен фазы Bind включает точки и дефисы, и без
+    /// этой проверки «А-» в «А- б» считалось бы коротким словом и получало неразрывный пробел.
+    /// </remarks>
+    public static bool IsShortWord(ReadOnlySpan<char> word)
+    {
+        if (word.Length is 0 or > 3)
+        {
+            return false;
+        }
+
+        foreach (char c in word)
+        {
+            if (!char.IsLetter(c))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Проверяет, что слово может быть частью устойчивого сокращения:
@@ -15,6 +35,26 @@ internal static class Dictionaries
     /// </summary>
     public static bool IsAbbreviationPart(ReadOnlySpan<char> word)
         => word.Length == 1 && word[0] is 'т' or 'д' or 'п' or 'е' or 'н' or 'э' or 'г' or 'в';
+
+    /// <summary>Частицы, которые нельзя отрывать от предшествующего слова. ГОСТ 9.4.</summary>
+    private static readonly string[] Particles = ["ли", "ль", "же", "ж", "бы", "б"];
+
+    /// <summary>Слово — частица, которую нельзя отрывать от предыдущего слова.</summary>
+    public static bool IsParticle(ReadOnlySpan<char> word) => Contains(Particles, word);
+
+    /// <summary>
+    /// Предлоги и союзы длиной от четырёх букв, которые нельзя оставлять в конце строки.
+    /// Слова до трёх букв покрыты правилом короткого слова, и дублировать их здесь не нужно.
+    /// </summary>
+    private static readonly string[] FunctionWords =
+    [
+        "близ", "вместо", "вопреки", "перед", "после", "около", "среди", "сквозь", "через",
+        "между", "кроме", "чтобы", "когда", "хотя", "если", "либо", "итак", "зато", "даже",
+        "лишь", "пусть", "будто",
+    ];
+
+    /// <summary>Слово — предлог или союз из закрытого списка.</summary>
+    public static bool IsFunctionWord(ReadOnlySpan<char> word) => Contains(FunctionWords, word);
 
     /// <summary>
     /// Месяцы в именительном и родительном падеже: «январь» для интервала месяцев,
@@ -32,6 +72,88 @@ internal static class Dictionaries
     [
         "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье",
     ];
+
+    /// <summary>Сокращение года: «г.», «гг.» и те же без точки.</summary>
+    private static readonly string[] YearAbbreviations = ["г.", "гг.", "г", "гг"];
+
+    /// <summary>Слово — сокращение года.</summary>
+    public static bool IsYearAbbreviation(ReadOnlySpan<char> word) => Contains(YearAbbreviations, word);
+
+    /// <summary>Разряды числа словом: «тыс.», «млн», «млрд», «трлн» — с точкой и без.</summary>
+    private static readonly string[] Magnitudes =
+    [
+        "тыс.", "тыс", "млн", "млн.", "млрд", "млрд.", "трлн", "трлн.",
+    ];
+
+    /// <summary>Слово — название разряда числа.</summary>
+    public static bool IsMagnitude(ReadOnlySpan<char> word) => Contains(Magnitudes, word);
+
+    /// <summary>Денежные сокращения: рубли, копейки, доллары — с точкой и без.</summary>
+    private static readonly string[] MoneyAbbreviations =
+    [
+        "руб.", "руб", "коп.", "коп", "р.", "к.", "долл.", "долл",
+    ];
+
+    /// <summary>Слово — денежное сокращение.</summary>
+    public static bool IsMoneyAbbreviation(ReadOnlySpan<char> word) => Contains(MoneyAbbreviations, word);
+
+    /// <summary>Единицы разрешения печати и экрана.</summary>
+    private static readonly string[] Resolutions = ["dpi", "lpi", "ppi"];
+
+    /// <summary>Слово — единица разрешения.</summary>
+    public static bool IsResolution(ReadOnlySpan<char> word) => Contains(Resolutions, word);
+
+    /// <summary>
+    /// Адресные сокращения. Точка входит в образец: она и есть признак сокращения,
+    /// без неё «с» — предлог, а «д» — буква.
+    /// </summary>
+    private static readonly string[] AddressAbbreviations =
+    [
+        "г.", "обл.", "р-н", "ул.", "пр.", "пр-т", "пер.", "пл.", "наб.", "бул.", "ш.",
+        "д.", "корп.", "стр.", "кв.", "оф.", "под.", "эт.", "пос.", "с.", "дер.", "ст.", "мкр.",
+    ];
+
+    /// <summary>Слово — адресное сокращение.</summary>
+    public static bool IsAddressAbbreviation(ReadOnlySpan<char> word) => Contains(AddressAbbreviations, word);
+
+    /// <summary>Сокращения ссылок на части текста.</summary>
+    private static readonly string[] PageAbbreviations =
+    [
+        "стр.", "с.", "гл.", "рис.", "илл.", "табл.", "п.", "пп.", "ч.", "т.",
+    ];
+
+    /// <summary>Слово — сокращение ссылки на часть текста.</summary>
+    public static bool IsPageAbbreviation(ReadOnlySpan<char> word) => Contains(PageAbbreviations, word);
+
+    /// <summary>Отсылочные сокращения.</summary>
+    private static readonly string[] ReferenceAbbreviations = ["см.", "им.", "ср.", "напр."];
+
+    /// <summary>Слово — отсылочное сокращение.</summary>
+    public static bool IsReferenceAbbreviation(ReadOnlySpan<char> word)
+        => Contains(ReferenceAbbreviations, word);
+
+    /// <summary>Формы собственности и организационные сокращения. Регистр значим.</summary>
+    private static readonly string[] Organizations =
+    [
+        "ООО", "ОАО", "ЗАО", "ПАО", "АО", "НИИ", "ПБОЮЛ", "ИП", "НПО", "КБ",
+    ];
+
+    /// <summary>
+    /// Слово — форма собственности. Сравнение с учётом регистра: «ооо» строчными —
+    /// не название формы, а звук.
+    /// </summary>
+    public static bool IsOrganization(ReadOnlySpan<char> word)
+    {
+        foreach (string candidate in Organizations)
+        {
+            if (word.Equals(candidate.AsSpan(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>Слово — название месяца.</summary>
     public static bool IsMonth(ReadOnlySpan<char> word) => Contains(MonthNames, word);

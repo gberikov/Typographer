@@ -179,6 +179,58 @@ public readonly struct RuleId : IEquatable<RuleId>
         {
             /// <summary>Неразрывный пробел после короткого слова.</summary>
             public static RuleId AfterShortWord => Registry.AfterShortWord;
+
+            /// <summary>
+            /// Замена неразрывного пробела на обычный ДО типографирования. Вне
+            /// <see cref="RuleSet.Default"/>: неразрывный пробел во входе поставлен руками и
+            /// означает «здесь рвать нельзя», а правило это решение стирает. Работает только
+            /// вместе с правилами фазы Bind — без них текст останется вовсе без неразрывных пробелов.
+            /// </summary>
+            public static RuleId ReplaceNbsp => Registry.ReplaceNbsp;
+
+            /// <summary>Неразрывный пробел между числом и следующим за ним словом.</summary>
+            public static RuleId AfterNumber => Registry.NbspAfterNumber;
+
+            /// <summary>Неразрывный пробел перед «dpi», «lpi» и «ppi».</summary>
+            public static RuleId Dpi => Registry.NbspDpi;
+
+            /// <summary>Неразрывный пробел после предлога или союза из словаря.</summary>
+            public static RuleId AfterShortWordByList => Registry.NbspAfterShortWordByList;
+
+            /// <summary>
+            /// Неразрывный пробел перед последним коротким словом предложения. Конец
+            /// предложения распознаётся по точке ВНУТРИ токена, поэтому правило срабатывает и
+            /// перед сокращением: «Улица&#160;ул.&#160;Ленина». Отличить точку сокращения от
+            /// точки конца предложения без разбора смысла нельзя — за сокращением часто стоит
+            /// имя собственное с прописной буквы, — а лишний неразрывный пробел безвреден и
+            /// не противоречит Мильчину, который требует не отрывать сокращение от слова.
+            /// </summary>
+            public static RuleId BeforeShortLastWord => Registry.NbspBeforeShortLastWord;
+
+            /// <summary>Неразрывный пробел перед числом не длиннее двух цифр в конце предложения.</summary>
+            public static RuleId BeforeShortLastNumber => Registry.NbspBeforeShortLastNumber;
+
+            /// <summary>Узкий неразрывный пробел после знака параграфа.</summary>
+            public static RuleId AfterSectionMark => Registry.NbspAfterSectionMark;
+
+            /// <summary>Неразрывный пробел после знака абзаца.</summary>
+            public static RuleId AfterParagraphMark => Registry.NbspAfterParagraphMark;
+
+            /// <summary>Снятие неразрывных пробелов внутри тегов nobr и nowrap.</summary>
+            public static RuleId Nowrap => Registry.NbspNowrap;
+        }
+
+        /// <summary>Прочие правила, общие для языков.</summary>
+        public static class Other
+        {
+            /// <summary>Удаление метки порядка байт в начале документа.</summary>
+            public static RuleId DelBom => Registry.DelBom;
+
+            /// <summary>
+            /// Удаление повтора слова. Вне <see cref="RuleSet.Default"/>: правило стирает
+            /// слово, то есть меняет текст, а не оформление.
+            /// </summary>
+            public static RuleId RepeatWord => Registry.RepeatWord;
         }
     }
 
@@ -261,6 +313,81 @@ public readonly struct RuleId : IEquatable<RuleId>
 
             /// <summary>Привязка инициалов к фамилии.</summary>
             public static RuleId Initials => Registry.NbspInitials;
+
+            /// <summary>Неразрывный пробел между числом и названием месяца.</summary>
+            public static RuleId DayMonth => Registry.NbspDayMonth;
+
+            /// <summary>Неразрывный пробел между годом и сокращением «г.» или «гг.».</summary>
+            public static RuleId Year => Registry.NbspYear;
+
+            /// <summary>Неразрывный пробел перед «тыс.», «млн», «млрд» и «трлн».</summary>
+            public static RuleId Mln => Registry.NbspMln;
+
+            /// <summary>Неразрывный пробел перед «руб.», «коп.» и их однобуквенными формами.</summary>
+            public static RuleId RubleKopek => Registry.NbspRubleKopek;
+
+            /// <summary>Неразрывный пробел после адресных сокращений: «г.», «ул.», «д.», «кв.».</summary>
+            public static RuleId Addr => Registry.NbspAddr;
+
+            /// <summary>Неразрывный пробел после «стр.», «гл.», «рис.», «илл.».</summary>
+            public static RuleId Page => Registry.NbspPage;
+
+            /// <summary>Неразрывный пробел после «см.» и «им.».</summary>
+            public static RuleId See => Registry.NbspSee;
+
+            /// <summary>Неразрывный пробел после «ООО», «ОАО», «ЗАО», «НИИ» и им подобных.</summary>
+            public static RuleId Ooo => Registry.NbspOoo;
+
+            /// <summary>Неразрывный пробел перед частицами «ли», «ль», «же», «бы», «б».</summary>
+            public static RuleId BeforeParticle => Registry.NbspBeforeParticle;
+
+            /// <summary>Узкий неразрывный пробел после знака номера.</summary>
+            public static RuleId AfterNumberSign => Registry.NbspAfterNumberSign;
+
+            /// <summary>«г.г.» приводится к «гг.» с неразрывным пробелом перед ним.</summary>
+            public static RuleId Years => Registry.NbspYears;
+
+            /// <summary>«в. в.» приводится к «вв.» с неразрывным пробелом перед ним.</summary>
+            public static RuleId Centuries => Registry.NbspCenturies;
+
+            /// <summary>Неразрывный пробел внутри «P. S.» и «P. P. S.».</summary>
+            public static RuleId Ps => Registry.NbspPs;
+
+            /// <summary>«м2» и «м3» с квадратным и кубическим знаком и неразрывным пробелом.</summary>
+            public static RuleId M => Registry.NbspM;
+        }
+
+        /// <summary>Даты.</summary>
+        public static class Date
+        {
+            /// <summary>Дата вида ГГГГ-ММ-ДД приводится к виду ДД.ММ.ГГГГ.</summary>
+            public static RuleId FromIso => Registry.DateFromIso;
+
+            /// <summary>Название месяца и дня недели пишется со строчной буквы.</summary>
+            public static RuleId Weekday => Registry.DateWeekday;
+        }
+
+        /// <summary>Деньги. Обе записи вне <see cref="RuleSet.Default"/>: они меняют запись суммы.</summary>
+        public static class Money
+        {
+            /// <summary>Символ валюты переносится за число: «$100» становится «100 $».</summary>
+            public static RuleId Currency => Registry.MoneyCurrency;
+
+            /// <summary>«1 руб.» становится «1 ₽».</summary>
+            public static RuleId Ruble => Registry.MoneyRuble;
+        }
+
+        /// <summary>Прочие правила русского языка.</summary>
+        public static class Other
+        {
+            /// <summary>
+            /// Ударение: единственная прописная буква внутри слова становится строчной со
+            /// знаком ударения. Вне <see cref="RuleSet.Default"/>: правило меняет запись слова.
+            /// </summary>
+            public static RuleId Accent => Registry.OtherAccent;
+
+            /// <summary>Телефонный номер приводится к виду «+7 999 123-45-67» с неразрывными пробелами.</summary>
+            public static RuleId PhoneNumber => Registry.PhoneNumber;
         }
 
         /// <summary>Пунктуация русского языка.</summary>
@@ -414,6 +541,37 @@ public readonly struct RuleId : IEquatable<RuleId>
         public static readonly RuleId RuSymbolsNN = new(63, "ru/symbols/NN", RulePhase.Scan);
         public static readonly RuleId EnGbDashMain = new(64, "en-GB/dash/main", RulePhase.Scan);
         public static readonly RuleId EnUsDashMain = new(65, "en-US/dash/main", RulePhase.Scan);
+        public static readonly RuleId DelBom = new(66, "common/other/delBOM", RulePhase.Prepare);
+        public static readonly RuleId ReplaceNbsp = new(67, "common/nbsp/replaceNbsp", RulePhase.Prepare);
+        public static readonly RuleId NbspAfterNumber = new(68, "common/nbsp/afterNumber", RulePhase.Bind);
+        public static readonly RuleId NbspDayMonth = new(69, "ru/nbsp/dayMonth", RulePhase.Bind);
+        public static readonly RuleId NbspYear = new(70, "ru/nbsp/year", RulePhase.Bind);
+        public static readonly RuleId NbspMln = new(71, "ru/nbsp/mln", RulePhase.Bind);
+        public static readonly RuleId NbspRubleKopek = new(72, "ru/nbsp/rubleKopek", RulePhase.Bind);
+        public static readonly RuleId NbspDpi = new(73, "common/nbsp/dpi", RulePhase.Bind);
+        public static readonly RuleId NbspAddr = new(74, "ru/nbsp/addr", RulePhase.Bind);
+        public static readonly RuleId NbspPage = new(75, "ru/nbsp/page", RulePhase.Bind);
+        public static readonly RuleId NbspSee = new(76, "ru/nbsp/see", RulePhase.Bind);
+        public static readonly RuleId NbspOoo = new(77, "ru/nbsp/ooo", RulePhase.Bind);
+        public static readonly RuleId NbspBeforeParticle = new(78, "ru/nbsp/beforeParticle", RulePhase.Bind);
+        public static readonly RuleId NbspAfterShortWordByList = new(79, "common/nbsp/afterShortWordByList", RulePhase.Bind);
+        public static readonly RuleId NbspBeforeShortLastWord = new(80, "common/nbsp/beforeShortLastWord", RulePhase.Bind);
+        public static readonly RuleId NbspBeforeShortLastNumber = new(81, "common/nbsp/beforeShortLastNumber", RulePhase.Bind);
+        public static readonly RuleId NbspAfterNumberSign = new(82, "ru/nbsp/afterNumberSign", RulePhase.Bind);
+        public static readonly RuleId NbspAfterSectionMark = new(83, "common/nbsp/afterSectionMark", RulePhase.Bind);
+        public static readonly RuleId NbspAfterParagraphMark = new(84, "common/nbsp/afterParagraphMark", RulePhase.Bind);
+        public static readonly RuleId NbspYears = new(85, "ru/nbsp/years", RulePhase.Bind);
+        public static readonly RuleId NbspCenturies = new(86, "ru/nbsp/centuries", RulePhase.Bind);
+        public static readonly RuleId NbspPs = new(87, "ru/nbsp/ps", RulePhase.Bind);
+        public static readonly RuleId NbspM = new(88, "ru/nbsp/m", RulePhase.Bind);
+        public static readonly RuleId NbspNowrap = new(89, "common/nbsp/nowrap", RulePhase.Bind);
+        public static readonly RuleId DateFromIso = new(90, "ru/date/fromISO", RulePhase.Bind);
+        public static readonly RuleId DateWeekday = new(91, "ru/date/weekday", RulePhase.Bind);
+        public static readonly RuleId MoneyCurrency = new(92, "ru/money/currency", RulePhase.Bind);
+        public static readonly RuleId MoneyRuble = new(93, "ru/money/ruble", RulePhase.Bind);
+        public static readonly RuleId OtherAccent = new(94, "ru/other/accent", RulePhase.Bind);
+        public static readonly RuleId RepeatWord = new(95, "common/other/repeatWord", RulePhase.Bind);
+        public static readonly RuleId PhoneNumber = new(96, "ru/other/phone-number", RulePhase.Bind);
 
         public static readonly RuleId[] All =
         [
@@ -430,6 +588,13 @@ public readonly struct RuleId : IEquatable<RuleId>
             DashTime, DashDaysMonth, DashMonth, DashWeekday, DashSurname,
             PunctuationExclamation, PunctuationExclamationQuestion, PunctuationHellipQuestion, RuNumberComma, RuNumberOrdinals,
             RuSpaceAfterHellip, RuSpaceYear, RuSymbolsNN, EnGbDashMain, EnUsDashMain,
+            DelBom, ReplaceNbsp, NbspAfterNumber, NbspDayMonth, NbspYear,
+            NbspMln, NbspRubleKopek, NbspDpi, NbspAddr, NbspPage,
+            NbspSee, NbspOoo, NbspBeforeParticle, NbspAfterShortWordByList, NbspBeforeShortLastWord,
+            NbspBeforeShortLastNumber, NbspAfterNumberSign, NbspAfterSectionMark, NbspAfterParagraphMark, NbspYears,
+            NbspCenturies, NbspPs, NbspM, NbspNowrap, DateFromIso,
+            DateWeekday, MoneyCurrency, MoneyRuble, OtherAccent, RepeatWord,
+            PhoneNumber,
         ];
 
         /// <summary>Правила, выключенные в пресете Default: меняют смысл текста.</summary>
@@ -450,11 +615,13 @@ public readonly struct RuleId : IEquatable<RuleId>
         /// Правила, доступные по требованию, но выключенные в Default по своим причинам:
         /// разбиение разрядов меняет запись числа; quoteLink не реализуется вовсе (нарушает
         /// гарантию 3); частица «де» ошибается на иностранных фамилиях; английское тире
-        /// относится к другому языку.
+        /// относится к другому языку; деньги, ударение и повтор слова меняют запись самого
+        /// текста; снятие неразрывных пробелов стирает решение автора.
         /// </summary>
         public static readonly RuleId[] OptIn =
         [
             NumberDigitGrouping, QuoteLink, DashTo, DashKakTo, DashDe, EnGbDashMain, EnUsDashMain,
+            ReplaceNbsp, MoneyCurrency, MoneyRuble, OtherAccent, RepeatWord,
         ];
     }
 }
