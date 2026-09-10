@@ -129,13 +129,48 @@ public class RuleSetTests
     {
         // Реестр — источник имён для docs/rules.md и для RuleId.TryParse. Пропущенное имя
         // означает, что правило нельзя включить по имени, даже если код его реализует.
-        Assert.Equal(96, RuleId.Registry.All.Length);
+        Assert.Equal(107, RuleId.Registry.All.Length);
         Assert.True(RuleId.TryParse("common/space/afterColon", out _));
         Assert.True(RuleId.TryParse("ru/dash/kakto", out _));
         Assert.True(RuleId.TryParse("en-GB/dash/main", out _));
         Assert.True(RuleId.TryParse("ru/nbsp/rubleKopek", out _));
         Assert.True(RuleId.TryParse("ru/other/phone-number", out _));
         Assert.True(RuleId.TryParse("common/other/delBOM", out _));
+    }
+
+    [Fact]
+    public void RegistryHasAllHundredSevenRules()
+    {
+        // Число правил закреплено в RegistryHasEveryScanRuleOfTheSpec; здесь — имена
+        // последней группы, добавленной планом 2d.
+        Assert.True(RuleId.TryParse("common/html/quot", out _));
+        Assert.True(RuleId.TryParse("common/html/e-mail", out _));
+        Assert.True(RuleId.TryParse("ru/optalign/quote", out _));
+    }
+
+    [Fact]
+    public void HtmlRulesAreOutOfDefaultExceptQuot()
+    {
+        Assert.True(RuleSet.Default.Contains(RuleId.Common.Html.Quot));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Html.Url));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Html.EMail));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Html.Nbr));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Html.P));
+        Assert.False(RuleSet.Default.Contains(RuleId.Common.Html.Escape));
+        Assert.False(RuleSet.Default.Contains(RuleId.Ru.OptAlign.Quote));
+        Assert.False(RuleSet.Default.Contains(RuleId.Ru.OptAlign.Bracket));
+        Assert.False(RuleSet.Default.Contains(RuleId.Ru.OptAlign.Comma));
+    }
+
+    [Fact]
+    public void MarkupChangingRulesAreAllOutOfDefault()
+    {
+        // Гарантия 4: ни одно правило Default не делает тега из текста.
+        foreach (RuleId rule in RuleId.Registry.MarkupChanging)
+        {
+            Assert.False(RuleSet.Default.Contains(rule), rule.Name);
+            Assert.True(RuleSet.All.Contains(rule), rule.Name);
+        }
     }
 
     [Fact]

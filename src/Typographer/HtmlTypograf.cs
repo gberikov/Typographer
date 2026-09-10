@@ -109,7 +109,7 @@ public sealed class HtmlTypograf
             {
                 LayoutWriter.Run(bound.AsSpan(), _options, canWrapParagraphs, ref laidOut);
             }
-            Emitter.EncodeDocument(laidOut.AsSpan(), _options.Entities, ref output);
+            Emitter.EncodeDocument(laidOut.AsSpan(), _options.Entities, _options.Rules, ref output);
         }
         finally
         {

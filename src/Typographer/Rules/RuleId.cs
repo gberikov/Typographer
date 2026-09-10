@@ -220,6 +220,63 @@ public readonly struct RuleId : IEquatable<RuleId>
             public static RuleId Nowrap => Registry.NbspNowrap;
         }
 
+        /// <summary>Правила уровня разметки. Работают только в HTML-режиме.</summary>
+        public static class Html
+        {
+            /// <summary>Сущность прямой кавычки декодируется в символ до расстановки кавычек.</summary>
+            public static RuleId Quot => Registry.HtmlQuot;
+
+            /// <summary>
+            /// Веб-адрес в тексте становится ссылкой. Вне <see cref="RuleSet.Default"/>:
+            /// правило делает тег из текста, а гарантия 4 обещает, что правила
+            /// <see cref="RuleSet.Default"/> так не поступают.
+            /// </summary>
+            public static RuleId Url => Registry.HtmlUrl;
+
+            /// <summary>
+            /// Адрес электронной почты становится ссылкой. Вне <see cref="RuleSet.Default"/>
+            /// по той же причине, что и <see cref="Url"/>.
+            /// </summary>
+            public static RuleId EMail => Registry.HtmlEmail;
+
+            /// <summary>
+            /// Перевод строки размечается тегом переноса. То же, что
+            /// <see cref="HtmlOptions.UseBr"/>: включено любое из двух — тег ставится.
+            /// Вне <see cref="RuleSet.Default"/>; гарантия 5 на него не распространяется —
+            /// прогон по собственному выводу вкладывает теги повторно.
+            /// </summary>
+            public static RuleId Nbr => Registry.HtmlNbr;
+
+            /// <summary>
+            /// Абзацы оборачиваются тегом абзаца. То же, что <see cref="HtmlOptions.UseP"/>:
+            /// включено любое из двух — теги ставятся. Вне <see cref="RuleSet.Default"/>.
+            /// </summary>
+            public static RuleId P => Registry.HtmlP;
+
+            /// <summary>
+            /// Экранирование разметки: документ выходит текстом. Вне
+            /// <see cref="RuleSet.Default"/>, единственное исключение из гарантии 3, и
+            /// неподвижной точки не имеет — на втором прогоне «&amp;amp;» станет
+            /// «&amp;amp;amp;», поэтому гарантия 5 на него тоже не распространяется.
+            /// </summary>
+            public static RuleId Escape => Registry.HtmlEscape;
+
+            /// <summary>
+            /// Удаление тегов. НЕ РЕАЛИЗУЕТСЯ: это санитайзинг, а не типографика, и он
+            /// противоречит гарантии 3, которая обещает разметку байт в байт. Имя
+            /// зарегистрировано ради паритета с JS-typograf, чтобы
+            /// <see cref="RuleId.TryParse"/> его узнавал, а справочник правил был полным.
+            /// </summary>
+            public static RuleId StripTags => Registry.HtmlStripTags;
+
+            /// <summary>
+            /// Типографирование значений атрибутов. НЕ РЕАЛИЗУЕТСЯ: гарантия 3 обещает
+            /// атрибуты байт в байт, а реализация требует разбора значений внутри тега и
+            /// повторного запуска всего конвейера на каждом из них.
+            /// </summary>
+            public static RuleId ProcessingAttrs => Registry.HtmlProcessingAttrs;
+        }
+
         /// <summary>Прочие правила, общие для языков.</summary>
         public static class Other
         {
@@ -437,6 +494,23 @@ public readonly struct RuleId : IEquatable<RuleId>
             public static RuleId NN => Registry.RuSymbolsNN;
         }
 
+        /// <summary>
+        /// Висячая пунктуация. Все три правила вне <see cref="RuleSet.Default"/>: они
+        /// оборачивают символ в тег, а выравнивание делает CSS на стороне сайта — без него
+        /// вывод ничем не отличается от обычного.
+        /// </summary>
+        public static class OptAlign
+        {
+            /// <summary>Открывающая кавычка выносится за левый край набора.</summary>
+            public static RuleId Quote => Registry.OptAlignQuote;
+
+            /// <summary>Открывающая скобка выносится за левый край набора.</summary>
+            public static RuleId Bracket => Registry.OptAlignBracket;
+
+            /// <summary>Запятая выносится за правый край набора.</summary>
+            public static RuleId Comma => Registry.OptAlignComma;
+        }
+
         /// <summary>Исправление опечаток.</summary>
         public static class Typo
         {
@@ -572,6 +646,17 @@ public readonly struct RuleId : IEquatable<RuleId>
         public static readonly RuleId OtherAccent = new(94, "ru/other/accent", RulePhase.Bind);
         public static readonly RuleId RepeatWord = new(95, "common/other/repeatWord", RulePhase.Bind);
         public static readonly RuleId PhoneNumber = new(96, "ru/other/phone-number", RulePhase.Bind);
+        public static readonly RuleId HtmlQuot = new(97, "common/html/quot", RulePhase.Prepare);
+        public static readonly RuleId HtmlUrl = new(98, "common/html/url", RulePhase.Layout);
+        public static readonly RuleId HtmlEmail = new(99, "common/html/e-mail", RulePhase.Layout);
+        public static readonly RuleId OptAlignQuote = new(100, "ru/optalign/quote", RulePhase.Layout);
+        public static readonly RuleId OptAlignBracket = new(101, "ru/optalign/bracket", RulePhase.Layout);
+        public static readonly RuleId OptAlignComma = new(102, "ru/optalign/comma", RulePhase.Layout);
+        public static readonly RuleId HtmlNbr = new(103, "common/html/nbr", RulePhase.Layout);
+        public static readonly RuleId HtmlP = new(104, "common/html/p", RulePhase.Layout);
+        public static readonly RuleId HtmlEscape = new(105, "common/html/escape", RulePhase.Emit);
+        public static readonly RuleId HtmlStripTags = new(106, "common/html/stripTags", RulePhase.Emit);
+        public static readonly RuleId HtmlProcessingAttrs = new(107, "common/html/processingAttrs", RulePhase.Protect);
 
         public static readonly RuleId[] All =
         [
@@ -594,7 +679,20 @@ public readonly struct RuleId : IEquatable<RuleId>
             NbspBeforeShortLastNumber, NbspAfterNumberSign, NbspAfterSectionMark, NbspAfterParagraphMark, NbspYears,
             NbspCenturies, NbspPs, NbspM, NbspNowrap, DateFromIso,
             DateWeekday, MoneyCurrency, MoneyRuble, OtherAccent, RepeatWord,
-            PhoneNumber,
+            PhoneNumber, HtmlQuot, HtmlUrl, HtmlEmail, OptAlignQuote,
+            OptAlignBracket, OptAlignComma, HtmlNbr, HtmlP, HtmlEscape,
+            HtmlStripTags, HtmlProcessingAttrs,
+        ];
+
+        /// <summary>
+        /// Правила, которые создают разметку из текста или преобразуют её целиком. Все они
+        /// вне Default (гарантия 4), и прогоны гарантии 3, сравнивающие число тегов до и
+        /// после, их исключают: эти правила теги добавляют и снимают законно.
+        /// </summary>
+        public static readonly RuleId[] MarkupChanging =
+        [
+            HtmlUrl, HtmlEmail, HtmlNbr, HtmlP, HtmlEscape, HtmlStripTags,
+            OptAlignQuote, OptAlignBracket, OptAlignComma,
         ];
 
         /// <summary>Правила, выключенные в пресете Default: меняют смысл текста.</summary>
@@ -622,6 +720,8 @@ public readonly struct RuleId : IEquatable<RuleId>
         [
             NumberDigitGrouping, QuoteLink, DashTo, DashKakTo, DashDe, EnGbDashMain, EnUsDashMain,
             ReplaceNbsp, MoneyCurrency, MoneyRuble, OtherAccent, RepeatWord,
+            HtmlUrl, HtmlEmail, HtmlNbr, HtmlP, HtmlEscape, HtmlStripTags, HtmlProcessingAttrs,
+            OptAlignQuote, OptAlignBracket, OptAlignComma,
         ];
     }
 }

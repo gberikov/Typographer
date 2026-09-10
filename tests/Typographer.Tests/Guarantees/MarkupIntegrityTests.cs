@@ -18,11 +18,17 @@ public class MarkupIntegrityTests
     // Правила фазы Bind УСЕКАЮТ буфер («г.г.» в «гг.», повтор слова, знак рубля), и усечение
     // мимо границы съело бы байты тега. Набор All включает их все разом — именно на нём
     // нарушение гарантии 3 вероятнее всего.
+    // Правила из Registry.MarkupChanging из набора исключены: тест проверяет сохранность
+    // СУЩЕСТВУЮЩЕЙ разметки, а автоссылки, висячая пунктуация, переносы и абзацы теги
+    // добавляют законно — это их работа, и она разрешена только вне Default (гарантия 4).
     [Theory]
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void TagCountUnchanged_AllRules(string source)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.All });
+        var typograf = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.All.Without(RuleId.Registry.MarkupChanging),
+        });
         string result = typograf.Process(source);
 
         Assert.Equal(CountTags(source), CountTags(result));
@@ -40,7 +46,10 @@ public class MarkupIntegrityTests
     public void RewriteRulesStopAtMarkup(string source, string untouched)
         => Assert.Contains(
             untouched,
-            new HtmlTypograf(new HtmlOptions { Rules = RuleSet.All }).Process(source),
+            new HtmlTypograf(new HtmlOptions
+            {
+                Rules = RuleSet.All.Without(RuleId.Registry.MarkupChanging),
+            }).Process(source),
             StringComparison.Ordinal);
 
     [Fact]

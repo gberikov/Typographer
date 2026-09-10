@@ -55,9 +55,21 @@ internal static class Preparer
         // ошибка, а прямое следствие включения правила в одиночку.
         bool replaceNbsp = rules.Contains(RuleId.Common.Nbsp.ReplaceNbsp);
 
+        // Сущность прямой кавычки декодируется отдельным правилом и только здесь. В таблицу
+        // типографских сущностей она не входит намеренно: иначе фаза Emit начала бы кодировать
+        // обратно КАЖДУЮ прямую кавычку в тексте, чего не просил никто.
+        bool quot = decodeEntities && rules.Contains(RuleId.Common.Html.Quot);
+
         for (int i = start; i < source.Length; i++)
         {
             char c = source[i];
+
+            if (quot && c == '&' && TryDecodeQuot(source.Slice(i), out int quotLength))
+            {
+                buffer.Write('"');
+                i += quotLength - 1;
+                continue;
+            }
 
             if (decodeEntities && c == '&'
                 && EntityTable.TryDecode(source.Slice(i), out char value, out int consumed))
@@ -69,6 +81,39 @@ internal static class Preparer
 
             buffer.Write(replaceNbsp && c == Chars.Nbsp ? ' ' : c);
         }
+    }
+
+    /// <summary>
+    /// Сущность прямой кавычки: «&amp;quot;», «&amp;#34;» и «&amp;#x22;». Остальные сущности
+    /// разметки (&amp;amp;, &amp;lt;, &amp;gt;) не декодируются никогда: они несут смысл
+    /// разметки, и раскодировать их значило бы сделать текст разметкой.
+    /// </summary>
+    private static bool TryDecodeQuot(ReadOnlySpan<char> source, out int length)
+    {
+        if (source.StartsWith("&quot;".AsSpan(), StringComparison.Ordinal))
+        {
+            length = 6;
+            return true;
+        }
+
+        if (source.StartsWith("&#".AsSpan(), StringComparison.Ordinal))
+        {
+            int end = source.Slice(0, Math.Min(source.Length, 8)).IndexOf(';');
+            if (end > 2)
+            {
+                ReadOnlySpan<char> digits = source.Slice(2, end - 2);
+                if (digits.SequenceEqual("34".AsSpan())
+                    || digits.SequenceEqual("x22".AsSpan())
+                    || digits.SequenceEqual("X22".AsSpan()))
+                {
+                    length = end + 1;
+                    return true;
+                }
+            }
+        }
+
+        length = 0;
+        return false;
     }
 
     /// <summary>
