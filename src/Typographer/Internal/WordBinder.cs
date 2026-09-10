@@ -40,6 +40,12 @@ internal struct BindState
     /// <summary>Длина предыдущего токена.</summary>
     public int PrevLength;
 
+    /// <summary>Позиция начала предыдущего токена в буфере вывода.</summary>
+    public int PrevTokenStart;
+
+    /// <summary>Позиция пробела перед ПРЕДЫДУЩИМ токеном, -1 — связывать нечего.</summary>
+    public int PrevSpaceIndex;
+
     /// <summary>Вид предыдущего токена: правила «число и слово» смотрят именно на него.</summary>
     public TokenKind PrevKind;
 
@@ -65,6 +71,8 @@ internal struct BindState
         HasDigit = false;
         SpaceIndex = -1;
         PrevLength = 0;
+        PrevTokenStart = 0;
+        PrevSpaceIndex = -1;
         PrevKind = TokenKind.Word;
         SafeFrom = 0;
         GlueForward = false;
@@ -82,6 +90,8 @@ internal struct BindState
         ResetToken();
         SpaceIndex = -1;
         PrevLength = 0;
+        PrevTokenStart = 0;
+        PrevSpaceIndex = -1;
         PrevKind = TokenKind.Word;
         GlueForward = false;
     }
@@ -278,6 +288,8 @@ internal static class WordBinder
         token = previous;
         previous = finished;
         state.PrevLength = state.TokenLength;
+        state.PrevTokenStart = state.TokenStart;
+        state.PrevSpaceIndex = state.SpaceIndex;
         state.PrevKind = state.Kind;
         state.ResetToken();
         return true;
