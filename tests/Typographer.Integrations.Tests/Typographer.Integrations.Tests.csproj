@@ -19,6 +19,7 @@
     <ProjectReference Include="../../src/Typographer.DependencyInjection/Typographer.DependencyInjection.csproj" />
     <ProjectReference Include="../../src/Typographer.AspNetCore/Typographer.AspNetCore.csproj" />
     <ProjectReference Include="../../src/Typographer.Markdig/Typographer.Markdig.csproj" />
+    <ProjectReference Include="../../src/Typographer.Cli/Typographer.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>dotnet-typograf</AssemblyName>
+    <RootNamespace>Typographer.Cli</RootNamespace>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotnet-typograf</ToolCommandName>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <PackageId>dotnet-typograf</PackageId>
+    <Description>Типограф для русского языка в командной строке.</Description>
+    <PackageTags>typography;russian;typograf;cli;dotnet-tool</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/gberikov/Typographer</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="all" />
+    <ProjectReference Include="../Typographer/Typographer.csproj" />
+    <InternalsVisibleTo Include="Typographer.Integrations.Tests" />
+  </ItemGroup>
+
+</Project>

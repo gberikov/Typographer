@@ -63,7 +63,7 @@
 | `src/Typographer.Markdig/BlockTypograf.cs` | типографика текста блока с сохранением разметки |
 | `src/Typographer.Cli/Typographer.Cli.csproj` | пакет утилиты `dotnet-typograf` |
 | `src/Typographer.Cli/Program.cs` | точка входа, только консольная обвязка |
-| `src/Typographer.Cli/Cli.cs` | разбор ключей и работа с потоками — всё, что тестируется |
+| `src/Typographer.Cli/CommandLine.cs` | разбор ключей и работа с потоками — всё, что тестируется |
 | `tests/Typographer.Integrations.Tests/**` | тесты всех четырёх интеграций |
 | `Typographer.slnx` | пять новых проектов в решении |
 | `README.md`, `docs/spec.md` | раздел про пакеты |
@@ -921,7 +921,7 @@ rtk git commit -m "feat: расширение Markdig для типографи�
 
 **Files:**
 - Create: `src/Typographer.Cli/Typographer.Cli.csproj`
-- Create: `src/Typographer.Cli/Cli.cs`
+- Create: `src/Typographer.Cli/CommandLine.cs`
 - Create: `src/Typographer.Cli/Program.cs`
 - Modify: `tests/Typographer.Integrations.Tests/Typographer.Integrations.Tests.csproj`
 - Create: `tests/Typographer.Integrations.Tests/CliTests.cs`
@@ -931,7 +931,7 @@ rtk git commit -m "feat: расширение Markdig для типографи�
 - Consumes: `HtmlTypograf`, `TextTypograf`, `HtmlOptions`, `TextOptions`, `EntityMode`,
   `RuleSet`, `RuleId.TryParse(string, out RuleId)`, `RuleId.Registry` недоступен снаружи —
   список правил берётся перечислением `RuleSet.All`.
-- Produces: `internal static int Cli.Run(string[] args, TextReader input, TextWriter output, TextWriter error)`.
+- Produces: `internal static int CommandLine.Run(string[] args, TextReader input, TextWriter output, TextWriter error)`.
   Ничего наружу пакет не отдаёт: это утилита, а не библиотека.
 
 - [ ] **Step 1: Завести проект утилиты**
@@ -1008,7 +1008,7 @@ public class CliTests
     {
         var output = new StringWriter();
         var error = new StringWriter();
-        int code = Cli.Run(args, new StringReader(input), output, error);
+        int code = CommandLine.Run(args, new StringReader(input), output, error);
         return (code, output.ToString(), error.ToString());
     }
 
@@ -1168,11 +1168,11 @@ public class CliTests
 - [ ] **Step 4: Убедиться, что тест падает**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
-Ожидается: ошибка компиляции — тип `Cli` не найден.
+Ожидается: ошибка компиляции — тип `CommandLine` не найден.
 
 - [ ] **Step 5: Реализовать разбор ключей и работу**
 
-Создать `src/Typographer.Cli/Cli.cs`:
+Создать `src/Typographer.Cli/CommandLine.cs`:
 
 ```csharp
 using System.Globalization;
@@ -1183,7 +1183,7 @@ using Typographer.Rules;
 namespace Typographer.Cli;
 
 /// <summary>Разбор ключей и работа с потоками. Всё, что можно проверить тестом.</summary>
-internal static class Cli
+internal static class CommandLine
 {
     private const string Help = """
         Типограф для русского языка.
@@ -1424,7 +1424,7 @@ internal static class Cli
     }
 
     private static string Version()
-        => typeof(Cli).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        => typeof(CommandLine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                ?.InformationalVersion
            ?? "0.0.0";
 
@@ -1448,13 +1448,17 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
-        // Консоль Windows по умолчанию не в UTF-8, и кавычки-ёлочки превратились бы
-        // в вопросительные знаки. Перенаправленный вывод менять не нужно и нельзя.
+        // UTF-8 задаётся потокам явно, а не через Console.InputEncoding: перенаправленный
+        // ввод-вывод в Windows иначе кодируется кодовой страницей консоли, и кавычки-ёлочки
+        // в файле превращаются в угловые скобки. Кодовая страница самой консоли меняется
+        // отдельно — иначе те же байты стали бы кашей уже на экране.
+        var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
         if (!Console.IsOutputRedirected)
         {
             try
             {
-                Console.OutputEncoding = new UTF8Encoding(false);
+                Console.OutputEncoding = utf8;
             }
             catch (IOException)
             {
@@ -1462,7 +1466,11 @@ internal static class Program
             }
         }
 
-        return Cli.Run(args, Console.In, Console.Out, Console.Error);
+        using var input = new StreamReader(Console.OpenStandardInput(), utf8);
+        using var output = new StreamWriter(Console.OpenStandardOutput(), utf8) { AutoFlush = true };
+        using var error = new StreamWriter(Console.OpenStandardError(), utf8) { AutoFlush = true };
+
+        return CommandLine.Run(args, input, output, error);
     }
 }
 ```
