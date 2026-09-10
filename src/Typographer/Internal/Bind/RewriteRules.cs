@@ -172,8 +172,17 @@ internal static class RewriteRules
         return true;
     }
 
-    /// <summary>Заменяет хвост буфера начиная с <paramref name="from"/> на замену.</summary>
-    private static bool Replace(
+    /// <summary>
+    /// Заменяет хвост буфера начиная с <paramref name="from"/> на замену и приводит к ней
+    /// стековую копию токена. Общий помощник всех правил-перезаписей, включая
+    /// <see cref="DateRules"/>.
+    /// </summary>
+    /// <param name="replacement">Новое содержимое токена.</param>
+    /// <param name="token">Стековая копия токена.</param>
+    /// <param name="from">Позиция в буфере, с которой начинается заменяемый отрезок.</param>
+    /// <param name="state">Состояние фазы.</param>
+    /// <param name="buffer">Буфер вывода.</param>
+    public static bool Replace(
         ReadOnlySpan<char> replacement, Span<char> token, int from,
         ref BindState state, ref CharBuffer buffer)
     {

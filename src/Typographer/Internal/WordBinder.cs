@@ -303,6 +303,9 @@ internal static class WordBinder
         RewriteRules.TryRewrite(
             token, previous.Slice(0, state.PrevLength), boundary, rules, ref state, ref buffer);
 
+        DateRules.TryRewrite(
+            token, previous.Slice(0, state.PrevLength), boundary, rules, ref state, ref buffer);
+
         NbspRules.TryGlue(
             token.Slice(0, state.TokenLength), previous.Slice(0, state.PrevLength),
             boundary, rules, ref state, ref buffer);
