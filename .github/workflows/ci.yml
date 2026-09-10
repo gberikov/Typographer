@@ -10,12 +10,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
             10.0.x
+
+      # Сборка отдельным шагом, потому что `dotnet test` строит только то, что нужно
+      # тестам, а тестовый проект нацелен на net10.0. Ядро при этом многоцелевое, и без
+      # этого шага netstandard2.0 и net8.0 не проверялись бы вовсе.
+      - run: dotnet build -c Release
+
       - run: dotnet test -c Release

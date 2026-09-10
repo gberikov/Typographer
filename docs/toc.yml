@@ -1,0 +1,16 @@
+- name: Быстрый старт
+  href: quickstart.md
+- name: Справочник правил
+  href: rules.md
+- name: Рецепты
+  href: recipes.md
+- name: Архитектура
+  href: architecture.md
+- name: Источники
+  href: sources.md
+- name: Производительность
+  href: perf.md
+- name: Спецификация
+  href: spec.md
+- name: API
+  href: api/
