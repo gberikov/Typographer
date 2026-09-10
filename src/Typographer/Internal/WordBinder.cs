@@ -221,6 +221,18 @@ internal static class WordBinder
 
             bool flushed = FlushToken(c, rules, ref token, ref previous, ref state, ref buffer);
 
+            // Символьные правила: они пишут сами и сообщают, сколько символов документа
+            // проглотили. То, что они записали, для токенного окна непрозрачно — окно
+            // сбрасывается, а SafeFrom запрещает переписывать записанное.
+            if (MarkRules.TryApply(document, i, end, rules, ref state, ref buffer))
+            {
+                i += state.Skip;
+                state.Skip = 0;
+                state.Reset();
+                state.SafeFrom = buffer.Length;
+                continue;
+            }
+
             if (c is ' ' or Chars.Nbsp)
             {
                 // Позиция пробела запоминается ДО записи: правило-склейка следующего токена

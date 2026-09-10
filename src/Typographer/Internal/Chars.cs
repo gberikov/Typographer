@@ -17,6 +17,8 @@ internal static class Chars
     public const char NDash = '\u2013';
     public const char Hellip = '\u2026';
     public const char Numero = '\u2116';
+    public const char Section = '\u00A7';
+    public const char Pilcrow = '\u00B6';
     public const char Minus = '\u2212';
     public const char Times = '\u00D7';
     public const char Degree = '\u00B0';
