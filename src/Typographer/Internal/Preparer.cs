@@ -70,8 +70,24 @@ internal static class Preparer
         // нарушая гарантию 5.
         bool replaceTab = rules.Contains(RuleId.Common.Space.ReplaceTab);
 
+        // Фазе интересны три символа из всего текста. Между ними — сплошной кусок, который
+        // копируется целиком, а не по символу: поиск в спане векторизован, а посимвольный
+        // цикл нет. На обычном тексте таких символов единицы на тысячу.
         for (int i = start; i < source.Length; i++)
         {
+            int next = IndexOfInteresting(source.Slice(i), decodeEntities, replaceNbsp, replaceTab);
+            if (next < 0)
+            {
+                buffer.Write(source.Slice(i));
+                return;
+            }
+
+            if (next > 0)
+            {
+                buffer.Write(source.Slice(i, next));
+                i += next;
+            }
+
             char c = source[i];
 
             if (replaceTab && c == '\t')
@@ -101,6 +117,26 @@ internal static class Preparer
 
             buffer.Write(replaceNbsp && c == Chars.Nbsp ? ' ' : c);
         }
+    }
+
+    /// <summary>
+    /// Ближайший символ, который фазе есть смысл рассматривать: амперсанд (сущность),
+    /// табуляция и неразрывный пробел. Набор зависит от включённых правил: искать то,
+    /// что всё равно не будет тронуто, значит найти лишнюю границу и потерять кусок.
+    /// </summary>
+    private static int IndexOfInteresting(
+        ReadOnlySpan<char> source, bool decodeEntities, bool replaceNbsp, bool replaceTab)
+    {
+        if (decodeEntities)
+        {
+            return replaceNbsp
+                ? replaceTab ? source.IndexOfAny('&', Chars.Nbsp, '\t') : source.IndexOfAny('&', Chars.Nbsp)
+                : replaceTab ? source.IndexOfAny('&', '\t') : source.IndexOf('&');
+        }
+
+        return replaceNbsp
+            ? replaceTab ? source.IndexOfAny(Chars.Nbsp, '\t') : source.IndexOf(Chars.Nbsp)
+            : replaceTab ? source.IndexOf('\t') : -1;
     }
 
     /// <summary>
