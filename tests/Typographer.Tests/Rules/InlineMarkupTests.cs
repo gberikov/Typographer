@@ -20,4 +20,43 @@ public class InlineMarkupTests
         Assert.Equal(source, Run(source, RuleId.Common.Html.Url));
         Assert.Equal(source, Run(source, RuleId.Common.Punctuation.Quote));
     }
+
+    [Theory]
+    [InlineData("http://example.com", "<a href=\"http://example.com\">http://example.com</a>")]
+    [InlineData(
+        "https://a.ru/b?x=1&y=2",
+        "<a href=\"https://a.ru/b?x=1&amp;y=2\">https://a.ru/b?x=1&y=2</a>")]
+    [InlineData("Сайт http://a.ru.", "Сайт <a href=\"http://a.ru\">http://a.ru</a>.")]
+    // Внутри уже открытой ссылки правило не работает: вложенная ссылка невалидна.
+    [InlineData("<a href=\"#\">http://a.ru</a>", "<a href=\"#\">http://a.ru</a>")]
+    [InlineData("текст без адреса", "текст без адреса")]
+    public void UrlBecomesLink(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Html.Url));
+
+    [Theory]
+    [InlineData("mail@example.com", "<a href=\"mailto:mail@example.com\">mail@example.com</a>")]
+    [InlineData(
+        "Пишите на mail@example.com.",
+        "Пишите на <a href=\"mailto:mail@example.com\">mail@example.com</a>.")]
+    [InlineData("@ и собака", "@ и собака")]
+    // Домен без точки и без зоны адресом не является.
+    [InlineData("mail@example", "mail@example")]
+    [InlineData("<a href=\"#\">m@e.com</a>", "<a href=\"#\">m@e.com</a>")]
+    public void EmailBecomesLink(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Html.EMail));
+
+    // Прогон по собственному выводу вкладывал бы ссылку в ссылку.
+    [Fact]
+    public void LinkRulesAreIdempotent()
+    {
+        string once = Run("Сайт http://a.ru и почта m@e.com", RuleId.Common.Html.Url, RuleId.Common.Html.EMail);
+        Assert.Equal(once, Run(once, RuleId.Common.Html.Url, RuleId.Common.Html.EMail));
+    }
+
+    // Защищённая зона остаётся байт в байт: внутри code ссылка не размечается.
+    [Fact]
+    public void ProtectedZoneKeepsItsText()
+        => Assert.Equal(
+            "<code>http://a.ru</code>",
+            Run("<code>http://a.ru</code>", RuleId.Common.Html.Url));
 }
