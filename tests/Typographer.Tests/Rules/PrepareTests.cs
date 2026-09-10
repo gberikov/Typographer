@@ -125,4 +125,44 @@ public class PrepareTests
 
         Assert.Contains(Chars.Bom, result);
     }
+
+    // Метка порядка байт удаляется правилом, а не безусловно: набор без него обязан
+    // вернуть вход байт в байт.
+    [Fact]
+    public void BomIsRemovedByItsRule()
+        => Assert.Equal(
+            "текст",
+            new TextTypograf(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Other.DelBom) })
+                .Process($"{Chars.Bom}текст"));
+
+    [Fact]
+    public void BomStaysWhenTheRuleIsOff()
+        => Assert.Equal(
+            $"{Chars.Bom}текст",
+            new TextTypograf(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote) })
+                .Process($"{Chars.Bom}текст"));
+
+    // Снятие неразрывных пробелов — обратная операция к фазе Bind, и в одиночку оно
+    // оставляет текст вовсе без них.
+    [Fact]
+    public void NbspIsReplacedByItsRule()
+        => Assert.Equal(
+            "в доме",
+            new TextTypograf(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Nbsp.ReplaceNbsp) })
+                .Process($"в{Chars.Nbsp}доме"));
+
+    [Fact]
+    public void NbspComesBackWhenBindRulesAreOn()
+        => Assert.Equal(
+            $"в{Chars.Nbsp}доме",
+            new TextTypograf(new TextOptions
+            {
+                Rules = RuleSet.None.With(RuleId.Common.Nbsp.ReplaceNbsp, RuleId.Common.Nbsp.AfterShortWord),
+            }).Process($"в{Chars.Nbsp}доме"));
+
+    [Fact]
+    public void NbspStaysWhenTheRuleIsOff()
+        => Assert.Equal(
+            $"дерево{Chars.Nbsp}стоит",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Default }).Process($"дерево{Chars.Nbsp}стоит"));
 }

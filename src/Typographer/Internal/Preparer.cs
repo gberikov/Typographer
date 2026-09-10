@@ -41,13 +41,19 @@ internal static class Preparer
         // BOM удаляется только в начале документа. Внутренний U+FEFF может разделять
         // символы, которые после удаления станут HTML-тегом или сущностью: <\uFEFFb>, &\uFEFFnbsp;.
         int start = 0;
-        if (isDocumentStart)
+        if (isDocumentStart && rules.Contains(RuleId.Common.Other.DelBom))
         {
             while (start < source.Length && source[start] == Chars.Bom)
             {
                 start++;
             }
         }
+
+        // Снятие неразрывных пробелов — обратная операция к тому, что делает фаза Bind:
+        // авторские неразрывные пробелы становятся обычными, чтобы правила расставили свои.
+        // Без правил фазы Bind текст останется вовсе без неразрывных пробелов, и это не
+        // ошибка, а прямое следствие включения правила в одиночку.
+        bool replaceNbsp = rules.Contains(RuleId.Common.Nbsp.ReplaceNbsp);
 
         for (int i = start; i < source.Length; i++)
         {
@@ -56,12 +62,12 @@ internal static class Preparer
             if (decodeEntities && c == '&'
                 && EntityTable.TryDecode(source.Slice(i), out char value, out int consumed))
             {
-                buffer.Write(value);
+                buffer.Write(replaceNbsp && value == Chars.Nbsp ? ' ' : value);
                 i += consumed - 1;
                 continue;
             }
 
-            buffer.Write(c);
+            buffer.Write(replaceNbsp && c == Chars.Nbsp ? ' ' : c);
         }
     }
 
