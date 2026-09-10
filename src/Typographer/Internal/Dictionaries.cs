@@ -36,6 +36,26 @@ internal static class Dictionaries
     public static bool IsAbbreviationPart(ReadOnlySpan<char> word)
         => word.Length == 1 && word[0] is 'т' or 'д' or 'п' or 'е' or 'н' or 'э' or 'г' or 'в';
 
+    /// <summary>Частицы, которые нельзя отрывать от предшествующего слова. ГОСТ 9.4.</summary>
+    private static readonly string[] Particles = ["ли", "ль", "же", "ж", "бы", "б"];
+
+    /// <summary>Слово — частица, которую нельзя отрывать от предыдущего слова.</summary>
+    public static bool IsParticle(ReadOnlySpan<char> word) => Contains(Particles, word);
+
+    /// <summary>
+    /// Предлоги и союзы длиной от четырёх букв, которые нельзя оставлять в конце строки.
+    /// Слова до трёх букв покрыты правилом короткого слова, и дублировать их здесь не нужно.
+    /// </summary>
+    private static readonly string[] FunctionWords =
+    [
+        "близ", "вместо", "вопреки", "перед", "после", "около", "среди", "сквозь", "через",
+        "между", "кроме", "чтобы", "когда", "хотя", "если", "либо", "итак", "зато", "даже",
+        "лишь", "пусть", "будто",
+    ];
+
+    /// <summary>Слово — предлог или союз из закрытого списка.</summary>
+    public static bool IsFunctionWord(ReadOnlySpan<char> word) => Contains(FunctionWords, word);
+
     /// <summary>
     /// Месяцы в именительном и родительном падеже: «январь» для интервала месяцев,
     /// «января» для даты вида «5 января».

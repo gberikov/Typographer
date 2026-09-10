@@ -12,6 +12,8 @@ namespace Typographer.Internal.Bind;
 /// любой его позиции, в том числе левее <see cref="BindState.SafeFrom"/> — пробел это текст,
 /// а не разметка. Благодаря этому «Пушкин &lt;b&gt;А.&lt;/b&gt;» связывается через тег.
 /// Переписывать буфер правило-склейка не имеет права вовсе.
+/// Правила одного направления перечислены в одном предикате и спрашиваются подряд: действие
+/// у них одно, и «первое сработавшее» тут не имеет смысла — важно только, склеивать или нет.
 /// </remarks>
 internal static class NbspRules
 {
@@ -30,50 +32,80 @@ internal static class NbspRules
 
         bool hasDot = token[token.Length - 1] == '.';
         ReadOnlySpan<char> letters = hasDot ? token.Slice(0, token.Length - 1) : token;
-
-        // Склейка НАЗАД по предыдущему токену: число слева, не число справа. Три правила
-        // делают одно действие и различаются только предикатом, поэтому спрашиваются
-        // подряд, а не через выбор первого сработавшего. Правое условие «не число» нужно,
-        // чтобы «2026 2027» осталось с обычным пробелом: перечисление чисел рвать можно.
-        if (state.SpaceIndex >= 0 && state.PrevLength > 0
-            && state.PrevKind == TokenKind.Number && state.Kind != TokenKind.Number
-            && !state.TokenOverflow
-            && (rules.Contains(RuleId.Common.Nbsp.AfterNumber)
-                || (rules.Contains(RuleId.Ru.Nbsp.DayMonth) && Dictionaries.IsMonth(letters))
-                || (rules.Contains(RuleId.Ru.Nbsp.Year) && Dictionaries.IsYearAbbreviation(token))
-                || (rules.Contains(RuleId.Ru.Nbsp.Mln) && Dictionaries.IsMagnitude(token))
-                || (rules.Contains(RuleId.Ru.Nbsp.RubleKopek) && Dictionaries.IsMoneyAbbreviation(token))
-                || (rules.Contains(RuleId.Common.Nbsp.Dpi) && Dictionaries.IsResolution(token))))
-        {
-            buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
-        }
         bool initial = rules.Contains(RuleId.Ru.Nbsp.Initials) && !state.TokenOverflow && IsInitial(token);
 
-        // Инициал связывает себя не только со следующим словом, но и с предыдущим —
-        // «Пушкин А.» нуждается в неразрывном пробеле по обе стороны от «А.».
-        if (initial && state.SpaceIndex >= 0)
+        if (state.SpaceIndex >= 0 && (initial || BindsBackward(token, letters, rules, ref state)))
         {
             buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
         }
 
-        bool glue = !state.TokenOverflow && boundary is ' ' or Chars.Nbsp
-            && ((rules.Contains(RuleId.Ru.Nbsp.Addr) && Dictionaries.IsAddressAbbreviation(token))
-                || (rules.Contains(RuleId.Ru.Nbsp.Page) && Dictionaries.IsPageAbbreviation(token))
-                || (rules.Contains(RuleId.Ru.Nbsp.See) && Dictionaries.IsReferenceAbbreviation(token))
-                || (rules.Contains(RuleId.Ru.Nbsp.Ooo) && Dictionaries.IsOrganization(token))
-                || (rules.Contains(RuleId.Common.Nbsp.AfterShortWord)
-                    && !hasDot && state.Kind == TokenKind.Word && Dictionaries.IsShortWord(letters))
-                || (rules.Contains(RuleId.Ru.Nbsp.Abbr)
-                    && hasDot && Dictionaries.IsAbbreviationPart(letters))
-                || initial);
-
-        if (glue)
+        if (boundary is ' ' or Chars.Nbsp
+            && (initial || BindsForward(token, letters, hasDot, rules, ref state)))
         {
             state.GlueForward = true;
         }
     }
 
-    /// <summary>Инициал — одна прописная буква с точкой: «А.».</summary>
+    /// <summary>
+    /// Пробел ПЕРЕД токеном становится неразрывным. Инициал сюда не входит: он связывается
+    /// в обе стороны и решается отдельно.
+    /// </summary>
+    private static bool BindsBackward(
+        ReadOnlySpan<char> token, ReadOnlySpan<char> letters, RuleSet rules, ref BindState state)
+    {
+        if (state.TokenOverflow)
+        {
+            return false;
+        }
+
+        // Частица не отрывается от предшествующего слова: «так ли», «он же», «если бы».
+        if (rules.Contains(RuleId.Ru.Nbsp.BeforeParticle)
+            && state.Kind == TokenKind.Word && Dictionaries.IsParticle(token))
+        {
+            return true;
+        }
+
+        // Число слева, не число справа. «2026 2027» остаётся с обычным пробелом:
+        // перечисление чисел рвать можно, а число и слово — нет (ГОСТ 9.4).
+        if (state.PrevLength == 0 || state.PrevKind != TokenKind.Number || state.Kind == TokenKind.Number)
+        {
+            return false;
+        }
+
+        return rules.Contains(RuleId.Common.Nbsp.AfterNumber)
+            || (rules.Contains(RuleId.Ru.Nbsp.DayMonth) && Dictionaries.IsMonth(letters))
+            || (rules.Contains(RuleId.Ru.Nbsp.Year) && Dictionaries.IsYearAbbreviation(token))
+            || (rules.Contains(RuleId.Ru.Nbsp.Mln) && Dictionaries.IsMagnitude(token))
+            || (rules.Contains(RuleId.Ru.Nbsp.RubleKopek) && Dictionaries.IsMoneyAbbreviation(token))
+            || (rules.Contains(RuleId.Common.Nbsp.Dpi) && Dictionaries.IsResolution(token));
+    }
+
+    /// <summary>Пробел ПОСЛЕ токена становится неразрывным.</summary>
+    private static bool BindsForward(
+        ReadOnlySpan<char> token, ReadOnlySpan<char> letters, bool hasDot,
+        RuleSet rules, ref BindState state)
+    {
+        if (state.TokenOverflow)
+        {
+            return false;
+        }
+
+        return (rules.Contains(RuleId.Ru.Nbsp.Addr) && Dictionaries.IsAddressAbbreviation(token))
+            || (rules.Contains(RuleId.Ru.Nbsp.Page) && Dictionaries.IsPageAbbreviation(token))
+            || (rules.Contains(RuleId.Ru.Nbsp.See) && Dictionaries.IsReferenceAbbreviation(token))
+            || (rules.Contains(RuleId.Ru.Nbsp.Ooo) && Dictionaries.IsOrganization(token))
+            || (rules.Contains(RuleId.Common.Nbsp.AfterShortWordByList)
+                && state.Kind == TokenKind.Word && Dictionaries.IsFunctionWord(token))
+            || (rules.Contains(RuleId.Common.Nbsp.AfterShortWord)
+                && !hasDot && state.Kind == TokenKind.Word && Dictionaries.IsShortWord(letters))
+            || (rules.Contains(RuleId.Ru.Nbsp.Abbr)
+                && hasDot && Dictionaries.IsAbbreviationPart(letters));
+    }
+
+    /// <summary>
+    /// Инициал — одна прописная буква с точкой: «А.». Связывается в обе стороны:
+    /// «Пушкин А.» нуждается в неразрывном пробеле и слева от инициала, и справа.
+    /// </summary>
     private static bool IsInitial(ReadOnlySpan<char> token)
         => token.Length == 2 && token[1] == '.' && char.IsUpper(token[0]);
 }
