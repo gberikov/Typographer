@@ -1,8 +1,11 @@
 name: Docs
 
 on:
+  # Не по тегу: окружение github-pages разрешает выкладку только с master, и прогон на
+  # теге отклоняется политикой окружения ещё до первого шага. Сайт описывает master, а
+  # не последний релиз, и обновляется вместе с ним.
   push:
-    tags: ['[0-9]*']
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -35,8 +38,6 @@ jobs:
 
   deploy:
     needs: build
-    # На пул-реквесте выкладки не происходит: там проверяется только сборка сайта.
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 public class EnDashTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Fact]
     public void BritishDashKeepsSpacing()

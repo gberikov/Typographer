@@ -2,25 +2,25 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Typographer.AspNetCore;
 
-/// <summary>Тег-хелпер <c>&lt;typograf&gt;</c>: типографирует содержимое элемента.</summary>
+/// <summary>Тег-хелпер <c>&lt;typographer&gt;</c>: типографирует содержимое элемента.</summary>
 /// <remarks>
 /// Содержимое к этому моменту уже отрендерено и закодировано шаблонизатором, то есть
-/// является готовым HTML, — потому обрабатывается <see cref="HtmlTypograf"/>, а не
+/// является готовым HTML, — потому обрабатывается <see cref="HtmlTypographer"/>, а не
 /// текстовым типографом, и возвращается как разметка, а не как текст.
-/// Требует регистрации типографа в контейнере: <c>services.AddTypograf()</c>.
+/// Требует регистрации типографа в контейнере: <c>services.AddTypographer()</c>.
 /// </remarks>
-[HtmlTargetElement("typograf")]
-public sealed class TypografTagHelper : TagHelper
+[HtmlTargetElement("typographer")]
+public sealed class TypographerTagHelper : TagHelper
 {
-    private readonly HtmlTypograf _typograf;
+    private readonly HtmlTypographer _typographer;
 
     /// <summary>Создаёт тег-хелпер с типографом из контейнера.</summary>
-    /// <param name="typograf">Типограф HTML.</param>
+    /// <param name="typographer">Типограф HTML.</param>
     /// <exception cref="ArgumentNullException">Типограф равен <c>null</c>.</exception>
-    public TypografTagHelper(HtmlTypograf typograf)
+    public TypographerTagHelper(HtmlTypographer typographer)
     {
-        ArgumentNullException.ThrowIfNull(typograf);
-        _typograf = typograf;
+        ArgumentNullException.ThrowIfNull(typographer);
+        _typographer = typographer;
     }
 
     /// <summary>Заменяет содержимое элемента типографированным и убирает сам элемент.</summary>
@@ -34,6 +34,6 @@ public sealed class TypografTagHelper : TagHelper
         TagHelperContent content = await output.GetChildContentAsync().ConfigureAwait(false);
 
         output.TagName = null;
-        output.Content.SetHtmlContent(_typograf.Process(content.GetContent()));
+        output.Content.SetHtmlContent(_typographer.Process(content.GetContent()));
     }
 }

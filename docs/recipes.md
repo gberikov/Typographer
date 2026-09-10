@@ -7,7 +7,7 @@ RuleSet rules = RuleSet.Default
     .Without(RuleId.Common.Space.DelBeforePercent)   // ГОСТ 9.6 требует там пробел
     .With(RuleId.Common.Number.DigitGrouping);       // 1 000 000 вместо 1000000
 
-var typograf = new HtmlTypograf(new HtmlOptions { Rules = rules });
+var typographer = new HtmlTypographer(new HtmlOptions { Rules = rules });
 ```
 
 Правило можно найти и по имени, как в JS-typograf:
@@ -26,11 +26,11 @@ dotnet add package Typographer.DependencyInjection
 ```
 
 ```csharp
-services.AddTypograf();                                        // настройки по умолчанию
-services.AddTypograf(new HtmlOptions { Entities = EntityMode.Named });
+services.AddTypographer();                                        // настройки по умолчанию
+services.AddTypographer(new HtmlOptions { Entities = EntityMode.Named });
 ```
 
-Регистрируются одиночками `HtmlTypograf` и `TextTypograf`. Своя регистрация, сделанная
+Регистрируются одиночками `HtmlTypographer` и `TextTypographer`. Своя регистрация, сделанная
 раньше, побеждает: внутри `TryAddSingleton`.
 
 ## ASP.NET Core
@@ -42,15 +42,15 @@ dotnet add package Typographer.AspNetCore
 ```cshtml
 @addTagHelper *, Typographer.AspNetCore
 
-<typograf><p>Он - человек и "цитата"</p></typograf>
+<typographer><p>Он - человек и "цитата"</p></typographer>
 ```
 
-Тег-хелпер типографирует содержимое и исчезает сам. Требует `services.AddTypograf()`.
+Тег-хелпер типографирует содержимое и исчезает сам. Требует `services.AddTypographer()`.
 Там, где удобнее вызов, а не элемент:
 
 ```cshtml
-@inject HtmlTypograf Typograf
-@Typograf.ToHtmlContent(Model.Text)
+@inject HtmlTypographer Typographer
+@Typographer.ToHtmlContent(Model.Text)
 ```
 
 ## Markdown
@@ -60,7 +60,7 @@ dotnet add package Typographer.Markdig
 ```
 
 ```csharp
-MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypograf().Build();
+MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypographer().Build();
 string html = Markdown.ToHtml(source, pipeline);
 ```
 
@@ -89,7 +89,7 @@ dotnet-typographer --list-rules
 
 ```csharp
 var writer = new ArrayBufferWriter<char>();
-typograf.Process(source.AsSpan(), writer);
+typographer.Process(source.AsSpan(), writer);
 ```
 
 Путь `Process(ReadOnlySpan<char>, IBufferWriter<char>)` после прогрева пула не выделяет в
@@ -99,7 +99,7 @@ typograf.Process(source.AsSpan(), writer);
 ## Защита от разрастания вывода
 
 ```csharp
-var typograf = new HtmlTypograf(new HtmlOptions { MaxOutputLength = 1_000_000 });
+var typographer = new HtmlTypographer(new HtmlOptions { MaxOutputLength = 1_000_000 });
 ```
 
 Превышение предела даёт `OutputTooLargeException` — единственное исключение, которое

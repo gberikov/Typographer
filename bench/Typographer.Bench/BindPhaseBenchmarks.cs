@@ -15,7 +15,7 @@ public class BindPhaseBenchmarks
         "А.С. Пушкин писал про 10 км/ч и 100 % на 25 °C.</p>";
 
     private string _text = string.Empty;
-    private HtmlTypograf _typograf = null!;
+    private HtmlTypographer _typographer = null!;
 
     /// <summary>Какой набор правил включён: имя набора задаёт объём словарной работы.</summary>
     [Params("scan-only", "bind-one-cheap", "bind-nbsp", "bind-all")]
@@ -25,11 +25,11 @@ public class BindPhaseBenchmarks
     public void Setup()
     {
         _text = string.Concat(Enumerable.Repeat(Fragment, 200));
-        _typograf = new HtmlTypograf(new HtmlOptions { Rules = Rules() });
+        _typographer = new HtmlTypographer(new HtmlOptions { Rules = Rules() });
     }
 
     [Benchmark]
-    public string Process() => _typograf.Process(_text);
+    public string Process() => _typographer.Process(_text);
 
     private RuleSet Rules()
     {

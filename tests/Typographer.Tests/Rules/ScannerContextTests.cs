@@ -14,12 +14,12 @@ namespace Typographer.Tests.Rules;
 /// </remarks>
 public class ScannerContextTests
 {
-    private static string Text(string source) => new TextTypograf(new TextOptions
+    private static string Text(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.Default,
     }).Process(source);
 
-    private static string Html(string source) => new HtmlTypograf(new HtmlOptions
+    private static string Html(string source) => new HtmlTypographer(new HtmlOptions
     {
         Rules = RuleSet.Default,
     }).Process(source);
@@ -93,7 +93,7 @@ public class ScannerContextTests
     {
         // Стек кавычек и последний символ живут сквозь ВСЕ сегменты: закрывающая
         // кавычка в четвёртом узле обязана закрыть уровень, открытый в первом.
-        string result = new HtmlTypograf(new HtmlOptions
+        string result = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote),
         }).Process("<i>\"</i>а<b>б</b>\"");

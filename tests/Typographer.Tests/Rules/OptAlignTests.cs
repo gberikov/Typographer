@@ -9,7 +9,7 @@ namespace Typographer.Tests.Rules;
 public class OptAlignTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Theory]
     [InlineData("«цитата»", "<span class=\"typograf-oa-n-lquote\">«</span>цитата»")]

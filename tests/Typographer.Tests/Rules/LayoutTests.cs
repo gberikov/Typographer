@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 
 public class LayoutTests
 {
-    private static string Run(string source, HtmlOptions options) => new HtmlTypograf(options).Process(source);
+    private static string Run(string source, HtmlOptions options) => new HtmlTypographer(options).Process(source);
 
     [Fact]
     public void UseBr_ReplacesLineBreak()
@@ -125,10 +125,10 @@ public class LayoutTests
         string element = $"<{tag}>first\n\nsecond</{tag}>";
         string source = "first\n\n" + element + "\n\nlast";
         string expected = $"<p>first</p>\n<p>{element}</p>\n<p>last</p>";
-        var typograf = new HtmlTypograf(new HtmlOptions { UseP = true });
+        var typographer = new HtmlTypographer(new HtmlOptions { UseP = true });
 
-        Assert.Equal(expected, typograf.Process(source));
-        Assert.Equal(expected, typograf.Process(expected));
+        Assert.Equal(expected, typographer.Process(source));
+        Assert.Equal(expected, typographer.Process(expected));
         Assert.Equal(expected, Run(source, new HtmlOptions { UseP = true, UseBr = true }));
     }
 
@@ -224,7 +224,7 @@ public class LayoutTests
         // иначе <nobr> пересечётся с <b> и разметка перестанет быть валидной. Цепочку
         // задают именно неразрывные пробелы — на обычных <nobr> не появляется вовсе, и
         // проверять на таком входе было бы нечего.
-        string result = new HtmlTypograf(new HtmlOptions
+        string result = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None,
             MaxNobr = 3,

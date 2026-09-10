@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 public class RuPunctuationTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Theory]
     [InlineData("Ура!!", "Ура!")]
@@ -45,6 +45,6 @@ public class RuPunctuationTests
     {
         // Правило само расставляет знаки, то есть меняет текст, а не оформление.
         Assert.False(RuleSet.Default.Contains(RuleId.Ru.Punctuation.Ano));
-        Assert.DoesNotContain(",", new TextTypograf().Process("Пришёл а ушёл"));
+        Assert.DoesNotContain(",", new TextTypographer().Process("Пришёл а ушёл"));
     }
 }

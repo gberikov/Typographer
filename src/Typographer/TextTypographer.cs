@@ -5,21 +5,21 @@ using Typographer.Internal.Scan;
 namespace Typographer;
 
 /// <summary>Типограф для обычного текста. Иммутабелен и потокобезопасен.</summary>
-public sealed class TextTypograf
+public sealed class TextTypographer
 {
     private readonly TextOptions _options;
 
     /// <summary>Создаёт типограф с указанными настройками.</summary>
     /// <param name="options">Настройки; null — настройки по умолчанию.</param>
     /// <exception cref="ArgumentOutOfRangeException">Предел длины результата отрицателен.</exception>
-    public TextTypograf(TextOptions? options = null)
+    public TextTypographer(TextOptions? options = null)
     {
         _options = options ?? TextOptions.Default;
         Throw.IfNegative(_options.MaxOutputLength, nameof(TextOptions.MaxOutputLength));
     }
 
     /// <summary>Типограф с настройками по умолчанию.</summary>
-    public static TextTypograf Default { get; } = new();
+    public static TextTypographer Default { get; } = new();
 
     /// <summary>Типографирует текст.</summary>
     /// <param name="text">Исходный текст.</param>

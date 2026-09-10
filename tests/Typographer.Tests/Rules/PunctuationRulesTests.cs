@@ -4,7 +4,7 @@ namespace Typographer.Tests.Rules;
 
 public class PunctuationRulesTests
 {
-    private static string Run(string source) => new TextTypograf(new TextOptions
+    private static string Run(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Common.Punctuation.DelDoublePunctuation)

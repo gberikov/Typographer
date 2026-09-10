@@ -10,7 +10,7 @@ namespace Typographer.Tests.Rules;
 public class HtmlRulesTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     /// <summary>
     /// Сущность разметки атомарна: правила чисел внутрь неё не лезут. Разбиение разрядов

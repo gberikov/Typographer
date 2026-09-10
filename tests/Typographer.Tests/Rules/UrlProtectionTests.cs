@@ -26,7 +26,7 @@ public class UrlProtectionTests
     private const string Nbsp = "\u00A0";
 
     private static string Run(string source)
-        => new HtmlTypograf(new HtmlOptions
+        => new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.Lebedev.With(RuleId.Ru.Date.FromIso, RuleId.Ru.Money.Currency),
         }).Process(source);
@@ -82,7 +82,7 @@ public class UrlProtectionTests
     public void AutolinkGetsTheOriginalAddress()
         => Assert.Equal(
             "<a href=\"https://example.com/?v=1.5\">https://example.com/?v=1.5</a>",
-            new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Lebedev.With(RuleId.Common.Html.Url) })
+            new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Lebedev.With(RuleId.Common.Html.Url) })
                 .Process("https://example.com/?v=1.5"));
 
     // Тег обрывает адрес: «http://a<b>?x» — это не адрес с вопросом, и правила за тегом

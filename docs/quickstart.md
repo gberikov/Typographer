@@ -13,28 +13,28 @@ dotnet add package Typographer
 ```csharp
 using Typographer;
 
-string html = Typograf.Html("<p>Он - человек</p>");
-string text = Typograf.PlainText("Он - человек");
+string html = Typographer.Html("<p>Он - человек</p>");
+string text = Typographer.PlainText("Он - человек");
 ```
 
 Настраиваемый типограф — иммутабельный и потокобезопасный, создаётся один раз и живёт
 столько, сколько приложение:
 
 ```csharp
-var typograf = new HtmlTypograf(new HtmlOptions
+var typographer = new HtmlTypographer(new HtmlOptions
 {
     Entities = EntityMode.Named,
     Rules = RuleSet.Default,
 });
 
-string html = typograf.Process(source);
+string html = typographer.Process(source);
 ```
 
 Без промежуточной строки — ноль аллокаций в куче после прогрева пула:
 
 ```csharp
 var writer = new ArrayBufferWriter<char>();
-typograf.Process(source.AsSpan(), writer);
+typographer.Process(source.AsSpan(), writer);
 ```
 
 ## Наборы правил

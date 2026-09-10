@@ -8,7 +8,7 @@ namespace Typographer.Tests.Corpus;
 /// этом ПАДАЕТ намеренно: перегенерация — не проверка, и зелёный прогон с перезаписанными
 /// эталонами обманул бы того, кто её запустил и забыл про переменную.
 /// Набор правил — Default в режиме HTML: корпус показывает то, что получает тот, кто просто
-/// вызвал Typograf.Html(text). Всё, что вне Default, проверяется юнит-тестами правил.
+/// вызвал Typographer.Html(text). Всё, что вне Default, проверяется юнит-тестами правил.
 /// </remarks>
 public class CorpusFileTests
 {
@@ -19,8 +19,8 @@ public class CorpusFileTests
     [MemberData(nameof(CorpusFiles.Names), MemberType = typeof(CorpusFiles))]
     public void OutputMatchesGolden(string name)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
-        string actual = typograf.Process(CorpusFiles.ReadInput(name));
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
+        string actual = typographer.Process(CorpusFiles.ReadInput(name));
 
         if (Update)
         {
@@ -42,10 +42,10 @@ public class CorpusFileTests
             return;
         }
 
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
         string expected = CorpusFiles.ReadExpected(name);
 
-        Assert.Equal(expected, typograf.Process(expected));
+        Assert.Equal(expected, typographer.Process(expected));
     }
 
     [Fact]

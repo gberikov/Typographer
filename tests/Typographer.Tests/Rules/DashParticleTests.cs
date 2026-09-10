@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 public class DashParticleTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Theory]
     [InlineData("скажи ка", "скажи-ка")]
@@ -45,17 +45,17 @@ public class DashParticleTests
         // Правило есть, но включает его только тот, кто знает свой текст.
         // Проверяется отсутствие дефиса, а не побайтовое равенство: Default законно ставит
         // неразрывные пробелы после коротких слов, и они здесь ни при чём.
-        var typograf = new TextTypograf();
-        Assert.DoesNotContain("-", typograf.Process("Я знал, что то было ошибкой"));
-        Assert.DoesNotContain("-", typograf.Process("Шарль де Голль"));
-        Assert.DoesNotContain("-", typograf.Process("как то так"));
+        var typographer = new TextTypographer();
+        Assert.DoesNotContain("-", typographer.Process("Я знал, что то было ошибкой"));
+        Assert.DoesNotContain("-", typographer.Process("Шарль де Голль"));
+        Assert.DoesNotContain("-", typographer.Process("как то так"));
     }
 
     [Fact]
     public void HyphenatesInsideDefaultWhereUnambiguous()
     {
-        var typograf = new TextTypograf();
-        Assert.StartsWith("кое-что", typograf.Process("кое что"));
-        Assert.StartsWith("из-под", typograf.Process("из под стола"));
+        var typographer = new TextTypographer();
+        Assert.StartsWith("кое-что", typographer.Process("кое что"));
+        Assert.StartsWith("из-под", typographer.Process("из под стола"));
     }
 }

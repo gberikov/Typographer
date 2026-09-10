@@ -48,7 +48,7 @@ public class RuleSetTests
     [Theory]
     [InlineData("ru/dash/main")]
     [InlineData("common/punctuation/quote")]
-    public void TryParse_ParsesJsTypografStyleName(string name)
+    public void TryParse_ParsesJsTypographerStyleName(string name)
     {
         Assert.True(RuleId.TryParse(name, out RuleId rule));
         Assert.Equal(name, rule.Name);
@@ -224,7 +224,7 @@ public class RuleSetTests
     public void NormalizationRulesAreOutOfDefault()
     {
         // Обрезка краёв и замена табов меняют текст за пределами оформления: тот, кто
-        // вызвал Typograf.Html(text), такого не ожидает.
+        // вызвал Typographer.Html(text), такого не ожидает.
         foreach (RuleId rule in RuleId.Registry.Normalization)
         {
             Assert.False(RuleSet.Default.Contains(rule), rule.Name);
@@ -267,10 +267,10 @@ public class RuleSetTests
     {
         Assert.Equal(
             "ул. Ленина",
-            new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("ул. Ленина"));
+            new TextTypographer(new TextOptions { Rules = RuleSet.Lebedev }).Process("ул. Ленина"));
         Assert.Equal(
             $"ул.{Chars.Nbsp}Ленина",
-            new TextTypograf(new TextOptions { Rules = RuleSet.Default }).Process("ул. Ленина"));
+            new TextTypographer(new TextOptions { Rules = RuleSet.Default }).Process("ул. Ленина"));
     }
 
     [Fact]
@@ -282,9 +282,9 @@ public class RuleSetTests
         // к спору о тире отношения не имеет — оракул ставит его там же.
         Assert.Equal(
             $"1941—1945{Chars.Nbsp}гг.",
-            new TextTypograf(new TextOptions { Rules = RuleSet.Gost }).Process("1941-1945 гг."));
+            new TextTypographer(new TextOptions { Rules = RuleSet.Gost }).Process("1941-1945 гг."));
         Assert.Equal(
             $"1941-1945{Chars.Nbsp}гг.",
-            new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("1941-1945 гг."));
+            new TextTypographer(new TextOptions { Rules = RuleSet.Lebedev }).Process("1941-1945 гг."));
     }
 }
