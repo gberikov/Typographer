@@ -18,6 +18,9 @@ namespace Typographer.Internal;
 /// </remarks>
 internal static class Preparer
 {
+    /// <summary>Ширина табулятора в пробелах.</summary>
+    private const int TabWidth = 4;
+
     /// <param name="source">Текстовый узел.</param>
     /// <param name="decodeEntities">
     /// Декодировать типографские сущности. Для HTML — да; в обычном тексте
@@ -60,9 +63,26 @@ internal static class Preparer
         // обратно КАЖДУЮ прямую кавычку в тексте, чего не просил никто.
         bool quot = decodeEntities && rules.Contains(RuleId.Common.Html.Quot);
 
+        // Табуляция разворачивается здесь, а не в фазе нормализации пробелов в конце
+        // конвейера: получившиеся пробелы обязаны попасть на глаза правилам, которые
+        // читают соседний символ. Иначе первый прогон оставляет табуляцию невидимой для
+        // фаз Scan и Bind, второй видит на её месте пробел — и результат меняется,
+        // нарушая гарантию 5.
+        bool replaceTab = rules.Contains(RuleId.Common.Space.ReplaceTab);
+
         for (int i = start; i < source.Length; i++)
         {
             char c = source[i];
+
+            if (replaceTab && c == '\t')
+            {
+                for (int k = 0; k < TabWidth; k++)
+                {
+                    buffer.Write(' ');
+                }
+
+                continue;
+            }
 
             if (quot && c == '&' && TryDecodeQuot(source.Slice(i), out int quotLength))
             {

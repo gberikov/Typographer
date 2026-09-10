@@ -579,7 +579,9 @@ public readonly struct RuleId : IEquatable<RuleId>
         public static readonly RuleId SpaceDelLeadingBlanks = new(27, "common/space/delLeadingBlanks", RulePhase.Scan);
         public static readonly RuleId SpaceDelTrailingBlanks = new(28, "common/space/delTrailingBlanks", RulePhase.Scan);
         public static readonly RuleId SpaceDelRepeatN = new(29, "common/space/delRepeatN", RulePhase.Scan);
-        public static readonly RuleId SpaceReplaceTab = new(30, "common/space/replaceTab", RulePhase.Scan);
+        // Фаза Prepare, а не Scan: табуляция разворачивается до того, как правила начнут
+        // читать соседние символы, иначе получившиеся пробелы видит только второй прогон.
+        public static readonly RuleId SpaceReplaceTab = new(30, "common/space/replaceTab", RulePhase.Prepare);
         public static readonly RuleId SpaceInsertFinalNewline = new(31, "common/space/insertFinalNewline", RulePhase.Scan);
         public static readonly RuleId DelDoublePunctuation = new(32, "common/punctuation/delDoublePunctuation", RulePhase.Scan);
         public static readonly RuleId QuoteLink = new(33, "common/punctuation/quoteLink", RulePhase.Scan);

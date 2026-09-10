@@ -17,9 +17,6 @@ namespace Typographer.Internal.Scan;
 /// </remarks>
 internal static class DocumentSpaceRules
 {
-    /// <summary>Ширина, на которую разворачивается табуляция.</summary>
-    private const int TabWidth = 4;
-
     /// <summary>Хоть одно правило нормализации включено, и проход имеет смысл запускать.</summary>
     public static bool IsEnabled(RuleSet rules)
         => rules.Contains(RuleId.Common.Space.TrimLeft)
@@ -27,7 +24,6 @@ internal static class DocumentSpaceRules
            || rules.Contains(RuleId.Common.Space.DelLeadingBlanks)
            || rules.Contains(RuleId.Common.Space.DelTrailingBlanks)
            || rules.Contains(RuleId.Common.Space.DelRepeatN)
-           || rules.Contains(RuleId.Common.Space.ReplaceTab)
            || rules.Contains(RuleId.Common.Space.InsertFinalNewline);
 
     /// <summary>Нормализация обычного текста: сегментов нет, весь вход — один узел.</summary>
@@ -99,7 +95,10 @@ internal static class DocumentSpaceRules
         bool delLeading = rules.Contains(RuleId.Common.Space.DelLeadingBlanks);
         bool delTrailing = rules.Contains(RuleId.Common.Space.DelTrailingBlanks);
         bool delRepeatN = rules.Contains(RuleId.Common.Space.DelRepeatN);
-        bool replaceTab = rules.Contains(RuleId.Common.Space.ReplaceTab);
+
+        // Табуляции здесь уже нет, если включено её правило: она разворачивается в пробелы
+        // фазой Prepare, до того как правила начнут читать соседние символы. Ветка ниже
+        // про удаление отступов работает с табуляцией, которую разворачивать не просили.
 
         // Число переводов строки подряд, уже записанных этим узлом. Двух хватает на пустую
         // строку между абзацами; третий и дальше — повтор, который схлопывает delRepeatN.
@@ -135,17 +134,6 @@ internal static class DocumentSpaceRules
 
             if (lineStart && delLeading && (c == ' ' || c == '\t'))
             {
-                continue;
-            }
-
-            if (c == '\t' && replaceTab)
-            {
-                for (int k = 0; k < TabWidth; k++)
-                {
-                    buffer.Write(' ');
-                }
-
-                lineStart = false;
                 continue;
             }
 
