@@ -1,6 +1,6 @@
 # План 2a: инфраструктура под полный набор правил
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Подготовить конвейер к 93 новым правилам: перевести фазы с посегментной работы на документную (состояние фазы `Bind` начинает жить сквозь разметку), разложить диспетчер фазы `Scan` по тематическим файлам, закрыть вопрос по U+202F и снять эталонный снимок веб-сервиса Лебедева.
 
@@ -65,7 +65,7 @@
 
 Задача — рефакторинг, а не починка: фаза Prepare уже ведёт себя правильно, меняется только место, где живёт обход сегментов. Тесты поэтому пишутся не «красными», а как страховка переноса: они обязаны быть зелёными и до, и после.
 
-- [ ] **Step 1: Закрепить поведение тестами**
+- [x] **Step 1: Закрепить поведение тестами**
 
 В `tests/Typographer.Tests/Rules/PrepareTests.cs` добавить:
 
@@ -101,12 +101,12 @@ public void BomInsideSecondSegmentIsKept()
 
 Невидимые символы в тестах пишутся через `Chars.*`, а не литералами — так принято в существующих тестах (`EmitterTests`), и литеральный U+FEFF в файле иначе невозможно вычитать глазами.
 
-- [ ] **Step 2: Прогнать тесты**
+- [x] **Step 2: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS оба. Если падают — переносить нечего: сначала разобраться, почему поведение отличается от ожидаемого.
 
-- [ ] **Step 3: Добавить документный проход в `Preparer`**
+- [x] **Step 3: Добавить документный проход в `Preparer`**
 
 В `src/Typographer/Internal/Preparer.cs`:
 
@@ -137,7 +137,7 @@ public static void RunDocument(ReadOnlySpan<char> html, RuleSet rules, ref CharB
 }
 ```
 
-- [ ] **Step 4: Переключить `HtmlTypograf` на документный Prepare**
+- [x] **Step 4: Переключить `HtmlTypograf` на документный Prepare**
 
 В `HtmlTypograf.RunSegments` удалить буфер `prepared` и вызов `Preparer.Run(...)`, а в `HtmlTypograf.Run` вызвать `Preparer.RunDocument` ДО сегментного цикла, передав его результат дальше вместо `source`:
 
@@ -159,12 +159,12 @@ private void Run(ReadOnlySpan<char> source, ref CharBuffer buffer)
 
 где `RunPipeline` — прежнее тело `Run` (проверка `UseBr`/`UseP`, буфер `body`, `RunSegments`, `LayoutWriter.WriteBreaks`), а в `RunSegments` текстовый сегмент теперь идёт сразу в `TextScanner.Run`.
 
-- [ ] **Step 5: Прогнать тесты**
+- [x] **Step 5: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS — падать не должно ничего, включая тесты, добавленные этой задачей.
 
-- [ ] **Step 6: Коммит**
+- [x] **Step 6: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -192,7 +192,7 @@ EOF
 - Consumes: `Preparer.RunDocument` (Task 1); `ScanState` с полями `Quotes`, `Last`, `TrailingDigits`.
 - Produces: `internal static bool TextScanner.RunDocument(ReadOnlySpan<char> html, RuleSet rules, ref CharBuffer buffer)` — возвращает `canWrapParagraphs`: `true`, если в документе нет ни блочной, ни незакрытой разметки. Значение потребляет `LayoutWriter.Run` (Task 4).
 
-- [ ] **Step 1: Закрепить инвариант тестом**
+- [x] **Step 1: Закрепить инвариант тестом**
 
 В `tests/Typographer.Tests/Rules/ScannerContextTests.cs` добавить:
 
@@ -211,12 +211,12 @@ public void ScanStateSurvivesManySegments()
 }
 ```
 
-- [ ] **Step 2: Прогнать тест**
+- [x] **Step 2: Прогнать тест**
 
 Run: `dotnet test`
 Expected: PASS — состояние сканера уже протянуто планом 1. Тест закрепляет инвариант перед переносом кода; если он падает, переносить нечего — сначала чинить.
 
-- [ ] **Step 3: Перенести сегментный цикл в `TextScanner.RunDocument`**
+- [x] **Step 3: Перенести сегментный цикл в `TextScanner.RunDocument`**
 
 В `src/Typographer/Internal/TextScanner.cs` добавить (тело переезжает из `HtmlTypograf.RunSegments` без изменений в логике):
 
@@ -265,7 +265,7 @@ public static bool RunDocument(ReadOnlySpan<char> html, RuleSet rules, ref CharB
 }
 ```
 
-- [ ] **Step 4: Убрать сегментный цикл из `HtmlTypograf`**
+- [x] **Step 4: Убрать сегментный цикл из `HtmlTypograf`**
 
 `HtmlTypograf.RunSegments` удаляется целиком. Место вызова:
 
@@ -275,14 +275,14 @@ bool canWrapParagraphs = TextScanner.RunDocument(prepared.AsSpan(), _options.Rul
 
 Буферы `scanned`, `bound`, `laidOut` на сегмент удаляются; фазы `Bind`, `Layout`, `Emit` пока вызываются по документу в том же порядке, что раньше по сегменту — их документные версии приходят в задачах 3–5, а до тех пор используются существующие сигнатуры на всём буфере.
 
-- [ ] **Step 5: Прогнать тесты**
+- [x] **Step 5: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: FAIL ожидаем в тестах кодирования сущностей (`NamedModeEncodesOnlyTextSegments`) — `Emitter` пока кодирует весь документ, включая разметку. Это чинит Task 5. Если падает что-то ещё — разбираться до перехода дальше.
 
 Чтобы не оставлять ветку красной, порядок внутри задачи такой: Step 4 выполняется вместе с Task 5 Step 3 (документный `Emitter`) в одном коммите. Оба шага маленькие; разрывать их нельзя, потому что промежуточное состояние ломает гарантию 3.
 
-- [ ] **Step 6: Коммит** (после того как Task 5 Step 3 сделан)
+- [x] **Step 6: Коммит** (после того как Task 5 Step 3 сделан)
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -310,7 +310,7 @@ EOF
 - Consumes: `MarkupScanner`, `Dictionaries.IsShortWord(ReadOnlySpan<char>)`, `Dictionaries.IsAbbreviationPart(ReadOnlySpan<char>)`, `CharBuffer.PatchAt(int, char)`.
 - Produces: `internal static void WordBinder.RunDocument(ref CharBuffer buffer, RuleSet rules)` — патчит буфер на месте; слово, разорванное строчным тегом, считается одним словом; блочный тег и защищённая зона слово завершают.
 
-- [ ] **Step 1: Написать падающий тест**
+- [x] **Step 1: Написать падающий тест**
 
 Создать `tests/Typographer.Tests/Rules/BindAcrossMarkupTests.cs`:
 
@@ -373,12 +373,12 @@ public class BindAcrossMarkupTests
 }
 ```
 
-- [ ] **Step 2: Прогнать тесты и увидеть падения**
+- [x] **Step 2: Прогнать тесты и увидеть падения**
 
 Run: `dotnet test`
 Expected: FAIL в `WordSplitByInlineTagIsOneWord`, `ShortWordSplitByInlineTagStillBinds`, `ProtectedZoneEndsTheWord`, `InitialSplitByTagBindsToSurname` — фаза Bind сейчас видит один сегмент и о соседних не знает. `BlockTagEndsTheWord` проходит уже сейчас: закрепляем то, что ломать нельзя.
 
-- [ ] **Step 3: Написать документный проход**
+- [x] **Step 3: Написать документный проход**
 
 В `src/Typographer/Internal/WordBinder.cs` добавить:
 
@@ -473,7 +473,7 @@ internal struct BindState
 }
 ```
 
-- [ ] **Step 4: Разобрать текстовый сегмент**
+- [x] **Step 4: Разобрать текстовый сегмент**
 
 Тело `BindSegment` повторяет решение существующего `Run`, но координаты — документные, а буква копится в `word`:
 
@@ -556,16 +556,16 @@ private static void BindSegment(
 }
 ```
 
-- [ ] **Step 5: Переключить оба типографа**
+- [x] **Step 5: Переключить оба типографа**
 
 В `HtmlTypograf` вызвать `WordBinder.RunDocument(ref scanned, _options.Rules)`. В `TextTypograf` оставить `WordBinder.Run(ref buffer, _options.Rules)`: в обычном тексте сегментов нет, документный проход там ничего не даст.
 
-- [ ] **Step 6: Прогнать тесты**
+- [x] **Step 6: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS — падать не должно ничего, включая тесты, добавленные этой задачей.
 
-- [ ] **Step 7: Коммит**
+- [x] **Step 7: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -595,7 +595,7 @@ EOF
 - Consumes: `TextScanner.RunDocument` (возвращает `canWrapParagraphs`).
 - Produces: `internal static void LayoutWriter.Run(ReadOnlySpan<char> source, HtmlOptions options, bool canWrapParagraphs, ref CharBuffer buffer)` — единственная точка входа фазы; неразрывные цепочки ставятся внутри текстовых сегментов, переносы и абзацы — по документу. Прежние `Run(source, options, ref buffer)` и `WriteBreaks(...)` уходят.
 
-- [ ] **Step 1: Написать тест на границу цепочки**
+- [x] **Step 1: Написать тест на границу цепочки**
 
 В `tests/Typographer.Tests/Rules/LayoutTests.cs` добавить:
 
@@ -616,12 +616,12 @@ public void NobrChainDoesNotCrossTag()
 }
 ```
 
-- [ ] **Step 2: Прогнать тест**
+- [x] **Step 2: Прогнать тест**
 
 Run: `dotnet test`
 Expected: PASS — так работает и сейчас (nobr применяется к сегменту). Тест закрепляет поведение перед переносом.
 
-- [ ] **Step 3: Сделать фазу документной**
+- [x] **Step 3: Сделать фазу документной**
 
 В `src/Typographer/Internal/LayoutWriter.cs` заменить обе точки входа одной:
 
@@ -674,7 +674,7 @@ public static void Run(
 
 `WriteBreaks` становится приватным, публичная перегрузка `Run(source, options, ref buffer)` удаляется.
 
-- [ ] **Step 4: Переключить `HtmlTypograf`**
+- [x] **Step 4: Переключить `HtmlTypograf`**
 
 ```csharp
 LayoutWriter.Run(scanned.AsSpan(), _options, canWrapParagraphs, ref laidOut);
@@ -682,12 +682,12 @@ LayoutWriter.Run(scanned.AsSpan(), _options, canWrapParagraphs, ref laidOut);
 
 Ветка «ни `UseBr`, ни `UseP` — второй буфер не заводим» из `HtmlTypograf` уходит: решение о буфере принимает сама фаза.
 
-- [ ] **Step 5: Прогнать тесты**
+- [x] **Step 5: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS — падать не должно ничего, включая тесты, добавленные этой задачей. Особенно `UseP_WithMaxNobr_KeepsChainInsideParagraph` и `LongChain_TerminatesAndLosesNoChars` — они ловят смену порядка подфаз.
 
-- [ ] **Step 6: Коммит**
+- [x] **Step 6: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -715,7 +715,7 @@ EOF
 - Consumes: `MarkupScanner`, `EntityTable.NameOf(char)`, `EntityTable.IsInvisible(char)`.
 - Produces: `internal static void Emitter.EncodeDocument(ReadOnlySpan<char> html, EntityMode mode, ref CharBuffer destination)` — кодирует только внутри текстовых узлов; разметка и защищённые зоны выходят байт в байт.
 
-- [ ] **Step 1: Написать тест на гарантию 3**
+- [x] **Step 1: Написать тест на гарантию 3**
 
 В `tests/Typographer.Tests/Internal/EmitterTests.cs` добавить:
 
@@ -737,12 +737,12 @@ public void DocumentEncodingSkipsMarkupAndProtectedZones()
 }
 ```
 
-- [ ] **Step 2: Прогнать тест**
+- [x] **Step 2: Прогнать тест**
 
 Run: `dotnet test`
 Expected: PASS до Task 2 Step 4 и FAIL после него, пока `EncodeDocument` не написан. Именно поэтому Task 2 Step 4 и этот шаг едут одним коммитом.
 
-- [ ] **Step 3: Написать документное кодирование**
+- [x] **Step 3: Написать документное кодирование**
 
 В `src/Typographer/Internal/Emitter.cs`:
 
@@ -782,7 +782,7 @@ public static void EncodeDocument(ReadOnlySpan<char> html, EntityMode mode, ref 
 }
 ```
 
-- [ ] **Step 4: Переключить `HtmlTypograf` и убрать посегментные буферы**
+- [x] **Step 4: Переключить `HtmlTypograf` и убрать посегментные буферы**
 
 Итоговое тело:
 
@@ -809,12 +809,12 @@ private void Run(ReadOnlySpan<char> source, ref CharBuffer output)
 }
 ```
 
-- [ ] **Step 5: Прогнать тесты**
+- [x] **Step 5: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS — падать не должно ничего, включая тесты, добавленные этой задачей.
 
-- [ ] **Step 6: Коммит** — общий с Task 2 Step 6.
+- [x] **Step 6: Коммит** — общий с Task 2 Step 6.
 
 ---
 
@@ -828,7 +828,7 @@ Expected: PASS — падать не должно ничего, включая �
 - Consumes: всё, что собрано задачами 1–5.
 - Produces: ничего для кода; задача закрепляет, что перестройка буферов не нарушила гарантии 1, 2 и 6.
 
-- [ ] **Step 1: Написать тесты**
+- [x] **Step 1: Написать тесты**
 
 В `tests/Typographer.Tests/Guarantees/RobustnessTests.cs` добавить:
 
@@ -861,17 +861,17 @@ public void MultiSegmentDocumentStaysIdempotent()
 }
 ```
 
-- [ ] **Step 2: Прогнать тесты**
+- [x] **Step 2: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS. Если `LimitCountsWholeDocumentNotSegment` падает — предел где-то снова проверяется по частям; чинить до коммита.
 
-- [ ] **Step 3: Прогнать бенчмарк и записать цифры**
+- [x] **Step 3: Прогнать бенчмарк и записать цифры**
 
 Run: `rtk dotnet run -c Release --project bench/Typographer.Bench -- --filter '*'`
 Ожидание: время на документе из одного-двух сегментов не выросло больше чем на 10 %, число аллокаций на пути `IBufferWriter<char>` осталось нулевым. Цифры до и после вписать в тело коммита.
 
-- [ ] **Step 4: Коммит**
+- [x] **Step 4: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -906,12 +906,12 @@ EOF
   ```
   `true` означает «символ обработан и записан в буфер»; `false` — «правило не применилось, символ пишет диспетчер».
 
-- [ ] **Step 1: Убедиться, что тесты зелёные до рефакторинга**
+- [x] **Step 1: Убедиться, что тесты зелёные до рефакторинга**
 
 Run: `dotnet test`
 Expected: PASS. Задача — чистый рефакторинг: ни один тест не добавляется и не меняется.
 
-- [ ] **Step 2: Вынести правила многоточия и кавычек**
+- [x] **Step 2: Вынести правила многоточия и кавычек**
 
 Создать `src/Typographer/Internal/Scan/PunctuationRules.cs` и `QuoteRules.cs`, перенеся в них тела соответствующих веток из `TextScanner.Run` вместе с приватными помощниками (`ClosesEllipsis`, `IsOpeningContext`, `IsReadyOpeningQuote`, `IsReadyClosingQuote`) и их комментариями — комментарии объясняют неочевидные решения и обязаны переехать целиком. Пример:
 
@@ -953,16 +953,16 @@ internal static class QuoteRules
 }
 ```
 
-- [ ] **Step 3: Прогнать тесты**
+- [x] **Step 3: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS. Каждый вынос — отдельный прогон; если тесты покраснели, вынос сделан не байт в байт.
 
-- [ ] **Step 4: Вынести правила пробелов и тире**
+- [x] **Step 4: Вынести правила пробелов и тире**
 
 Создать `SpaceRules.cs` (ветка `' '`, дописывание пробела после запятой, `IsPunctuation`, `IsClosing`, `NeedsSpaceAfterComma`) и `DashRules.cs` (ветка `'-'`, `IsNumberAhead`, `IsYearBefore`, `IsYearAfter`, константа `YearDigits`). `CountTrailingDigits` остаётся в `TextScanner`: это учёт состояния, а не правило.
 
-- [ ] **Step 5: Свести цикл к диспетчеру**
+- [x] **Step 5: Свести цикл к диспетчеру**
 
 `TextScanner.Run` становится таким:
 
@@ -1005,7 +1005,7 @@ public static void Run(ReadOnlySpan<char> source, RuleSet rules, ref ScanState s
 }
 ```
 
-- [ ] **Step 6: Прогнать тесты и бенчмарк**
+- [x] **Step 6: Прогнать тесты и бенчмарк**
 
 Run: `dotnet test`
 Expected: PASS, число тестов не изменилось.
@@ -1013,7 +1013,7 @@ Expected: PASS, число тестов не изменилось.
 Run: `rtk dotnet run -c Release --project bench/Typographer.Bench -- --filter '*'`
 Ожидание: время не выросло больше чем на 5 % — диспетчеризация по `switch` не должна стоить дороже цепочки `if`.
 
-- [ ] **Step 7: Коммит**
+- [x] **Step 7: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -1046,7 +1046,7 @@ EOF
 - Consumes: `EntityTable.NameOf(char)`, `EntityTable.IsInvisible(char)`.
 - Produces: `EntityTable.IsEncodable(char)` — символ кодируется, даже если буквенного имени у него нет. `Emitter` при `NameOf == null` пишет числовой код.
 
-- [ ] **Step 1: Написать падающий тест**
+- [x] **Step 1: Написать падающий тест**
 
 В `tests/Typographer.Tests/Internal/EntityTableTests.cs`:
 
@@ -1085,12 +1085,12 @@ public void SymbolsModeKeepsNarrowNbspAsChar()
 
 `Encode` — уже существующий в `EmitterTests` приватный помощник над `CharBuffer`.
 
-- [ ] **Step 2: Прогнать тесты**
+- [x] **Step 2: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: FAIL — `IsEncodable` не существует, U+202F выходит символом во всех режимах.
 
-- [ ] **Step 3: Реализовать**
+- [x] **Step 3: Реализовать**
 
 В `EntityTable` добавить:
 
@@ -1130,16 +1130,16 @@ else
 destination.Write(';');
 ```
 
-- [ ] **Step 4: Прогнать тесты**
+- [x] **Step 4: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS.
 
-- [ ] **Step 5: Записать решение в передачу планам**
+- [x] **Step 5: Записать решение в передачу планам**
 
 В `docs/superpowers/plans/2026-09-08-input-for-plan-2.md` в абзаце про U+202F заменить «решить, выводить числовым кодом или оставлять символом» на «решено: числовым кодом `&#8239;`, см. план 2a, задача 8».
 
-- [ ] **Step 6: Коммит**
+- [x] **Step 6: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -1165,7 +1165,7 @@ EOF
 - Consumes: `RuleId.Registry.All`, `RuleId.Index`, `RuleSet` (маска на два `ulong`).
 - Produces: ничего для кода; тест ловит ошибку, которую иначе заметят только через 93 правила.
 
-- [ ] **Step 1: Написать тест**
+- [x] **Step 1: Написать тест**
 
 ```csharp
 [Fact]
@@ -1195,12 +1195,12 @@ public void RegistryNamesAreUnique()
 }
 ```
 
-- [ ] **Step 2: Прогнать тесты**
+- [x] **Step 2: Прогнать тесты**
 
 Run: `dotnet test`
 Expected: PASS — сейчас реестр корректен. Тест страхует планы 2b и 2c, где реестр вырастет с 14 записей до 107.
 
-- [ ] **Step 3: Коммит**
+- [x] **Step 3: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -1228,7 +1228,7 @@ EOF
 - Consumes: SOAP-метод `ProcessText(text, entityType, useBr, useP, maxNobr)` по адресу `https://typograf.artlebedev.ru/webservices/typograf.asmx`, `SOAPAction: "http://typograf.artlebedev.ru/webservices/ProcessText"`. Проверено: WSDL отдаёт 200, `entityType=3` возвращает символы, а не сущности.
 - Produces: `docs/oracle/lebedev.md` — таблица «вход | выход оракула», источник для планов 2b и 2c. Тесты его не читают: они остаются оффлайновыми.
 
-- [ ] **Step 1: Составить список входов**
+- [x] **Step 1: Составить список входов**
 
 Создать `tools/oracle-inputs.txt` — по одному случаю в строке, покрывая группы правил планов 2b и 2c:
 
@@ -1272,7 +1272,7 @@ EOF
 Абзац второй
 ```
 
-- [ ] **Step 2: Написать скрипт снимка**
+- [x] **Step 2: Написать скрипт снимка**
 
 Создать `tools/oracle-snapshot.sh`:
 
@@ -1326,18 +1326,18 @@ done < "$INPUTS"
 echo "Снимок записан в $OUT"
 ```
 
-- [ ] **Step 3: Прогнать скрипт**
+- [x] **Step 3: Прогнать скрипт**
 
 Run: `bash tools/oracle-snapshot.sh`
 Expected: `docs/oracle/lebedev.md` со всеми строками входа и непустым выходом в каждой.
 
 Если сервис недоступен или отвечает ошибкой — не выдумывать содержимое файла. Записать в `docs/oracle/lebedev.md` дату и текст ошибки, сообщить об этом, и планы 2b/2c писать по приоритету источников из спецификации: ГОСТ Р 7.0.110-2025 ⇒ Мильчин ⇒ практика Лебедева по документации ⇒ JS-typograf.
 
-- [ ] **Step 4: Проверить снимок глазами**
+- [x] **Step 4: Проверить снимок глазами**
 
 Прочитать `docs/oracle/lebedev.md` целиком. Отметить в конце файла разделом «Расхождения с нашим Default» случаи, где оракул ведёт себя не так, как текущая реализация. Пробный запрос уже показал один такой: `1941-1945` оракул оставляет с дефисом, а наше правило `ru/dash/years` ставит длинное тире — решение по нему принимает план 2b, здесь только фиксируется факт.
 
-- [ ] **Step 5: Коммит**
+- [x] **Step 5: Коммит**
 
 ```bash
 rtk git add -A && rtk git commit -F - <<'EOF'
@@ -1357,13 +1357,13 @@ EOF
 
 ## Приёмка плана
 
-- [ ] `dotnet test` — все тесты зелёные на всех целевых платформах.
-- [ ] `rtk dotnet build -c Release` — без предупреждений (`TreatWarningsAsErrors` включён).
-- [ ] Фаза `Bind` видит слово, разорванное строчным тегом, как одно слово; блочный тег и защищённая зона слово завершают.
-- [ ] В `HtmlTypograf.Run` три буфера на документ и ни одного на сегмент.
-- [ ] Правила фазы `Scan` лежат в `Internal/Scan/*` и вызываются из `switch` по символу-триггеру.
-- [ ] `docs/oracle/lebedev.md` в репозитории, расхождения с текущим `Default` перечислены в конце файла.
-- [ ] Ветка `feature/rules-infra` влита в `develop` и удалена.
+- [x] `dotnet test` — все тесты зелёные на всех целевых платформах.
+- [x] `rtk dotnet build -c Release` — без предупреждений (`TreatWarningsAsErrors` включён).
+- [x] Фаза `Bind` видит слово, разорванное строчным тегом, как одно слово; блочный тег и защищённая зона слово завершают.
+- [x] В `HtmlTypograf.Run` три буфера на документ и ни одного на сегмент.
+- [x] Правила фазы `Scan` лежат в `Internal/Scan/*` и вызываются из `switch` по символу-триггеру.
+- [x] `docs/oracle/lebedev.md` в репозитории, расхождения с текущим `Default` перечислены в конце файла.
+- [x] Ветка `feature/rules-infra` влита в `develop` и удалена.
 
 ## Что этот план передаёт планам 2b и 2c
 

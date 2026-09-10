@@ -28,6 +28,9 @@ internal static class NbspRules
         ReadOnlySpan<char> token, ReadOnlySpan<char> previous, char boundary,
         RuleSet rules, ref BindState state, ref CharBuffer buffer)
     {
+        // Предыдущий токен этому набору правил не нужен: всё, что о нём важно, лежит в
+        // BindState — вид, длина и позиция пробела перед ним. Параметр остаётся ради
+        // единообразия соглашения о правиле-склейке.
         _ = previous;
 
         // Внутри nobr и nowrap перенос уже запрещён тегом: склеивать нечего.
