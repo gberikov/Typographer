@@ -78,6 +78,9 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     /// <summary>Все правила фазы Bind. Нужна самой фазе: без пересечения проход не запускается.</summary>
     internal static RuleSet BindPhase { get; } = FromPhase(RulePhase.Bind);
 
+    /// <summary>Все правила фазы Layout. Нужна самой фазе: без пересечения проход не запускается.</summary>
+    internal static RuleSet LayoutPhase { get; } = FromPhase(RulePhase.Layout);
+
     /// <summary>Количество включённых правил.</summary>
     public int Count => BitCount(_low) + BitCount(_high);
 
