@@ -28,11 +28,6 @@ internal static class NbspRules
         ReadOnlySpan<char> token, ReadOnlySpan<char> previous, char boundary,
         RuleSet rules, ref BindState state, ref CharBuffer buffer)
     {
-        // Предыдущий токен этому набору правил не нужен: всё, что о нём важно, лежит в
-        // BindState — вид, длина и позиция пробела перед ним. Параметр остаётся ради
-        // единообразия соглашения о правиле-склейке.
-        _ = previous;
-
         // Внутри nobr и nowrap перенос уже запрещён тегом: склеивать нечего.
         if (state.NoWrap)
         {
@@ -44,7 +39,7 @@ internal static class NbspRules
         bool initial = rules.Contains(RuleId.Ru.Nbsp.Initials) && !state.TokenOverflow && IsInitial(token);
 
         if (state.SpaceIndex >= 0
-            && (initial || BindsBackward(token, letters, hasDot, boundary, rules, ref state)))
+            && (initial || BindsBackward(token, letters, previous, hasDot, boundary, rules, ref state)))
         {
             buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
         }
@@ -61,8 +56,8 @@ internal static class NbspRules
     /// в обе стороны и решается отдельно.
     /// </summary>
     private static bool BindsBackward(
-        ReadOnlySpan<char> token, ReadOnlySpan<char> letters, bool hasDot, char boundary,
-        RuleSet rules, ref BindState state)
+        ReadOnlySpan<char> token, ReadOnlySpan<char> letters, ReadOnlySpan<char> previous,
+        bool hasDot, char boundary, RuleSet rules, ref BindState state)
     {
         if (state.TokenOverflow)
         {
@@ -97,9 +92,14 @@ internal static class NbspRules
         // нельзя (ГОСТ 9.5), а разбивать его заново правилу разбиения уже нечего — остаётся
         // сделать неразрывными пробелы, которые в тексте стоят. Признак разряда строгий:
         // ровно три цифры справа и число слева, иначе «в 1941 1945» слиплось бы в одно.
+        // Смотреть надо на letters, а не на токен целиком: точка конца предложения входит
+        // в токен, и «1 000 000.» иначе теряло бы последнюю склейку.
+        // Слева при этом требуется число БЕЗ точки: «1. 000» — нумерованный пункт и
+        // следующее за ним число, а не разряды одного.
         if (rules.Contains(RuleId.Common.Number.DigitGrouping)
             && state.PrevKind == TokenKind.Number && state.PrevLength > 0
-            && state.Kind == TokenKind.Number && IsDigitGroup(token))
+            && previous[previous.Length - 1] != '.'
+            && state.Kind == TokenKind.Number && IsDigitGroup(letters))
         {
             return true;
         }
@@ -119,15 +119,15 @@ internal static class NbspRules
             || (rules.Contains(RuleId.Common.Nbsp.Dpi) && Dictionaries.IsResolution(token));
     }
 
-    /// <summary>Токен — разряд числа: ровно три цифры и ничего кроме них.</summary>
-    private static bool IsDigitGroup(ReadOnlySpan<char> token)
+    /// <summary>Разряд числа: ровно три цифры и ничего кроме них.</summary>
+    private static bool IsDigitGroup(ReadOnlySpan<char> digits)
     {
-        if (token.Length != 3)
+        if (digits.Length != 3)
         {
             return false;
         }
 
-        foreach (char c in token)
+        foreach (char c in digits)
         {
             if (!char.IsDigit(c))
             {

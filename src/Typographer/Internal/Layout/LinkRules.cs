@@ -53,8 +53,9 @@ internal static class LinkRules
             return false;
         }
 
-        int length = 0;
-        while (length < rest.Length && !IsUrlBoundary(rest[length]))
+        // Границы адреса те же, что у фазы Scan (см. Url); внутри схемы границ нет.
+        int length = scheme;
+        while (length < rest.Length && !Url.Ends(rest, length, rest[length - 1]))
         {
             length++;
         }
@@ -136,15 +137,22 @@ internal static class LinkRules
     /// Пишет элемент ссылки. Значение атрибута экранируется, текст ссылки — нет: это два
     /// разных контекста, и амперсанд в них означает разное.
     /// </summary>
+    /// <remarks>
+    /// Экранируется только амперсанд, который сущности НЕ начинает. Иначе уже записанная
+    /// автором «&amp;amp;» превращалась бы в «&amp;amp;amp;», и параметр «b» после
+    /// разбора браузером назывался бы «amp;b» — адрес в href переставал бы совпадать с
+    /// адресом в тексте ссылки.
+    /// </remarks>
     private static void WriteLink(ReadOnlySpan<char> target, ReadOnlySpan<char> scheme, ref CharBuffer buffer)
     {
         buffer.Write("<a href=\"");
         buffer.Write(scheme);
-        foreach (char c in target)
+        for (int i = 0; i < target.Length; i++)
         {
+            char c = target[i];
             switch (c)
             {
-                case '&':
+                case '&' when !StartsEntity(target, i):
                     buffer.Write("&amp;");
                     break;
                 case '"':
@@ -160,6 +168,81 @@ internal static class LinkRules
         buffer.Write(target);
         buffer.Write("</a>");
     }
+
+    /// <summary>
+    /// Амперсанд на позиции <paramref name="index"/> начинает ссылку на символ:
+    /// «&amp;amp;», «&amp;#34;», «&amp;#x22;». Амперсанд без имени или без точки с запятой
+    /// сущности не начинает и подлежит экранированию.
+    /// </summary>
+    /// <remarks>
+    /// Взгляд вперёд гарантии 1 не нарушает, хотя и зовётся на каждом амперсанде: перебор
+    /// идёт по буквам, цифрам и решётке, а следующий амперсанд перебор останавливает.
+    /// Отрезки, просмотренные разными вызовами, поэтому не накладываются друг на друга, и
+    /// суммарная работа линейна от длины адреса.
+    /// </remarks>
+    private static bool StartsEntity(ReadOnlySpan<char> source, int index)
+    {
+        int end = index + 1;
+        while (end < source.Length && IsEntityChar(source[end]))
+        {
+            end++;
+        }
+
+        return end < source.Length && source[end] == ';' && IsEntity(source.Slice(index, end - index + 1));
+    }
+
+    /// <summary>
+    /// Точка с запятой на позиции <paramref name="index"/> закрывает ссылку на символ.
+    /// Признак тот же, что у <see cref="StartsEntity"/>: иначе «&amp;#;» одна проверка
+    /// считала сущностью, а другая — нет, и точка с запятой оставалась в адресе при
+    /// экранированном амперсанде.
+    /// </summary>
+    private static bool ClosesEntity(ReadOnlySpan<char> source, int index)
+    {
+        int start = index - 1;
+        while (start >= 0 && IsEntityChar(source[start]))
+        {
+            start--;
+        }
+
+        return start >= 0 && source[start] == '&' && IsEntity(source.Slice(start, index - start + 1));
+    }
+
+    /// <summary>
+    /// Запись от амперсанда до точки с запятой — ссылка на символ: имя («amp») или код
+    /// («#34», «#x22») хотя бы из одного знака. «&amp;;», «&amp;#;» и «&amp;#x;» сущностями
+    /// не являются.
+    /// </summary>
+    private static bool IsEntity(ReadOnlySpan<char> entity)
+    {
+        int last = entity.Length - 1;
+        int i = 1;
+        if (i < last && entity[i] == '#')
+        {
+            i++;
+            if (i < last && entity[i] is 'x' or 'X')
+            {
+                i++;
+            }
+        }
+
+        if (i >= last)
+        {
+            return false;
+        }
+
+        for (; i < last; i++)
+        {
+            if (!char.IsLetterOrDigit(entity[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsEntityChar(char c) => char.IsLetterOrDigit(c) || c == '#';
 
     /// <summary>Сравнение со схемой без учёта регистра и без аллокаций.</summary>
     private static bool StartsWithScheme(ReadOnlySpan<char> source, string scheme)
@@ -180,19 +263,45 @@ internal static class LinkRules
         return true;
     }
 
-    private static bool IsUrlBoundary(char c) => char.IsWhiteSpace(c) || c is '<' or '>' or '"';
-
     private static bool IsLocalChar(char c)
         => char.IsLetterOrDigit(c) || c is '.' or '_' or '%' or '+' or '-';
 
-    /// <summary>Хвостовые знаки препинания к адресу не относятся: «Сайт http://a.ru.».</summary>
+    /// <summary>
+    /// Хвостовые знаки препинания к адресу не относятся: «Сайт http://a.ru.», «'http://a.ru'».
+    /// Прямой апостроф внутри адреса законен (RFC 3986) и границей адреса не является —
+    /// «?q='x y'» рвать нельзя, — поэтому отрезается только с хвоста.
+    /// </summary>
     private static int TrimTrailingPunctuation(ReadOnlySpan<char> source, int length)
     {
-        while (length > 0 && source[length - 1] is '.' or ',' or ';' or ':' or '!' or '?' or ')')
+        int apostrophes = 0;
+        foreach (char c in source.Slice(0, length))
         {
+            apostrophes += c == '\'' ? 1 : 0;
+        }
+
+        while (length > 0 && source[length - 1] is '.' or ',' or ';' or ':' or '!' or '?' or ')' or '\'')
+        {
+            // Точка с запятой, закрывающая сущность, знаком препинания не является: она
+            // часть адреса. Без этого «?q=&quot;x&quot;» теряло хвост записи, и адрес в
+            // ссылке обрывался внутри сущности.
+            if (source[length - 1] == ';' && ClosesEntity(source, length - 1))
+            {
+                break;
+            }
+
+            // Нечётное число апострофов слева означает, что последний закрывает строку
+            // внутри самого адреса: ?q='hello', $filter=Name%20eq%20'Alice'. Такой апостроф
+            // законен в URI и удалять его нельзя. При чётном числе это внешняя кавычка:
+            // 'http://a.ru' или 'http://a.ru/?q='x''.
+            if (source[length - 1] == '\'' && --apostrophes % 2 != 0)
+            {
+                break;
+            }
+
             length--;
         }
 
         return length;
     }
+
 }

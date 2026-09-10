@@ -11,6 +11,9 @@ internal static class Chars
     public const char Raquo = '\u00BB';
     public const char Bdquo = '\u201E';
     public const char Ldquo = '\u201C';
+
+    /// <summary>Английская закрывающая кавычка: типограф её не ставит, но во входе она встречается.</summary>
+    public const char Rdquo = '\u201D';
     public const char Lsquo = '\u2018';
     public const char Rsquo = '\u2019';
     public const char MDash = '\u2014';

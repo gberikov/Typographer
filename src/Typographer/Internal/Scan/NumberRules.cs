@@ -51,7 +51,7 @@ internal static class NumberRules
         }
 
         if (char.IsDigit(c) && rules.Contains(RuleId.Common.Number.DigitGrouping)
-            && TryWriteGrouped(source, index, previous, ref state, ref buffer))
+            && TryWriteGrouped(source, index, previous, floor, ref state, ref buffer))
         {
             return true;
         }
@@ -138,9 +138,10 @@ internal static class NumberRules
     /// Дробная часть не трогается: разряды считают у целого, а «3.14159» — одно число.
     /// </summary>
     private static bool TryWriteGrouped(
-        ReadOnlySpan<char> source, int index, char previous, ref ScanState state, ref CharBuffer buffer)
+        ReadOnlySpan<char> source, int index, char previous, int floor,
+        ref ScanState state, ref CharBuffer buffer)
     {
-        if (char.IsDigit(previous) || previous is '.' or ',')
+        if (char.IsDigit(previous) || previous is '.' or ',' || IsNumericEntity(ref buffer, floor))
         {
             return false;
         }
@@ -169,6 +170,28 @@ internal static class NumberRules
 
         state.Skip = digits - 1;
         return true;
+    }
+
+    /// <summary>
+    /// Цифры продолжают числовую ссылку на символ: «&amp;#1055;» или «&amp;#x41F;».
+    /// </summary>
+    /// <remarks>
+    /// Сущности разметки фаза Prepare не декодирует намеренно, и до правил они доходят
+    /// набором символов. Разряды внутри такой записи — не число, а код символа: «&amp;#100000;»
+    /// после разбиения перестаёт быть сущностью вовсе. Взгляд назад ограничен тремя
+    /// символами и не уходит левее floor: за границей узла лежит разметка, и сущности,
+    /// разорванной тегом, не бывает.
+    /// </remarks>
+    private static bool IsNumericEntity(ref CharBuffer buffer, int floor)
+    {
+        int end = buffer.Length;
+        if (end - floor >= 3 && buffer.CharAt(end - 1) is 'x' or 'X'
+            && buffer.CharAt(end - 2) == '#' && buffer.CharAt(end - 3) == '&')
+        {
+            return true;
+        }
+
+        return end - floor >= 2 && buffer.CharAt(end - 1) == '#' && buffer.CharAt(end - 2) == '&';
     }
 
     /// <summary>

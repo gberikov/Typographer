@@ -12,6 +12,25 @@ public class HtmlRulesTests
     private static string Run(string source, params RuleId[] rules)
         => new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
+    /// <summary>
+    /// Сущность разметки атомарна: правила чисел внутрь неё не лезут. Разбиение разрядов
+    /// превращало «&amp;#100000;» в «&amp;#100 000;» — запись переставала быть сущностью вовсе.
+    /// </summary>
+    [Theory]
+    [InlineData("&#100000;")]
+    [InlineData("&#x100000;")]
+    [InlineData("&#X100000;")]
+    public void NumericEntityIsNotSplitIntoDigitGroups(string source)
+        => Assert.Equal(source, Run(source, RuleId.Common.Number.DigitGrouping));
+
+    // А число рядом с сущностью разрядами разбивается как обычно: атомарна запись, а не
+    // всё, что стоит около неё.
+    [Fact]
+    public void NumberNextToEntityIsStillGrouped()
+        => Assert.Equal(
+            "&#1055; 1 000 000",
+            Run("&#1055; 1000000", RuleId.Common.Number.DigitGrouping));
+
     [Fact]
     public void QuotEntityBecomesQuoteCharacter()
     {
