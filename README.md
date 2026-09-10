@@ -107,7 +107,7 @@ BOM (`U+FEFF`) удаляется только в начале документ�
 | `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `Typographer.AspNetCore` | тег-хелпер `<typograf>` и `IHtmlContent` | ASP.NET Core | `net8.0`, `net10.0` |
 | `Typographer.Markdig` | типографика Markdown | `Markdig` | `netstandard2.0`, `net8.0`, `net10.0` |
-| `dotnet-typograf` | утилита командной строки | ядро | `net10.0` |
+| `dotnet-typographer` | утилита командной строки | ядро | `net10.0` |
 
 ### Контейнер
 
@@ -150,10 +150,10 @@ string html = Markdown.ToHtml(source, pipeline);
 ### Командная строка
 
 ```bash
-dotnet tool install --global dotnet-typograf
-echo 'Он - человек' | dotnet-typograf
-dotnet-typograf --entities named --in-place статья.html
-dotnet-typograf --help
+dotnet tool install --global dotnet-typographer
+echo 'Он - человек' | dotnet-typographer
+dotnet-typographer --entities named --in-place статья.html
+dotnet-typographer --help
 ```
 
 ## Разработка

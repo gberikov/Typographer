@@ -90,7 +90,7 @@ public class CliTests
         (int code, string output, _) = Run(["--help"]);
 
         Assert.Equal(0, code);
-        Assert.Contains("dotnet-typograf", output);
+        Assert.Contains("dotnet-typographer", output);
     }
 
     [Fact]

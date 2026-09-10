@@ -433,7 +433,7 @@ XML-комментарии: `common/punctuation/quoteLink`, `common/html/stripTa
 | `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0;net8.0;net10.0` |
 | `Typographer.AspNetCore` | TagHelper и `IHtmlContent` | ASP.NET Core | `net8.0;net10.0` |
 | `Typographer.Markdig` | Типографика Markdown как расширение конвейера | `Markdig` | `netstandard2.0;net8.0;net10.0` |
-| `dotnet-typograf` | CLI как dotnet tool | ядро | `net10.0` |
+| `dotnet-typographer` | CLI как dotnet tool | ядро | `net10.0` |
 
 Типографика Markdown применяется к дереву документа после разбора, а не к готовому HTML:
 рендерер кодирует прямую кавычку в `&quot;`, а типограф сущности разметки намеренно не

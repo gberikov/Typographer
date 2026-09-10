@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** четыре пакета вокруг ядра — регистрация в контейнере, тег-хелпер ASP.NET Core,
-расширение Markdig и консольная утилита `dotnet-typograf`, — каждый со своей внешней
+расширение Markdig и консольная утилита `dotnet-typographer`, — каждый со своей внешней
 зависимостью и ни одной новой зависимостью у ядра.
 
 **Architecture:** ядро не меняется ни на строчку. Граница пакета — внешняя зависимость
@@ -61,7 +61,7 @@
 | `src/Typographer.Markdig/TypografExtension.cs` | расширение конвейера Markdig |
 | `src/Typographer.Markdig/MarkdownPipelineBuilderExtensions.cs` | `UseTypograf()` |
 | `src/Typographer.Markdig/BlockTypograf.cs` | типографика текста блока с сохранением разметки |
-| `src/Typographer.Cli/Typographer.Cli.csproj` | пакет утилиты `dotnet-typograf` |
+| `src/Typographer.Cli/Typographer.Cli.csproj` | пакет утилиты `dotnet-typographer` |
 | `src/Typographer.Cli/Program.cs` | точка входа, только консольная обвязка |
 | `src/Typographer.Cli/CommandLine.cs` | разбор ключей и работа с потоками — всё, что тестируется |
 | `tests/Typographer.Integrations.Tests/**` | тесты всех четырёх интеграций |
@@ -917,7 +917,7 @@ rtk git commit -m "feat: расширение Markdig для типографи�
 
 ---
 
-## Task 4: Утилита dotnet-typograf
+## Task 4: Утилита dotnet-typographer
 
 **Files:**
 - Create: `src/Typographer.Cli/Typographer.Cli.csproj`
@@ -944,14 +944,14 @@ rtk git commit -m "feat: расширение Markdig для типографи�
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AssemblyName>dotnet-typograf</AssemblyName>
+    <AssemblyName>dotnet-typographer</AssemblyName>
     <RootNamespace>Typographer.Cli</RootNamespace>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-typograf</ToolCommandName>
+    <ToolCommandName>dotnet-typographer</ToolCommandName>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
-    <PackageId>dotnet-typograf</PackageId>
+    <PackageId>dotnet-typographer</PackageId>
     <Description>Типограф для русского языка в командной строке.</Description>
     <PackageTags>typography;russian;typograf;cli;dotnet-tool</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -1096,7 +1096,7 @@ public class CliTests
         (int code, string output, _) = Run(["--help"]);
 
         Assert.Equal(0, code);
-        Assert.Contains("dotnet-typograf", output);
+        Assert.Contains("dotnet-typographer", output);
     }
 
     [Fact]
@@ -1188,7 +1188,7 @@ internal static class CommandLine
     private const string Help = """
         Типограф для русского языка.
 
-        Использование: dotnet-typograf [ключи] [файл...]
+        Использование: dotnet-typographer [ключи] [файл...]
 
         Без файлов читает стандартный ввод и пишет в стандартный вывод.
 
@@ -1319,7 +1319,7 @@ internal static class CommandLine
                 default:
                     if (arg.StartsWith('-'))
                     {
-                        return Fail(error, $"Неизвестный ключ: {arg}. Справка: dotnet-typograf --help");
+                        return Fail(error, $"Неизвестный ключ: {arg}. Справка: dotnet-typographer --help");
                     }
 
                     files.Add(arg);
@@ -1494,7 +1494,7 @@ echo 'Он - человек и "цитата"' | rtk dotnet run --project src/Ty
 
 ```bash
 rtk git add src/Typographer.Cli tests/Typographer.Integrations.Tests Typographer.slnx
-rtk git commit -m "feat: утилита командной строки dotnet-typograf"
+rtk git commit -m "feat: утилита командной строки dotnet-typographer"
 ```
 
 ---
@@ -1515,7 +1515,7 @@ rtk git commit -m "feat: утилита командной строки dotnet-t
 Выполнить: `rtk dotnet pack -c Release -o artifacts/packages`
 
 Ожидается: пять файлов `.nupkg` — `Typographer`, `Typographer.DependencyInjection`,
-`Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typograf`. Проверить список:
+`Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typographer`. Проверить список:
 
 ```bash
 rtk ls artifacts/packages
@@ -1529,9 +1529,9 @@ rtk ls artifacts/packages
 Выполнить:
 
 ```bash
-rtk dotnet tool install --global --add-source artifacts/packages dotnet-typograf --prerelease
-rtk dotnet-typograf --version
-rtk dotnet tool uninstall --global dotnet-typograf
+rtk dotnet tool install --global --add-source artifacts/packages dotnet-typographer --prerelease
+rtk dotnet-typographer --version
+rtk dotnet tool uninstall --global dotnet-typographer
 ```
 
 Ожидается: установка проходит, версия печатается, удаление проходит. Это единственная
@@ -1550,7 +1550,7 @@ rtk dotnet tool uninstall --global dotnet-typograf
 | `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` |
 | `Typographer.AspNetCore` | тег-хелпер `<typograf>` и `IHtmlContent` | ASP.NET Core |
 | `Typographer.Markdig` | типографика Markdown | `Markdig` |
-| `dotnet-typograf` | утилита командной строки | ядро |
+| `dotnet-typographer` | утилита командной строки | ядро |
 
 ### Контейнер
 
@@ -1592,10 +1592,10 @@ HTML остаются нетронутыми, а кавычки вокруг р�
 ### Командная строка
 
 ```bash
-dotnet tool install --global dotnet-typograf
-echo 'Он - человек' | dotnet-typograf
-dotnet-typograf --entities named --in-place статья.html
-dotnet-typograf --help
+dotnet tool install --global dotnet-typographer
+echo 'Он - человек' | dotnet-typographer
+dotnet-typographer --entities named --in-place статья.html
+dotnet-typographer --help
 ```
 ````
 
@@ -1620,7 +1620,7 @@ tests/Typographer.Integrations.Tests/ тесты пакетов интеграц
 | `Typographer.DependencyInjection` | `netstandard2.0;net8.0;net10.0` |
 | `Typographer.AspNetCore` | `net8.0;net10.0` |
 | `Typographer.Markdig` | `netstandard2.0;net8.0;net10.0` |
-| `dotnet-typograf` | `net10.0` |
+| `dotnet-typographer` | `net10.0` |
 
 - [x] **Step 5: Отметить план в очереди**
 
@@ -1628,7 +1628,7 @@ tests/Typographer.Integrations.Tests/ тесты пакетов интеграц
 строку про план 4 привести к виду:
 
 ```markdown
-| 4. Интеграции ✅ | `Typographer.DependencyInjection`, `Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typograf`. План — `2026-09-10-integrations.md` | 2 |
+| 4. Интеграции ✅ | `Typographer.DependencyInjection`, `Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typographer`. План — `2026-09-10-integrations.md` | 2 |
 ```
 
 - [x] **Step 6: Прогнать всё**
@@ -1659,7 +1659,7 @@ rtk git commit -m "docs: пакеты интеграций в README и спец
 | 10, `Typographer.DependencyInjection` — `AddTypograf()` | 1 |
 | 10, `Typographer.AspNetCore` — TagHelper и `IHtmlContent` | 2 |
 | 10, `Typographer.Markdig` — типографика Markdown | 3 |
-| 10, `dotnet-typograf` — CLI как dotnet tool | 4 |
+| 10, `dotnet-typographer` — CLI как dotnet tool | 4 |
 | 10, граница пакета — внешняя зависимость | 1–4, ядро не тронуто |
 | 10, структура репозитория | 5 |
 | 11, XML-комментарии по-русски на каждом публичном члене | 1–4, `GenerateDocumentationFile` |

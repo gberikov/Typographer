@@ -3024,5 +3024,5 @@ git commit -m "perf: бенчмарки ядра и фиксация цели"
 | 1. Ядро ✅ | Настоящий документ | — |
 | 2. Полный набор правил ✅ | Остальные 93 правила по группам, пресеты `Lebedev`, `Typograf`, `Gost` с их расхождениями, словари месяцев, единиц, адресных сокращений. Разбит на 2a, 2b, 2c, 2d | 1 |
 | 3. Качество ✅ | Golden-корпус в файлах, оракул `typograf.artlebedev.ru`, фаззинг SharpFuzz, прогон каждого правила в одиночку. План — `2026-09-10-quality.md` | 2 |
-| 4. Интеграции ✅ | `Typographer.DependencyInjection`, `Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typograf`. План — `2026-09-10-integrations.md` | 2 |
+| 4. Интеграции ✅ | `Typographer.DependencyInjection`, `Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typographer`. План — `2026-09-10-integrations.md` | 2 |
 | 5. Документация и релиз | Генератор `docs/rules.md` из метаданных, сайт DocFX на GitHub Pages, публикация в NuGet по тегу | 2, 4 |

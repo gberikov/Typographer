@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AssemblyName>dotnet-typograf</AssemblyName>
+    <AssemblyName>dotnet-typographer</AssemblyName>
     <RootNamespace>Typographer.Cli</RootNamespace>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-typograf</ToolCommandName>
+    <ToolCommandName>dotnet-typographer</ToolCommandName>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
-    <PackageId>dotnet-typograf</PackageId>
+    <PackageId>dotnet-typographer</PackageId>
     <Description>Типограф для русского языка в командной строке.</Description>
     <PackageTags>typography;russian;typograf;cli;dotnet-tool</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

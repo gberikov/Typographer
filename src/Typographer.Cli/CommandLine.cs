@@ -15,7 +15,7 @@ internal static class CommandLine
     private const string Help = """
         Типограф для русского языка.
 
-        Использование: dotnet-typograf [ключи] [файл...]
+        Использование: dotnet-typographer [ключи] [файл...]
 
         Без файлов читает стандартный ввод и пишет в стандартный вывод.
 
@@ -146,7 +146,7 @@ internal static class CommandLine
                 default:
                     if (arg.StartsWith('-'))
                     {
-                        return Fail(error, $"Неизвестный ключ: {arg}. Справка: dotnet-typograf --help");
+                        return Fail(error, $"Неизвестный ключ: {arg}. Справка: dotnet-typographer --help");
                     }
 
                     files.Add(arg);
