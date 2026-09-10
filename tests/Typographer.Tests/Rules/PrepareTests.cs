@@ -14,12 +14,12 @@ namespace Typographer.Tests.Rules;
 /// </remarks>
 public class PrepareTests
 {
-    private static string Html(string source) => new HtmlTypograf(new HtmlOptions
+    private static string Html(string source) => new HtmlTypographer(new HtmlOptions
     {
         Rules = RuleSet.Default,
     }).Process(source);
 
-    private static string Text(string source) => new TextTypograf(new TextOptions
+    private static string Text(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.Default,
     }).Process(source);
@@ -68,15 +68,15 @@ public class PrepareTests
         // законно получает пробел перед скобкой), и тест перестал бы говорить о метке.
         // Пустой набор тоже не годится: фаза Prepare при нулевом наборе не запускается вовсе.
         RuleSet rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote);
-        var html = new HtmlTypograf(new HtmlOptions { Rules = rules });
-        var text = new TextTypograf(new TextOptions { Rules = rules });
+        var html = new HtmlTypographer(new HtmlOptions { Rules = rules });
+        var text = new TextTypographer(new TextOptions { Rules = rules });
 
         Assert.Equal(source, html.Process(source));
         Assert.Equal(source, html.Process(html.Process(source)));
         Assert.Equal(source, text.Process(source));
         Assert.Equal(
             $"<p>{source}</p>",
-            new HtmlTypograf(new HtmlOptions { Rules = rules, UseP = true }).Process(source));
+            new HtmlTypographer(new HtmlOptions { Rules = rules, UseP = true }).Process(source));
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class PrepareTests
     {
         string source = Chars.Bom + "слово&nbsp;- слово";
 
-        Assert.Equal(source, new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None }).Process(source));
+        Assert.Equal(source, new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None }).Process(source));
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class PrepareTests
     {
         // Сущность во ВТОРОМ текстовом узле доходит до правила тире так же, как в первом:
         // документный проход не должен зависеть от номера сегмента.
-        string result = new HtmlTypograf(new HtmlOptions
+        string result = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None.With(RuleId.Ru.Dash.Main),
         }).Process("<b>раз</b> два&nbsp;- три");
@@ -118,7 +118,7 @@ public class PrepareTests
     {
         // Метка порядка байт снимается только в начале ДОКУМЕНТА: внутри текста её
         // удаление могло бы склеить соседние символы в тег или сущность.
-        string result = new HtmlTypograf(new HtmlOptions
+        string result = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.Default,
         }).Process($"<b>раз</b>{Chars.Bom}два");
@@ -132,14 +132,14 @@ public class PrepareTests
     public void BomIsRemovedByItsRule()
         => Assert.Equal(
             "текст",
-            new TextTypograf(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Other.DelBom) })
+            new TextTypographer(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Other.DelBom) })
                 .Process($"{Chars.Bom}текст"));
 
     [Fact]
     public void BomStaysWhenTheRuleIsOff()
         => Assert.Equal(
             $"{Chars.Bom}текст",
-            new TextTypograf(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote) })
+            new TextTypographer(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Punctuation.Quote) })
                 .Process($"{Chars.Bom}текст"));
 
     // Снятие неразрывных пробелов — обратная операция к фазе Bind, и в одиночку оно
@@ -148,14 +148,14 @@ public class PrepareTests
     public void NbspIsReplacedByItsRule()
         => Assert.Equal(
             "в доме",
-            new TextTypograf(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Nbsp.ReplaceNbsp) })
+            new TextTypographer(new TextOptions { Rules = RuleSet.None.With(RuleId.Common.Nbsp.ReplaceNbsp) })
                 .Process($"в{Chars.Nbsp}доме"));
 
     [Fact]
     public void NbspComesBackWhenBindRulesAreOn()
         => Assert.Equal(
             $"в{Chars.Nbsp}доме",
-            new TextTypograf(new TextOptions
+            new TextTypographer(new TextOptions
             {
                 Rules = RuleSet.None.With(RuleId.Common.Nbsp.ReplaceNbsp, RuleId.Common.Nbsp.AfterShortWord),
             }).Process($"в{Chars.Nbsp}доме"));
@@ -164,5 +164,5 @@ public class PrepareTests
     public void NbspStaysWhenTheRuleIsOff()
         => Assert.Equal(
             $"дерево{Chars.Nbsp}стоит",
-            new TextTypograf(new TextOptions { Rules = RuleSet.Default }).Process($"дерево{Chars.Nbsp}стоит"));
+            new TextTypographer(new TextOptions { Rules = RuleSet.Default }).Process($"дерево{Chars.Nbsp}стоит"));
 }

@@ -34,8 +34,8 @@ public class EveryRuleTests
     [MemberData(nameof(RuleNames))]
     public void RuleAloneDoesNotThrow(string name)
     {
-        var html = new HtmlTypograf(new HtmlOptions { Rules = Single(name) });
-        var text = new TextTypograf(new TextOptions { Rules = Single(name) });
+        var html = new HtmlTypographer(new HtmlOptions { Rules = Single(name) });
+        var text = new TextTypographer(new TextOptions { Rules = Single(name) });
 
         foreach (string source in Inputs())
         {
@@ -57,12 +57,12 @@ public class EveryRuleTests
             return;
         }
 
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = Single(name) });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = Single(name) });
 
         foreach (string source in Inputs())
         {
-            string once = typograf.Process(source);
-            Assert.Equal(once, typograf.Process(once));
+            string once = typographer.Process(source);
+            Assert.Equal(once, typographer.Process(once));
         }
     }
 
@@ -78,11 +78,11 @@ public class EveryRuleTests
             return;
         }
 
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rule) });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rule) });
 
         foreach (string source in Inputs())
         {
-            Assert.Equal(Tags(source), Tags(typograf.Process(source)));
+            Assert.Equal(Tags(source), Tags(typographer.Process(source)));
         }
     }
 
@@ -103,7 +103,7 @@ public class EveryRuleTests
 
         const string Neutral = "простое предложение написанное словами длиннее четырёх букв";
 
-        Assert.Same(Neutral, new HtmlTypograf(new HtmlOptions { Rules = Single(name) }).Process(Neutral));
+        Assert.Same(Neutral, new HtmlTypographer(new HtmlOptions { Rules = Single(name) }).Process(Neutral));
     }
 
     // Реестр — таблица с двумя ключами: имя используется в RuleId.TryParse, индекс — как

@@ -125,7 +125,7 @@ public class OracleSnapshotTests
         Assert.Fail("docs/oracle/divergences.md перезаписан. Сними переменную и проверь diff.");
     }
 
-    private static string Process(string input) => new HtmlTypograf(new HtmlOptions
+    private static string Process(string input) => new HtmlTypographer(new HtmlOptions
     {
         Rules = RuleSet.Lebedev,
         Entities = EntityMode.Symbols,

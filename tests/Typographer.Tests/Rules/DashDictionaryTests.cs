@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 public class DashDictionaryTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Theory]
     [InlineData("5-10 января", "5\u201410 января")]
@@ -34,11 +34,11 @@ public class DashDictionaryTests
     {
         // Двойная фамилия пишется через дефис, и ни одно правило тире не должно его трогать:
         // пробелов вокруг нет, словарных слов нет, цифр нет.
-        var typograf = new TextTypograf();
-        Assert.Equal("Салтыков-Щедрин", typograf.Process("Салтыков-Щедрин"));
-        Assert.Equal("Римский-Корсаков", typograf.Process("Римский-Корсаков"));
+        var typographer = new TextTypographer();
+        Assert.Equal("Салтыков-Щедрин", typographer.Process("Салтыков-Щедрин"));
+        Assert.Equal("Римский-Корсаков", typographer.Process("Римский-Корсаков"));
 
         // А вот дефис с пробелами между теми же словами — это тире.
-        Assert.Contains("\u2014", typograf.Process("Иванов - Петров"));
+        Assert.Contains("\u2014", typographer.Process("Иванов - Петров"));
     }
 }

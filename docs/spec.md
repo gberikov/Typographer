@@ -51,33 +51,34 @@
 
 ## 4. Публичный API
 
-Пространство имён `Typographer`. Главный тип называется `Typograf`, а не
-`Typographer`, чтобы тип не совпадал с именем пространства имён.
+Пространство имён `Typographer`, и главный тип называется так же. Совпадение имени
+типа с именем пространства имён намеренное: вызов `Typographer.Html(text)` читается
+ровно как название пакета, и ради этого стоит потерпеть CA1724.
 
 ### 4.1 Точки входа
 
 ```csharp
 // Статический фасад — дефолтные настройки, ноль церемоний
-public static class Typograf
+public static class Typographer
 {
     public static string Html(string html);
     public static string PlainText(string text);
 }
 
 // Настраиваемый, иммутабельный, потокобезопасный
-public sealed class HtmlTypograf
+public sealed class HtmlTypographer
 {
-    public HtmlTypograf(HtmlOptions? options = null);
-    public static HtmlTypograf Default { get; }
+    public HtmlTypographer(HtmlOptions? options = null);
+    public static HtmlTypographer Default { get; }
 
     public string Process(string html);
     public void Process(ReadOnlySpan<char> html, IBufferWriter<char> destination);
 }
 
-public sealed class TextTypograf
+public sealed class TextTypographer
 {
-    public TextTypograf(TextOptions? options = null);
-    public static TextTypograf Default { get; }
+    public TextTypographer(TextOptions? options = null);
+    public static TextTypographer Default { get; }
 
     public string Process(string text);
     public void Process(ReadOnlySpan<char> text, IBufferWriter<char> destination);
@@ -163,7 +164,7 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
 Пример:
 
 ```csharp
-var typograf = new HtmlTypograf(new HtmlOptions
+var typographer = new HtmlTypographer(new HtmlOptions
 {
     Entities = EntityMode.Named,
     UseBr = true,
@@ -173,7 +174,7 @@ var typograf = new HtmlTypograf(new HtmlOptions
         .With(RuleId.Ru.OptAlign.Quote),
 });
 
-string html = typograf.Process(source);
+string html = typographer.Process(source);
 ```
 
 ## 5. Конвейер: пять фаз
@@ -307,7 +308,7 @@ Bind делает неразрывными пробелы, которые меж
 \* Семь правил группы `common/space/*` — `trimLeft`, `trimRight`, `delLeadingBlanks`,
 `delTrailingBlanks`, `delRepeatN`, `replaceTab`, `insertFinalNewline` — нормализуют
 пробельное письмо, а не типографику: они обрезают края фрагмента, переписывают отступы и
-разворачивают табы. Тот, кто вызвал `Typograf.Html(text)`, такого не ожидает, поэтому в
+разворачивают табы. Тот, кто вызвал `Typographer.Html(text)`, такого не ожидает, поэтому в
 `Default` их нет. Побочная выгода: пока ни одно из них не включено, документный проход
 нормализации не запускается и не стоит ни буфера, ни копии документа.
 
@@ -322,7 +323,7 @@ Bind делает неразрывными пробелы, которые меж
 `processingAttrs` (типографирование значений атрибутов противоречит той же гарантии, а
 реализация требует разбора значений внутри тега и повторного запуска конвейера на каждом из
 них). Оставшиеся шесть работают; правила этой группы имеют смысл только в HTML-режиме, и
-`TextTypograf` их не применяет.
+`TextTypographer` их не применяет.
 
 Правило `common/punctuation/quoteLink` зарегистрировано, но НЕ РЕАЛИЗУЕТСЯ: оно выносит
 кавычки за пределы ссылки, то есть переносит текст через границу тега вопреки гарантии 3.
@@ -337,7 +338,7 @@ Bind делает неразрывными пробелы, которые меж
 `common/html/escape` и `ru/optalign/*` (делают тег из текста или преобразуют разметку).
 
 Причина одна: правило, меняющее смысл или запись текста — а тем более создающее
-разметку, — не должно срабатывать у того, кто просто вызвал `Typograf.Html(text)`.
+разметку, — не должно срабатывать у того, кто просто вызвал `Typographer.Html(text)`.
 Правила, создающие или преобразующие разметку, перечислены в коде массивом
 `RuleId.Registry.MarkupChanging`; тест стережёт, что ни одно из них не попало в `Default`.
 
@@ -474,7 +475,7 @@ XML-комментарии: `common/punctuation/quoteLink`, `common/html/stripTa
 | Пакет | Содержимое | Зависимости | Платформы |
 |---|---|---|---|
 | `Typographer` | Ядро: HTML и plain text, правила, опции | нет на `net8.0` и `net10.0`; на `netstandard2.0` — один официальный полифил `System.Memory` | `netstandard2.0;net8.0;net10.0` |
-| `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0;net8.0;net10.0` |
+| `Typographer.DependencyInjection` | `AddTypographer()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0;net8.0;net10.0` |
 | `Typographer.AspNetCore` | TagHelper и `IHtmlContent` | ASP.NET Core | `net8.0;net10.0` |
 | `Typographer.Markdig` | Типографика Markdown как расширение конвейера | `Markdig` | `netstandard2.0;net8.0;net10.0` |
 | `dotnet-typographer` | CLI как dotnet tool | ядро | `net10.0` |

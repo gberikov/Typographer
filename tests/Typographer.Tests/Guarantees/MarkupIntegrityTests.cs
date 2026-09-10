@@ -9,8 +9,8 @@ public class MarkupIntegrityTests
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void TagCountUnchanged(string source)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
-        string result = typograf.Process(source);
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
+        string result = typographer.Process(source);
 
         Assert.Equal(CountTags(source), CountTags(result));
     }
@@ -25,11 +25,11 @@ public class MarkupIntegrityTests
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void TagCountUnchanged_AllRules(string source)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions
+        var typographer = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.All.Without(RuleId.Registry.MarkupChanging),
         });
-        string result = typograf.Process(source);
+        string result = typographer.Process(source);
 
         Assert.Equal(CountTags(source), CountTags(result));
     }
@@ -46,7 +46,7 @@ public class MarkupIntegrityTests
     public void RewriteRulesStopAtMarkup(string source, string untouched)
         => Assert.Contains(
             untouched,
-            new HtmlTypograf(new HtmlOptions
+            new HtmlTypographer(new HtmlOptions
             {
                 Rules = RuleSet.All.Without(RuleId.Registry.MarkupChanging),
             }).Process(source),
@@ -55,17 +55,17 @@ public class MarkupIntegrityTests
     [Fact]
     public void CodeContentUntouched()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
 
-        Assert.Contains("<code>a - b \"x\"</code>", typograf.Process("<code>a - b \"x\"</code>"));
+        Assert.Contains("<code>a - b \"x\"</code>", typographer.Process("<code>a - b \"x\"</code>"));
     }
 
     [Fact]
     public void AttributeValuesUntouched()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
 
-        Assert.Contains("title=\"Не трогать - тире\"", typograf.Process("<a title=\"Не трогать - тире\">x</a>"));
+        Assert.Contains("title=\"Не трогать - тире\"", typographer.Process("<a title=\"Не трогать - тире\">x</a>"));
     }
 
     // Правило delBeforePunctuation удаляет пробел перед «?»/«!». Если слева от пробела стоит
@@ -77,8 +77,8 @@ public class MarkupIntegrityTests
     [InlineData("текст < !-- не комментарий", "<!--")]
     public void SpaceRuleDoesNotCreateTagStart(string source, string forbidden)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
-        string result = typograf.Process(source);
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
+        string result = typographer.Process(source);
 
         Assert.DoesNotContain(forbidden, result);
     }

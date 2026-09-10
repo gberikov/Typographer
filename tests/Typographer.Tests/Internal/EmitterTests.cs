@@ -56,7 +56,7 @@ public class EmitterTests
     {
         // Кавычка-ёлочка в значении атрибута и внутри <code> сущностью не становится:
         // гарантия 3 обещает разметку и защищённые зоны байт в байт.
-        string result = new HtmlTypograf(new HtmlOptions
+        string result = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None,
             Entities = EntityMode.Named,

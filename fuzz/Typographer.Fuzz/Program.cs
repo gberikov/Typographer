@@ -12,9 +12,9 @@ using Typographer.Rules;
 // а All ловит дефекты самих правил. Идемпотентность здесь не проверяется: три правила
 // нарушают её по своей природе (replaceNbsp, nbr, escape), и фаззеру про эти исключения
 // знать негде.
-HtmlTypograf? html = null;
-HtmlTypograf? htmlBare = null;
-TextTypograf? text = null;
+HtmlTypographer? html = null;
+HtmlTypographer? htmlBare = null;
+TextTypographer? text = null;
 
 Fuzzer.LibFuzzer.Run(bytes =>
 {
@@ -22,9 +22,9 @@ Fuzzer.LibFuzzer.Run(bytes =>
     // счётчики покрытия живут в разделяемой памяти, которую libFuzzer отображает уже после
     // старта процесса. Любое обращение к инструментированному коду раньше — падение с
     // AccessViolationException прямо в конструкторе (проверено прогоном workflow).
-    html ??= new HtmlTypograf(new HtmlOptions { Rules = RuleSet.All });
-    htmlBare ??= new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
-    text ??= new TextTypograf(new TextOptions { Rules = RuleSet.All });
+    html ??= new HtmlTypographer(new HtmlOptions { Rules = RuleSet.All });
+    htmlBare ??= new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None });
+    text ??= new TextTypographer(new TextOptions { Rules = RuleSet.All });
 
     // Два прочтения одних и тех же байт, потому что интересны два разных класса входов.
     // Как UTF-8 — осмысленный текст: затравка из корпуса остаётся читаемой, и фаззер

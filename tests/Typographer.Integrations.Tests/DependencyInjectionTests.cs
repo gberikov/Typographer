@@ -5,49 +5,49 @@ namespace Typographer.Integrations.Tests;
 public class DependencyInjectionTests
 {
     [Fact]
-    public void AddTypograf_RegistersBothTypografs()
+    public void AddTypographer_RegistersBothTypographers()
     {
-        ServiceProvider provider = new ServiceCollection().AddTypograf().BuildServiceProvider();
+        ServiceProvider provider = new ServiceCollection().AddTypographer().BuildServiceProvider();
 
-        Assert.NotNull(provider.GetRequiredService<HtmlTypograf>());
-        Assert.NotNull(provider.GetRequiredService<TextTypograf>());
+        Assert.NotNull(provider.GetRequiredService<HtmlTypographer>());
+        Assert.NotNull(provider.GetRequiredService<TextTypographer>());
     }
 
     [Fact]
-    public void AddTypograf_RegistersAsSingletons()
+    public void AddTypographer_RegistersAsSingletons()
     {
-        ServiceProvider provider = new ServiceCollection().AddTypograf().BuildServiceProvider();
+        ServiceProvider provider = new ServiceCollection().AddTypographer().BuildServiceProvider();
 
-        Assert.Same(provider.GetRequiredService<HtmlTypograf>(), provider.GetRequiredService<HtmlTypograf>());
+        Assert.Same(provider.GetRequiredService<HtmlTypographer>(), provider.GetRequiredService<HtmlTypographer>());
     }
 
     [Fact]
-    public void AddTypograf_PassesOptionsToTypograf()
+    public void AddTypographer_PassesOptionsToTypographer()
     {
         ServiceProvider provider = new ServiceCollection()
-            .AddTypograf(new HtmlOptions { Entities = EntityMode.Named })
+            .AddTypographer(new HtmlOptions { Entities = EntityMode.Named })
             .BuildServiceProvider();
 
-        Assert.Contains("&laquo;", provider.GetRequiredService<HtmlTypograf>().Process("\"цитата\""));
+        Assert.Contains("&laquo;", provider.GetRequiredService<HtmlTypographer>().Process("\"цитата\""));
     }
 
-    // TryAdd, а не Add: своя регистрация типографа должна побеждать. Иначе AddTypograf,
+    // TryAdd, а не Add: своя регистрация типографа должна побеждать. Иначе AddTypographer,
     // вызванный библиотекой, молча затирал бы настройку приложения.
     [Fact]
-    public void AddTypograf_DoesNotOverrideExistingRegistration()
+    public void AddTypographer_DoesNotOverrideExistingRegistration()
     {
-        var mine = new HtmlTypograf(new HtmlOptions { Entities = EntityMode.Numeric });
+        var mine = new HtmlTypographer(new HtmlOptions { Entities = EntityMode.Numeric });
         ServiceProvider provider = new ServiceCollection()
             .AddSingleton(mine)
-            .AddTypograf()
+            .AddTypographer()
             .BuildServiceProvider();
 
-        Assert.Same(mine, provider.GetRequiredService<HtmlTypograf>());
+        Assert.Same(mine, provider.GetRequiredService<HtmlTypographer>());
     }
 
     [Fact]
-    public void AddTypograf_NullThrowsArgumentNullException()
+    public void AddTypographer_NullThrowsArgumentNullException()
     {
-        Assert.Throws<ArgumentNullException>(() => ((IServiceCollection)null!).AddTypograf());
+        Assert.Throws<ArgumentNullException>(() => ((IServiceCollection)null!).AddTypographer());
     }
 }

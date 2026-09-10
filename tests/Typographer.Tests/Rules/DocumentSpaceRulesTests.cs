@@ -5,10 +5,10 @@ namespace Typographer.Tests.Rules;
 public class DocumentSpaceRulesTests
 {
     private static string Run(string html, params RuleId[] rules)
-        => new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(html);
+        => new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(html);
 
     private static string Text(string text, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(text);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(text);
 
     [Fact]
     public void CollapsesRepeatedLineBreaks()
@@ -98,6 +98,6 @@ public class DocumentSpaceRulesTests
         // Повторяющиеся ПРОБЕЛЫ в источнике намеренно отсутствуют: их Default схлопывает
         // законно, это типографика, а не нормализация пробельного письма.
         const string source = " текст\t\n\n\n\nдальше ";
-        Assert.Equal(source, new HtmlTypograf().Process(source));
+        Assert.Equal(source, new HtmlTypographer().Process(source));
     }
 }

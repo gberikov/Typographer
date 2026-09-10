@@ -160,8 +160,8 @@ internal static class CommandLine
         }
 
         Func<string, string> process = text
-            ? new TextTypograf(new TextOptions { Rules = rules }).Process
-            : new HtmlTypograf(new HtmlOptions
+            ? new TextTypographer(new TextOptions { Rules = rules }).Process
+            : new HtmlTypographer(new HtmlOptions
             {
                 Rules = rules,
                 Entities = entities,

@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 
 public class BindAcrossMarkupTests
 {
-    private static string Run(string html) => new HtmlTypograf(new HtmlOptions
+    private static string Run(string html) => new HtmlTypographer(new HtmlOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Common.Nbsp.AfterShortWord)
@@ -53,7 +53,7 @@ public class BindAcrossMarkupTests
         // Фаза стала пишущей: документ обязан выйти байт в байт, если ни одно правило не
         // сработало. Проверяется на входе, где есть все виды сегментов сразу.
         const string source = "<p title=\"a - b\">раз<!-- к --><code>x  y</code>два</p>";
-        Assert.Equal(source, new HtmlTypograf(new HtmlOptions
+        Assert.Equal(source, new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None.With(RuleId.Ru.Nbsp.Initials),
         }).Process(source));
@@ -65,7 +65,7 @@ public class BindAcrossMarkupTests
         // вывод начнётся с копии подготовленного документа — тест ловит именно это.
         => Assert.Equal(
             $"в{Chars.Nbsp}доме",
-            new TextTypograf(new TextOptions
+            new TextTypographer(new TextOptions
             {
                 Rules = RuleSet.None.With(RuleId.Common.Nbsp.AfterShortWord),
             }).Process("в доме"));
@@ -90,7 +90,7 @@ public class BindAcrossMarkupTests
     // Токен между пробелом и знаком соседство разрывает и через теги тоже.
     [InlineData("30 <b>15</b>°", "30 <b>15</b>°")]
     public void UnitSignBindsToNumberThroughInlineTag(string source, string expected)
-        => Assert.Equal(expected, new HtmlTypograf(new HtmlOptions
+        => Assert.Equal(expected, new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None.With(RuleId.Common.Nbsp.AfterNumber),
         }).Process(source));
@@ -100,7 +100,7 @@ public class BindAcrossMarkupTests
     /// </summary>
     [Fact]
     public void UnitSignInsideNobrStaysBreakable()
-        => Assert.Equal("<nobr>25 °C</nobr>", new HtmlTypograf(new HtmlOptions
+        => Assert.Equal("<nobr>25 °C</nobr>", new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None.With(RuleId.Common.Nbsp.AfterNumber, RuleId.Common.Nbsp.Nowrap),
         }).Process("<nobr>25 °C</nobr>"));

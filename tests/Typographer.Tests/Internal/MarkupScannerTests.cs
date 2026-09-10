@@ -177,7 +177,7 @@ public class MarkupScannerTests
             Scan(source));
         Assert.Equal(
             $"<pre>{protectedContent}</pre>слово{Chars.Nbsp}{Chars.MDash} слово",
-            HtmlTypograf.Default.Process(source));
+            HtmlTypographer.Default.Process(source));
     }
 
     [Fact]

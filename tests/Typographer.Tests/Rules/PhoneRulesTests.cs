@@ -13,7 +13,7 @@ public class PhoneRulesTests
         $"+7{Chars.Nbsp}999{Chars.Nbsp}123-45-67";
 
     private static string Run(string source)
-        => new TextTypograf(new TextOptions
+        => new TextTypographer(new TextOptions
         {
             Rules = RuleSet.None.With(RuleId.Ru.Other.PhoneNumber),
         }).Process(source);

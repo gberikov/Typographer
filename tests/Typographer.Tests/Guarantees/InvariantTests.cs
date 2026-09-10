@@ -32,8 +32,8 @@ public class InvariantTests
 
         foreach (RuleId rule in RuleSet.All)
         {
-            var html = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rule) });
-            var text = new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rule) });
+            var html = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rule) });
+            var text = new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rule) });
 
             foreach (string sample in Samples)
             {
@@ -57,7 +57,7 @@ public class InvariantTests
     }
 
     // Два пути к одному результату: текст без разметки обязан выглядеть одинаково после
-    // TextTypograf и после HtmlTypograf. Пока пути расходятся, один из них неверен, и
+    // TextTypographer и после HtmlTypographer. Пока пути расходятся, один из них неверен, и
     // отличить какой на глаз нельзя — это ловилось только по жалобам.
     [Fact]
     public void TextAndHtmlAgreeWhenThereIsNoMarkup()
@@ -68,8 +68,8 @@ public class InvariantTests
             .Without(RuleId.Registry.MarkupChanging)
             .Without(RuleId.Common.Html.Quot);
 
-        var html = new HtmlTypograf(new HtmlOptions { Rules = rules });
-        var text = new TextTypograf(new TextOptions { Rules = rules });
+        var html = new HtmlTypographer(new HtmlOptions { Rules = rules });
+        var text = new TextTypographer(new TextOptions { Rules = rules });
         var report = new StringBuilder();
 
         foreach (string sample in Samples)

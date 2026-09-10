@@ -103,7 +103,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_RuleListContainsJsTypografNames()
+    public void Run_RuleListContainsJsTypographerNames()
     {
         (int code, string output, _) = Run(["--list-rules"]);
 

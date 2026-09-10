@@ -703,7 +703,7 @@ public readonly struct RuleId : IEquatable<RuleId>
         /// <summary>
         /// Правила нормализации текста: обрезка краёв, отступы, табы, финальный перевод строки.
         /// Выключены в Default — они меняют текст за пределами оформления, и тот, кто вызвал
-        /// Typograf.Html(text), такого не ожидает.
+        /// Typographer.Html(text), такого не ожидает.
         /// </summary>
         public static readonly RuleId[] Normalization =
         [

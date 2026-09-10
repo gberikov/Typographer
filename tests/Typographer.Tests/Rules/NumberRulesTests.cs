@@ -4,7 +4,7 @@ namespace Typographer.Tests.Rules;
 
 public class NumberRulesTests
 {
-    private static string Run(string source) => new TextTypograf(new TextOptions
+    private static string Run(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Common.Number.Fraction)
@@ -12,7 +12,7 @@ public class NumberRulesTests
             .With(RuleId.Common.Number.Times),
     }).Process(source);
 
-    private static string Grouped(string source) => new TextTypograf(new TextOptions
+    private static string Grouped(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.None.With(RuleId.Common.Number.DigitGrouping),
     }).Process(source);

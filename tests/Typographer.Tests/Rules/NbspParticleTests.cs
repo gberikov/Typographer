@@ -10,7 +10,7 @@ namespace Typographer.Tests.Rules;
 public class NbspParticleTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Theory]
     [InlineData("так ли это", "так ли это")]

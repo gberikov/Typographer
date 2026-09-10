@@ -9,28 +9,28 @@ public class PipelineTests
     [Fact]
     public void NoRulesReturnsSameStringInstance()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None });
         string source = "<p>Он - человек</p>";
 
-        Assert.Same(source, typograf.Process(source));
+        Assert.Same(source, typographer.Process(source));
     }
 
     [Fact]
     public void NoRulesMarkupCopiedByteForByte()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None });
         string source = "<a title=\"a>b\">x</a><code>a - b</code><!-- c -->";
 
-        Assert.Equal(source, typograf.Process(source));
+        Assert.Equal(source, typographer.Process(source));
     }
 
     [Fact]
     public void WritesToBufferWriter()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None });
         var writer = new ArrayBufferWriter<char>();
 
-        typograf.Process("<p>текст</p>".AsSpan(), writer);
+        typographer.Process("<p>текст</p>".AsSpan(), writer);
 
         Assert.Equal("<p>текст</p>", writer.WrittenSpan.ToString());
     }
@@ -38,14 +38,14 @@ public class PipelineTests
     [Fact]
     public void FacadeWorksWithoutOptions()
     {
-        Assert.NotNull(Typograf.Html("текст"));
-        Assert.NotNull(Typograf.PlainText("текст"));
+        Assert.NotNull(Typographer.Html("текст"));
+        Assert.NotNull(Typographer.PlainText("текст"));
     }
 
     [Fact]
     public void NullThrowsArgumentNullException()
     {
-        Assert.Throws<ArgumentNullException>(() => Typograf.Html(null!));
+        Assert.Throws<ArgumentNullException>(() => Typographer.Html(null!));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class PipelineTests
     {
         // Тест проверяет, что кодирование применяется ТОЛЬКО к текстовым сегментам,
         // и не трогает разметку и защищённые зоны. Это критично для корректности.
-        var typograf = new HtmlTypograf(new HtmlOptions
+        var typographer = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None,
             Entities = EntityMode.Named
@@ -66,14 +66,14 @@ public class PipelineTests
         string input = $"text{Chars.Nbsp}end<a title=\"attr{Chars.Nbsp}value\">link</a><code>code{Chars.Nbsp}here</code>";
         string expected = $"text&nbsp;end<a title=\"attr{Chars.Nbsp}value\">link</a><code>code{Chars.Nbsp}here</code>";
 
-        Assert.Equal(expected, typograf.Process(input));
+        Assert.Equal(expected, typographer.Process(input));
     }
 
     [Fact]
     public void SymbolsModeLeavesMarkupAndProtectionIntact()
     {
         // Режим Symbols не должен ничего менять, даже если есть типографские символы.
-        var typograf = new HtmlTypograf(new HtmlOptions
+        var typographer = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None,
             Entities = EntityMode.Symbols
@@ -81,6 +81,6 @@ public class PipelineTests
 
         string input = $"text{Chars.Nbsp}end<a title=\"attr{Chars.Nbsp}value\">link</a><code>code{Chars.Nbsp}here</code>";
 
-        Assert.Equal(input, typograf.Process(input));
+        Assert.Equal(input, typographer.Process(input));
     }
 }

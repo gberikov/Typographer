@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 public class RuNumberSpaceTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Theory]
     [InlineData("3.14", "3,14")]

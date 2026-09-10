@@ -9,7 +9,7 @@ namespace Typographer.Tests.Rules;
 public class InlineMarkupTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     // Проход обязан вернуть документ байт в байт, если ни одно правило не сработало, и не
     // запускаться вовсе, когда его правила выключены.
