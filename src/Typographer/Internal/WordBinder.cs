@@ -258,7 +258,8 @@ internal static class WordBinder
             // Символьные правила: они пишут сами и сообщают, сколько символов документа
             // проглотили. То, что они записали, для токенного окна непрозрачно — окно
             // сбрасывается, а SafeFrom запрещает переписывать записанное.
-            if (MarkRules.TryApply(document, i, end, rules, ref state, ref buffer))
+            if (MarkRules.TryApply(document, i, end, rules, ref state, ref buffer)
+                || MoneyRules.TryApply(document, i, end, rules, ref state, ref buffer))
             {
                 i += state.Skip;
                 state.Skip = 0;
@@ -302,6 +303,8 @@ internal static class WordBinder
         // «1990 г.г.» — сперва «гг.», и только потом решение о неразрывном пробеле перед ним.
         RewriteRules.TryRewrite(
             token, previous.Slice(0, state.PrevLength), boundary, rules, ref state, ref buffer);
+
+        MoneyRules.TryRewrite(token, rules, ref state, ref buffer);
 
         DateRules.TryRewrite(
             token, previous.Slice(0, state.PrevLength), boundary, rules, ref state, ref buffer);
