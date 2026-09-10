@@ -43,4 +43,24 @@ public class HtmlRulesTests
         => Assert.Equal(
             "<a title=\"&quot;цитата&quot;\">x</a>",
             Run("<a title=\"&quot;цитата&quot;\">x</a>", RuleId.Common.Html.Quot));
+
+    // Правило и опция говорят одно и то же и складываются по «или»: заводить второй
+    // механизм для того, что уже написано и оттестировано, незачем.
+    [Fact]
+    public void NbrRuleReplacesNewlineLikeTheOption()
+        => Assert.Equal("первая<br />\nвторая", Run("первая\nвторая", RuleId.Common.Html.Nbr));
+
+    [Fact]
+    public void PRuleWrapsParagraphsLikeTheOption()
+        => Assert.Equal("<p>первый</p>\n<p>второй</p>", Run("первый\n\nвторой", RuleId.Common.Html.P));
+
+    [Fact]
+    public void PRuleDoesNotWrapExistingBlockMarkup()
+        => Assert.Equal(
+            "<ul>\n<li>раз</li>\n</ul>",
+            Run("<ul>\n<li>раз</li>\n</ul>", RuleId.Common.Html.P));
+
+    [Fact]
+    public void NewlineStaysWithoutRuleAndOption()
+        => Assert.Equal("первая\nвторая", Run("первая\nвторая", RuleId.Common.Punctuation.Quote));
 }

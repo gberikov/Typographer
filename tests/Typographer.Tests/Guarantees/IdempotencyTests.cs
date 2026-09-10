@@ -34,13 +34,19 @@ public class IdempotencyTests
     // превращением («- » в тире, «руб.» в знак рубля), на втором прогоне восстановить уже
     // нечем: исходной формы в тексте нет. Это свойство самого правила, а не дефект; см.
     // docs/spec.md, гарантия 5.
+    // По той же причине исключены common/html/nbr — он вкладывает теги переноса повторно,
+    // ровно как опция UseBr, — и common/html/escape: амперсанд, ставший «&amp;», на втором
+    // прогоне станет «&amp;amp;», и неподвижной точки у экранирования нет по определению.
     [Theory]
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void SecondPassChangesNothing_AllRules(string source)
     {
         var typograf = new HtmlTypograf(new HtmlOptions
         {
-            Rules = RuleSet.All.Without(RuleId.Common.Nbsp.ReplaceNbsp),
+            Rules = RuleSet.All.Without(
+                RuleId.Common.Nbsp.ReplaceNbsp,
+                RuleId.Common.Html.Nbr,
+                RuleId.Common.Html.Escape),
         });
         string once = typograf.Process(source);
 

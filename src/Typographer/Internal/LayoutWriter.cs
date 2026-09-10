@@ -1,4 +1,5 @@
 using Typographer.Internal.Layout;
+using Typographer.Rules;
 
 namespace Typographer.Internal;
 
@@ -63,10 +64,13 @@ internal static class LayoutWriter
         // невалидный HTML, и границы абзацев в таком документе задаёт сама разметка, а не
         // пустые строки. Незакрытая разметка тоже запрещает обёртку: её </p> иначе окажется
         // внутри незакрытого атрибута, комментария или script.
-        bool useP = options.UseP && canWrapParagraphs;
+        // Правило и опция говорят одно и то же: включено любое из двух — тег ставится.
+        // Второго механизма для этого не заводится, см. план 2d, решение 1.
+        bool useBr = options.UseBr || options.Rules.Contains(RuleId.Common.Html.Nbr);
+        bool useP = (options.UseP || options.Rules.Contains(RuleId.Common.Html.P)) && canWrapParagraphs;
         if (options.MaxNobr <= 0)
         {
-            WriteBreaks(source, options.UseBr, useP, ref buffer);
+            WriteBreaks(source, useBr, useP, ref buffer);
             return;
         }
 
@@ -90,7 +94,7 @@ internal static class LayoutWriter
                 }
             }
 
-            WriteBreaks(chained.AsSpan(), options.UseBr, useP, ref buffer);
+            WriteBreaks(chained.AsSpan(), useBr, useP, ref buffer);
         }
         finally
         {
