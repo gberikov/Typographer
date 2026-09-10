@@ -427,13 +427,17 @@ XML-комментарии: `common/punctuation/quoteLink`, `common/html/stripTa
 
 Граница пакета — внешняя зависимость. Ядро зависимостей не имеет.
 
-| Пакет | Содержимое | Зависимости |
-|---|---|---|
-| `Typographer` | Ядро: HTML и plain text, правила, опции | нет на `net8.0` и `net10.0`; на `netstandard2.0` — один официальный полифил `System.Memory` |
-| `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` |
-| `Typographer.AspNetCore` | TagHelper и `IHtmlContent` | ASP.NET Core |
-| `Typographer.Markdig` | Типографика Markdown как расширение конвейера | `Markdig` |
-| `dotnet-typograf` | CLI как dotnet tool | ядро |
+| Пакет | Содержимое | Зависимости | Платформы |
+|---|---|---|---|
+| `Typographer` | Ядро: HTML и plain text, правила, опции | нет на `net8.0` и `net10.0`; на `netstandard2.0` — один официальный полифил `System.Memory` | `netstandard2.0;net8.0;net10.0` |
+| `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0;net8.0;net10.0` |
+| `Typographer.AspNetCore` | TagHelper и `IHtmlContent` | ASP.NET Core | `net8.0;net10.0` |
+| `Typographer.Markdig` | Типографика Markdown как расширение конвейера | `Markdig` | `netstandard2.0;net8.0;net10.0` |
+| `dotnet-typograf` | CLI как dotnet tool | ядро | `net10.0` |
+
+Типографика Markdown применяется к дереву документа после разбора, а не к готовому HTML:
+рендерер кодирует прямую кавычку в `&quot;`, а типограф сущности разметки намеренно не
+декодирует (5.1), и кавычки-ёлочки в отрендеренном HTML не появились бы вовсе.
 
 Структура репозитория:
 
@@ -446,12 +450,14 @@ src/Typographer.Cli/
 tests/Typographer.Tests/         unit и property
 tests/Typographer.Corpus/        golden-файлы
 tests/Typographer.Oracle/        сверка с сервисом Лебедева, вне CI
+tests/Typographer.Integrations.Tests/ тесты пакетов интеграций
 bench/Typographer.Bench/         BenchmarkDotNet
 fuzz/Typographer.Fuzz/           цель libFuzzer
 docs/                            документация и DocFX
 ```
 
-Целевые платформы: `netstandard2.0`, `net8.0`, `net10.0`.
+Целевые платформы ядра: `netstandard2.0`, `net8.0`, `net10.0`. У пакетов интеграций —
+по таблице выше: их ограничивают собственные зависимости.
 
 ## 11. Документация
 
