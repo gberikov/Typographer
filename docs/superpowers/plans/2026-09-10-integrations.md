@@ -90,7 +90,7 @@
   в пространстве имён `Microsoft.Extensions.DependencyInjection`. Задача 2 опирается на то,
   что `HtmlTypograf` после этого вызова разрешается из контейнера.
 
-- [ ] **Step 1: Создать ветку**
+- [x] **Step 1: Создать ветку**
 
 ```bash
 rtk git switch develop
@@ -98,7 +98,7 @@ rtk git pull --ff-only origin develop
 rtk git switch -c feature/integrations
 ```
 
-- [ ] **Step 2: Завести проект пакета**
+- [x] **Step 2: Завести проект пакета**
 
 Создать `src/Typographer.DependencyInjection/Typographer.DependencyInjection.csproj`:
 
@@ -137,7 +137,7 @@ rtk git switch -c feature/integrations
 Версия 10.0.12 выбрана потому, что это последний стабильный выпуск линейки 10, и он всё ещё
 несёт `netstandard2.0` — целевые платформы пакета совпадают с платформами ядра.
 
-- [ ] **Step 3: Завести тестовый проект**
+- [x] **Step 3: Завести тестовый проект**
 
 Создать `tests/Typographer.Integrations.Tests/Typographer.Integrations.Tests.csproj`.
 Проект собирается сразу под все четыре интеграции: ссылки на остальные проекты добавляются
@@ -171,7 +171,7 @@ rtk git switch -c feature/integrations
 </Project>
 ```
 
-- [ ] **Step 4: Добавить оба проекта в решение**
+- [x] **Step 4: Добавить оба проекта в решение**
 
 В `Typographer.slnx` внутри `<Folder Name="/src/">` добавить строку:
 
@@ -185,7 +185,7 @@ rtk git switch -c feature/integrations
     <Project Path="tests/Typographer.Integrations.Tests/Typographer.Integrations.Tests.csproj" />
 ```
 
-- [ ] **Step 5: Написать падающий тест**
+- [x] **Step 5: Написать падающий тест**
 
 Создать `tests/Typographer.Integrations.Tests/DependencyInjectionTests.cs`:
 
@@ -245,12 +245,12 @@ public class DependencyInjectionTests
 }
 ```
 
-- [ ] **Step 6: Убедиться, что тест падает**
+- [x] **Step 6: Убедиться, что тест падает**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: ошибка компиляции CS1061 — метод `AddTypograf` не найден.
 
-- [ ] **Step 7: Реализовать регистрацию**
+- [x] **Step 7: Реализовать регистрацию**
 
 Создать `src/Typographer.DependencyInjection/TypografServiceCollectionExtensions.cs`:
 
@@ -293,18 +293,18 @@ public static class TypografServiceCollectionExtensions
 }
 ```
 
-- [ ] **Step 8: Убедиться, что тесты проходят**
+- [x] **Step 8: Убедиться, что тесты проходят**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: PASS, 5 тестов.
 
-- [ ] **Step 9: Убедиться, что собираются все платформы**
+- [x] **Step 9: Убедиться, что собираются все платформы**
 
 Выполнить: `rtk dotnet build -c Release`
 Ожидается: успех. Проверяется, что пакет компилируется и под `netstandard2.0`, где нет
 `ArgumentNullException.ThrowIfNull` — потому в коде явная проверка, а не хелпер.
 
-- [ ] **Step 10: Коммит**
+- [x] **Step 10: Коммит**
 
 ```bash
 rtk git add src/Typographer.DependencyInjection tests/Typographer.Integrations.Tests Typographer.slnx
@@ -329,7 +329,7 @@ rtk git commit -m "feat: пакет регистрации типографа в
   `Typographer.AspNetCore.HtmlTypografExtensions.ToHtmlContent(this HtmlTypograf typograf, string? html)`,
   возвращающий `IHtmlContent`.
 
-- [ ] **Step 1: Завести проект пакета**
+- [x] **Step 1: Завести проект пакета**
 
 Создать `src/Typographer.AspNetCore/Typographer.AspNetCore.csproj`:
 
@@ -369,7 +369,7 @@ rtk git commit -m "feat: пакет регистрации типографа в
 `netstandard2.0` тут нет и быть не может: `Microsoft.AspNetCore.App` — общая среда
 выполнения, доступная начиная с `net8.0`.
 
-- [ ] **Step 2: Подключить проект к решению и тестам**
+- [x] **Step 2: Подключить проект к решению и тестам**
 
 В `Typographer.slnx` внутри `<Folder Name="/src/">` добавить:
 
@@ -391,7 +391,7 @@ rtk git commit -m "feat: пакет регистрации типографа в
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
 ```
 
-- [ ] **Step 3: Написать падающий тест**
+- [x] **Step 3: Написать падающий тест**
 
 Создать `tests/Typographer.Integrations.Tests/AspNetCoreTests.cs`:
 
@@ -473,12 +473,12 @@ public class AspNetCoreTests
 `HtmlString.ToString()` возвращает саму разметку, поэтому отдельная запись в
 `TextWriter` в тесте не нужна.
 
-- [ ] **Step 4: Убедиться, что тест падает**
+- [x] **Step 4: Убедиться, что тест падает**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: ошибка компиляции — типы `TypografTagHelper` и метод `ToHtmlContent` не найдены.
 
-- [ ] **Step 5: Реализовать тег-хелпер**
+- [x] **Step 5: Реализовать тег-хелпер**
 
 Создать `src/Typographer.AspNetCore/TypografTagHelper.cs`:
 
@@ -524,7 +524,7 @@ public sealed class TypografTagHelper : TagHelper
 }
 ```
 
-- [ ] **Step 6: Реализовать переходник к IHtmlContent**
+- [x] **Step 6: Реализовать переходник к IHtmlContent**
 
 Создать `src/Typographer.AspNetCore/HtmlTypografExtensions.cs`:
 
@@ -559,12 +559,12 @@ public static class HtmlTypografExtensions
 }
 ```
 
-- [ ] **Step 7: Убедиться, что тесты проходят**
+- [x] **Step 7: Убедиться, что тесты проходят**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: PASS, 10 тестов (5 из задачи 1 и 5 новых).
 
-- [ ] **Step 8: Коммит**
+- [x] **Step 8: Коммит**
 
 ```bash
 rtk git add src/Typographer.AspNetCore tests/Typographer.Integrations.Tests Typographer.slnx
@@ -605,7 +605,7 @@ Markdown нельзя типографировать после рендерин
   `Typographer.Markdig.MarkdownPipelineBuilderExtensions.UseTypograf(this MarkdownPipelineBuilder pipeline, TextTypograf? typograf = null)`,
   возвращающий тот же `MarkdownPipelineBuilder`.
 
-- [ ] **Step 1: Завести проект пакета**
+- [x] **Step 1: Завести проект пакета**
 
 Создать `src/Typographer.Markdig/Typographer.Markdig.csproj`:
 
@@ -642,7 +642,7 @@ Markdown нельзя типографировать после рендерин
 
 `Markdig` 1.3.2 несёт `netstandard2.0`, `net8.0` и `net10.0` — платформы совпадают с ядром.
 
-- [ ] **Step 2: Подключить проект к решению и тестам**
+- [x] **Step 2: Подключить проект к решению и тестам**
 
 В `Typographer.slnx` внутри `<Folder Name="/src/">`:
 
@@ -657,7 +657,7 @@ Markdown нельзя типографировать после рендерин
     <ProjectReference Include="../../src/Typographer.Markdig/Typographer.Markdig.csproj" />
 ```
 
-- [ ] **Step 3: Написать падающий тест**
+- [x] **Step 3: Написать падающий тест**
 
 Создать `tests/Typographer.Integrations.Tests/MarkdigTests.cs`:
 
@@ -724,12 +724,12 @@ public class MarkdigTests
 }
 ```
 
-- [ ] **Step 4: Убедиться, что тест падает**
+- [x] **Step 4: Убедиться, что тест падает**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: ошибка компиляции — метод `UseTypograf` не найден.
 
-- [ ] **Step 5: Реализовать типографику блока**
+- [x] **Step 5: Реализовать типографику блока**
 
 Создать `src/Typographer.Markdig/BlockTypograf.cs`.
 
@@ -802,7 +802,7 @@ internal static class BlockTypograf
 }
 ```
 
-- [ ] **Step 6: Реализовать расширение**
+- [x] **Step 6: Реализовать расширение**
 
 Создать `src/Typographer.Markdig/TypografExtension.cs`:
 
@@ -864,7 +864,7 @@ public sealed class TypografExtension : IMarkdownExtension
 }
 ```
 
-- [ ] **Step 7: Реализовать точку подключения**
+- [x] **Step 7: Реализовать точку подключения**
 
 Создать `src/Typographer.Markdig/MarkdownPipelineBuilderExtensions.cs`:
 
@@ -899,7 +899,7 @@ public static class MarkdownPipelineBuilderExtensions
 }
 ```
 
-- [ ] **Step 8: Убедиться, что тесты проходят**
+- [x] **Step 8: Убедиться, что тесты проходят**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: PASS, 16 тестов.
@@ -908,7 +908,7 @@ public static class MarkdownPipelineBuilderExtensions
 (`\n` против `\r\n`), это не наша беда: Markdig всегда пишет `\n`. Смотреть на фактический
 вывод в сообщении xunit и править ожидание только если различие в самой типографике.
 
-- [ ] **Step 9: Коммит**
+- [x] **Step 9: Коммит**
 
 ```bash
 rtk git add src/Typographer.Markdig tests/Typographer.Integrations.Tests Typographer.slnx
@@ -934,7 +934,7 @@ rtk git commit -m "feat: расширение Markdig для типографи�
 - Produces: `internal static int CommandLine.Run(string[] args, TextReader input, TextWriter output, TextWriter error)`.
   Ничего наружу пакет не отдаёт: это утилита, а не библиотека.
 
-- [ ] **Step 1: Завести проект утилиты**
+- [x] **Step 1: Завести проект утилиты**
 
 Создать `src/Typographer.Cli/Typographer.Cli.csproj`:
 
@@ -976,7 +976,7 @@ rtk git commit -m "feat: расширение Markdig для типографи�
 Разбор ключей написан вручную: спецификация (раздел 10) обещает утилите единственную
 зависимость — ядро, а `System.CommandLine` был бы второй ради двух десятков строк.
 
-- [ ] **Step 2: Подключить проект к решению и тестам**
+- [x] **Step 2: Подключить проект к решению и тестам**
 
 В `Typographer.slnx` внутри `<Folder Name="/src/">`:
 
@@ -991,7 +991,7 @@ rtk git commit -m "feat: расширение Markdig для типографи�
     <ProjectReference Include="../../src/Typographer.Cli/Typographer.Cli.csproj" />
 ```
 
-- [ ] **Step 3: Написать падающий тест**
+- [x] **Step 3: Написать падающий тест**
 
 Создать `tests/Typographer.Integrations.Tests/CliTests.cs`:
 
@@ -1165,12 +1165,12 @@ public class CliTests
 }
 ```
 
-- [ ] **Step 4: Убедиться, что тест падает**
+- [x] **Step 4: Убедиться, что тест падает**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: ошибка компиляции — тип `CommandLine` не найден.
 
-- [ ] **Step 5: Реализовать разбор ключей и работу**
+- [x] **Step 5: Реализовать разбор ключей и работу**
 
 Создать `src/Typographer.Cli/CommandLine.cs`:
 
@@ -1436,7 +1436,7 @@ internal static class CommandLine
 }
 ```
 
-- [ ] **Step 6: Реализовать точку входа**
+- [x] **Step 6: Реализовать точку входа**
 
 Создать `src/Typographer.Cli/Program.cs`. В нём только то, чего нельзя проверить тестом:
 
@@ -1475,12 +1475,12 @@ internal static class Program
 }
 ```
 
-- [ ] **Step 7: Убедиться, что тесты проходят**
+- [x] **Step 7: Убедиться, что тесты проходят**
 
 Выполнить: `dotnet test tests/Typographer.Integrations.Tests`
 Ожидается: PASS, 31 тест.
 
-- [ ] **Step 8: Проверить утилиту вживую**
+- [x] **Step 8: Проверить утилиту вживую**
 
 Выполнить:
 
@@ -1490,7 +1490,7 @@ echo 'Он - человек и "цитата"' | rtk dotnet run --project src/Ty
 
 Ожидается: `Он — человек и «цитата»` (перед тире неразрывный пробел).
 
-- [ ] **Step 9: Коммит**
+- [x] **Step 9: Коммит**
 
 ```bash
 rtk git add src/Typographer.Cli tests/Typographer.Integrations.Tests Typographer.slnx
@@ -1510,7 +1510,7 @@ rtk git commit -m "feat: утилита командной строки dotnet-t
 - Consumes: всё, что сделано задачами 1–4.
 - Produces: ничего для кода; раздел «Пакеты» в README и отметку о выполнении в очереди планов.
 
-- [ ] **Step 1: Проверить, что пакеты собираются**
+- [x] **Step 1: Проверить, что пакеты собираются**
 
 Выполнить: `rtk dotnet pack -c Release -o artifacts/packages`
 
@@ -1524,7 +1524,7 @@ rtk ls artifacts/packages
 Каталог `artifacts/` в репозиторий не попадает — убедиться, что он в `.gitignore`, и
 добавить строку `artifacts/`, если её там нет.
 
-- [ ] **Step 2: Проверить, что утилита ставится**
+- [x] **Step 2: Проверить, что утилита ставится**
 
 Выполнить:
 
@@ -1537,7 +1537,7 @@ rtk dotnet tool uninstall --global dotnet-typograf
 Ожидается: установка проходит, версия печатается, удаление проходит. Это единственная
 проверка того, что `PackAsTool` и `ToolCommandName` заданы верно: тестом её не сделать.
 
-- [ ] **Step 3: Описать пакеты в README**
+- [x] **Step 3: Описать пакеты в README**
 
 В `README.md` после раздела «Целевые платформы» добавить раздел:
 
@@ -1599,7 +1599,7 @@ dotnet-typograf --help
 ```
 ````
 
-- [ ] **Step 4: Отметить сделанное в спецификации**
+- [x] **Step 4: Отметить сделанное в спецификации**
 
 В `docs/spec.md`, раздел 10, привести структуру репозитория в соответствие с фактом:
 `src/Typographer.Cli/` появился, `tests/Typographer.Integrations.Tests/` — тоже. Добавить
@@ -1622,7 +1622,7 @@ tests/Typographer.Integrations.Tests/ тесты пакетов интеграц
 | `Typographer.Markdig` | `netstandard2.0;net8.0;net10.0` |
 | `dotnet-typograf` | `net10.0` |
 
-- [ ] **Step 5: Отметить план в очереди**
+- [x] **Step 5: Отметить план в очереди**
 
 В `docs/superpowers/plans/2026-09-08-typographer-core.md`, таблица «Очередь планов»,
 строку про план 4 привести к виду:
@@ -1631,19 +1631,19 @@ tests/Typographer.Integrations.Tests/ тесты пакетов интеграц
 | 4. Интеграции ✅ | `Typographer.DependencyInjection`, `Typographer.AspNetCore`, `Typographer.Markdig`, `dotnet-typograf`. План — `2026-09-10-integrations.md` | 2 |
 ```
 
-- [ ] **Step 6: Прогнать всё**
+- [x] **Step 6: Прогнать всё**
 
 Выполнить: `rtk dotnet build -c Release` и `dotnet test -c Release`
 Ожидается: сборка без предупреждений, все тесты зелёные — и старые, и новые.
 
-- [ ] **Step 7: Коммит**
+- [x] **Step 7: Коммит**
 
 ```bash
 rtk git add README.md docs .gitignore
 rtk git commit -m "docs: пакеты интеграций в README и спецификации"
 ```
 
-- [ ] **Step 8: Завершение работы**
+- [x] **Step 8: Завершение работы**
 
 Открыть PR в `develop`, дождаться зелёного `build` и слить через PR — прямой push в
 `develop` защита ветки не пропустит.
