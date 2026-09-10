@@ -65,9 +65,9 @@ HtmlTypographer.Default.Process("Он сказал: \"Привет!\"".AsSpan(),
 |---|---|
 | `RuleSet.Default` | безопасная типографика — пресет по умолчанию |
 | `RuleSet.Minimal` | только кавычки, тире и многоточие |
-| `RuleSet.All` | все зарегистрированные правила, включая ещё не реализованные |
+| `RuleSet.All` | все зарегистрированные правила, включая рискованные и четыре нереализованных |
 | `RuleSet.None` | ничего не менять |
-| `RuleSet.Lebedev`, `RuleSet.Gost`, `RuleSet.Typograf` | пока совпадают с `Default` — правила, которые должны их различать, ещё не реализованы (см. XML-комментарии на этих пресетах) |
+| `RuleSet.Lebedev`, `RuleSet.Gost`, `RuleSet.Typograf` | поведение сервиса Лебедева, строгий ГОСТ и паритет дефолтов с JS-typograf — расхождения с `Default` перечислены в XML-комментариях на пресетах |
 
 ```csharp
 RuleSet rules = RuleSet.Default.With(RuleId.Ru.Dash.Years).Without(RuleId.Ru.Nbsp.Abbr);
