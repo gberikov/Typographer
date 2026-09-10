@@ -1,3 +1,5 @@
+using Typographer.Rules;
+
 namespace Typographer.Internal;
 
 /// <summary>Фаза Emit: кодирование типографских символов по выбранному режиму.</summary>
@@ -13,9 +15,20 @@ internal static class Emitter
     /// </remarks>
     /// <param name="html">Документ после фазы Layout.</param>
     /// <param name="mode">Режим вывода сущностей.</param>
+    /// <param name="rules">Набор включённых правил.</param>
     /// <param name="destination">Приёмник.</param>
-    public static void EncodeDocument(ReadOnlySpan<char> html, EntityMode mode, ref CharBuffer destination)
+    public static void EncodeDocument(
+        ReadOnlySpan<char> html, EntityMode mode, RuleSet rules, ref CharBuffer destination)
     {
+        // Экранирование идёт по ГОТОВОМУ документу и касается всех сегментов — тегов,
+        // защищённых зон и текста. В этом и смысл правила: показать разметку как текст.
+        // Это единственное исключение из гарантии 3, и потому правило вне Default.
+        if (rules.Contains(RuleId.Common.Html.Escape))
+        {
+            Escape(html, ref destination);
+            return;
+        }
+
         if (mode == EntityMode.Symbols)
         {
             destination.Write(html);
@@ -33,6 +46,36 @@ internal static class Emitter
             else
             {
                 destination.Write(slice);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Пишет документ, заменяя значащие для разметки символы сущностями. Кодирование по
+    /// <see cref="EntityMode"/> при этом не выполняется: экранированный документ — уже
+    /// текст, и типографские символы в нём остаются символами.
+    /// </summary>
+    private static void Escape(ReadOnlySpan<char> source, ref CharBuffer destination)
+    {
+        foreach (char c in source)
+        {
+            switch (c)
+            {
+                case '&':
+                    destination.Write("&amp;");
+                    break;
+                case '<':
+                    destination.Write("&lt;");
+                    break;
+                case '>':
+                    destination.Write("&gt;");
+                    break;
+                case '"':
+                    destination.Write("&quot;");
+                    break;
+                default:
+                    destination.Write(c);
+                    break;
             }
         }
     }

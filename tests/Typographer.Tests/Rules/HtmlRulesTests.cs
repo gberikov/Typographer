@@ -63,4 +63,27 @@ public class HtmlRulesTests
     [Fact]
     public void NewlineStaysWithoutRuleAndOption()
         => Assert.Equal("первая\nвторая", Run("первая\nвторая", RuleId.Common.Punctuation.Quote));
+
+    [Theory]
+    [InlineData("<b>жирный</b>", "&lt;b&gt;жирный&lt;/b&gt;")]
+    [InlineData("a & b", "a &amp; b")]
+    [InlineData("<code>a - b</code>", "&lt;code&gt;a - b&lt;/code&gt;")]
+    public void EscapeTurnsMarkupIntoText(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Html.Escape));
+
+    [Fact]
+    public void MarkupStaysWithoutTheEscapeRule()
+        => Assert.Equal("<b>жирный</b>", Run("<b>жирный</b>", RuleId.Common.Punctuation.Quote));
+
+    // Гарантия 5 на экранирование не распространяется: неподвижной точки у него нет по
+    // определению. Тест закрепляет РЕАЛЬНОЕ поведение, чтобы оно было известным.
+    [Fact]
+    public void EscapeSecondPassEscapesAgain()
+    {
+        string once = Run("a & b", RuleId.Common.Html.Escape);
+        string twice = Run(once, RuleId.Common.Html.Escape);
+
+        Assert.Equal("a &amp; b", once);
+        Assert.Equal("a &amp;amp; b", twice);
+    }
 }
