@@ -78,6 +78,20 @@ internal static class SpaceRules
             return false;
         }
 
+        // Смайлик — не знак препинания: в «текст :-)» пробел перед двоеточием значащий,
+        // и удалить его значит склеить слово со скобкой.
+        if (StartsSmiley(source, index + 1))
+        {
+            return false;
+        }
+
+        // Скобка могла оказаться ртом рожицы: в «:-( текст» это не открывающая скобка,
+        // и пробел за ней принадлежит предложению, а не её содержимому.
+        if (EndsSmiley(source, index))
+        {
+            return false;
+        }
+
         // «8 != 9»: восклицательный знак здесь часть оператора, а не конец предложения.
         // Признак — равенство сразу за ним; знак препинания перед оператором отбивается
         // пробелом с обеих сторон, и съедать его нельзя.
@@ -159,6 +173,19 @@ internal static class SpaceRules
             return;
         }
 
+        // Внутри веб-адреса знак препинания принадлежит адресу: «?» открывает строку
+        // запроса, «,» и «;» разделяют параметры. Пробел после них рвёт ссылку.
+        if (state.InsideUrl)
+        {
+            return;
+        }
+
+        // «:-)» и «;)» — рожица, а не двоеточие перед словом.
+        if (StartsSmiley(source, index))
+        {
+            return;
+        }
+
         RuleId rule = source[index] switch
         {
             ',' => RuleId.Common.Space.AfterComma,
@@ -174,6 +201,48 @@ internal static class SpaceRules
         {
             buffer.Write(' ');
         }
+    }
+
+    /// <summary>Слева от позиции <paramref name="index"/> кончается рожица: «:-)», «;)».</summary>
+    private static bool EndsSmiley(ReadOnlySpan<char> source, int index)
+    {
+        int mouth = index - 1;
+        if (mouth < 0 || source[mouth] is not (')' or '(' or 'D' or 'P'))
+        {
+            return false;
+        }
+
+        int eyes = mouth - 1;
+        if (eyes >= 0 && source[eyes] is '-' or '^')
+        {
+            eyes--;
+        }
+
+        return eyes >= 0 && source[eyes] is ':' or ';';
+    }
+
+    /// <summary>
+    /// На позиции <paramref name="index"/> начинается рожица: «:-)», «;)», «:(», «:-D».
+    /// </summary>
+    /// <remarks>
+    /// Нос необязателен, глаза — двоеточие или точка с запятой. Косая черта в рот не
+    /// принимается намеренно: «http://» разбирается соседним правилом, и рожица здесь
+    /// только мешала бы.
+    /// </remarks>
+    private static bool StartsSmiley(ReadOnlySpan<char> source, int index)
+    {
+        if (index >= source.Length || source[index] is not (':' or ';'))
+        {
+            return false;
+        }
+
+        int mouth = index + 1;
+        if (mouth < source.Length && source[mouth] is '-' or '^')
+        {
+            mouth++;
+        }
+
+        return mouth < source.Length && source[mouth] is ')' or '(' or 'D' or 'P';
     }
 
     /// <summary>

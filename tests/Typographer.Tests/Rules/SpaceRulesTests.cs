@@ -160,4 +160,31 @@ public class SpaceRulesTests
     [InlineData("слово (текст)", "слово (текст)")]
     public void NormalizesSpacesAroundBrackets(string source, string expected)
         => Assert.Equal(expected, Run(source));
+
+    // Знаки препинания внутри веб-адреса принадлежат адресу, а не предложению. Признак
+    // адреса — «://»; он же и граница, за которой правила снова работают как обычно.
+    [Theory]
+    [InlineData("http://example.com/a-b?x=1&y=2")]
+    [InlineData("https://example.com/a,b;c")]
+    [InlineData("Сайт http://a.ru/x?y=1 и точка.")]
+    public void KeepsUrlIntact(string source) => Assert.Equal(source, Run(source));
+
+    // Адрес кончается на первом пробеле: за ним предложение снова обычное.
+    [Fact]
+    public void UrlEndsAtSpace()
+        => Assert.Equal("http://a.ru/x?y=1 текст: ещё", Run("http://a.ru/x?y=1 текст:ещё"));
+
+    // Рожица — не двоеточие перед словом: ни пробел слева не удаляется, ни справа
+    // не дописывается. Спецификация, раздел 9: «:-)» не должен стать тире.
+    [Theory]
+    [InlineData("смайл :-) в конце")]
+    [InlineData("смайл :-( в конце")]
+    [InlineData("смайл ;) в конце")]
+    [InlineData("смайл :-D в конце")]
+    public void KeepsSmileyIntact(string source) => Assert.Equal(source, Run(source));
+
+    // Двоеточие перед скобкой с текстом рожицей не считается: между ними пробел.
+    [Fact]
+    public void ColonBeforeSpacedBracketIsNotSmiley()
+        => Assert.Equal("Пример: (текст)", Run("Пример : (текст)"));
 }

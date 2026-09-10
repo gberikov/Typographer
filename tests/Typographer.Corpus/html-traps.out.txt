@@ -1,0 +1,6 @@
+<code>a - b</code> и <a title="Не трогать - тире">x</a>.
+<!--[if IE]>только тут<![endif]--> и <![CDATA[ x > a - b ]]> конец.
+<pre><!-- </pre> -->a - b</pre>
+<pre><a title="</pre>">x</a> a - b</pre>
+<code>outer <code>inner</code> a - b</code>
+<code-block>a — b</code-block> «а» — б

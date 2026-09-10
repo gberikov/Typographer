@@ -33,6 +33,13 @@ internal struct ScanState
     /// пятью: для проверки четырёхзначного года важно лишь наличие лишней пятой цифры.
     /// </summary>
     public int TrailingDigits;
+
+    /// <summary>
+    /// Курсор внутри веб-адреса: слева был «://», справа ещё не встретился пробел.
+    /// Знаки препинания внутри адреса — его часть, а не конец предложения, и пробел
+    /// после них ставить нельзя: «a-b?x=1» превращалось в «a-b? x=1».
+    /// </summary>
+    public bool InsideUrl;
 }
 
 /// <summary>Фаза Scan: посимвольное применение правил к текстовому узлу.</summary>
@@ -63,6 +70,22 @@ internal static class TextScanner
         {
             char c = source[i];
             char previous = buffer.Length > floor ? buffer.CharAt(buffer.Length - 1) : state.Last;
+
+            // Границы веб-адреса. Признак начала — «://», признак конца — пробельный
+            // символ или угловая скобка. Флаг вместо взгляда назад по буферу: искать
+            // «://» от каждого знака препинания до ближайшего пробела — это O(n²) на
+            // входе без пробелов, а гарантия 1 обещает один линейный проход.
+            if (state.InsideUrl)
+            {
+                if (char.IsWhiteSpace(c) || c is '<' or '>' or '"')
+                {
+                    state.InsideUrl = false;
+                }
+            }
+            else if (c == ':' && i + 2 < source.Length && source[i + 1] == '/' && source[i + 2] == '/')
+            {
+                state.InsideUrl = true;
+            }
 
             // switch по символу-триггеру: компилятор строит по нему таблицу переходов, и
             // цена диспетчеризации не растёт с числом правил. Порядок правил на один и тот
@@ -167,6 +190,9 @@ internal static class TextScanner
                     // прозрачно соединять числовой контекст по обе стороны от неё.
                     state.TrailingDigits = 0;
                 }
+
+                // Тег обрывает веб-адрес: «http://a<b>?x» — это не адрес с вопросом.
+                state.InsideUrl = false;
 
                 hasBlockMarkup |= segment.PreventsParagraphWrapping;
                 buffer.Write(slice);
