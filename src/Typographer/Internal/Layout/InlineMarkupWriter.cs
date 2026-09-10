@@ -20,6 +20,13 @@ internal struct InlineState
 
     /// <summary>Текущая позиция — начало строки документа.</summary>
     public bool AtLineStart;
+
+    /// <summary>
+    /// Позиция в буфере вывода, левее которой забирать записанное нельзя: там лежит уже
+    /// скопированная разметка. Правило висячей пунктуации забирает из буфера пробел слева от
+    /// знака, и без этой границы оно съело бы байты закрывающего тега.
+    /// </summary>
+    public int SafeFrom;
 }
 
 /// <summary>
@@ -67,6 +74,7 @@ internal static class InlineMarkupWriter
                 }
 
                 buffer.Write(slice);
+                state.SafeFrom = buffer.Length;
                 continue;
             }
 
