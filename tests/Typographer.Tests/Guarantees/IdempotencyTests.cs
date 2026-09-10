@@ -10,20 +10,20 @@ public class IdempotencyTests
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void SecondPassChangesNothing_Html(string source)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default });
-        string once = typograf.Process(source);
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default });
+        string once = typographer.Process(source);
 
-        Assert.Equal(once, typograf.Process(once));
+        Assert.Equal(once, typographer.Process(once));
     }
 
     [Theory]
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void SecondPassChangesNothing_PlainText(string source)
     {
-        var typograf = new TextTypograf(new TextOptions { Rules = RuleSet.Default });
-        string once = typograf.Process(source);
+        var typographer = new TextTypographer(new TextOptions { Rules = RuleSet.Default });
+        string once = typographer.Process(source);
 
-        Assert.Equal(once, typograf.Process(once));
+        Assert.Equal(once, typographer.Process(once));
     }
 
     // Набор Default проверяет то, чем пользуются; набор All — то, что вообще написано.
@@ -41,16 +41,16 @@ public class IdempotencyTests
     [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
     public void SecondPassChangesNothing_AllRules(string source)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions
+        var typographer = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.All.Without(
                 RuleId.Common.Nbsp.ReplaceNbsp,
                 RuleId.Common.Html.Nbr,
                 RuleId.Common.Html.Escape),
         });
-        string once = typograf.Process(source);
+        string once = typographer.Process(source);
 
-        Assert.Equal(once, typograf.Process(once));
+        Assert.Equal(once, typographer.Process(once));
     }
 
     // Входы подобраны так, чтобы вывод содержал сущность РЯДОМ со знаком, по которому
@@ -69,10 +69,10 @@ public class IdempotencyTests
     [InlineData(EntityMode.Mixed, "раз,...два")]
     public void IdempotentWithEntityEncoding(EntityMode mode, string source)
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default, Entities = mode });
-        string once = typograf.Process(source);
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default, Entities = mode });
+        string once = typographer.Process(source);
 
-        Assert.Equal(once, typograf.Process(once));
+        Assert.Equal(once, typographer.Process(once));
     }
 
     // Гарантия 5 намеренно НЕ распространяется на UseBr/MaxNobr (см. docs/spec.md, §8, и
@@ -84,9 +84,9 @@ public class IdempotencyTests
     [Fact]
     public void UseBr_SecondPassNestsBrTag()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None, UseBr = true });
-        string once = typograf.Process("первая\nвторая");
-        string twice = typograf.Process(once);
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None, UseBr = true });
+        string once = typographer.Process("первая\nвторая");
+        string twice = typographer.Process(once);
 
         Assert.Equal("первая<br />\nвторая", once);
         Assert.Equal("первая<br /><br />\nвторая", twice);
@@ -98,35 +98,35 @@ public class IdempotencyTests
     [Fact]
     public void UseP_SecondPassDoesNotNestParagraphTag()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None, UseP = true });
-        string once = typograf.Process("первый\n\nвторой");
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None, UseP = true });
+        string once = typographer.Process("первый\n\nвторой");
 
         Assert.Equal("<p>первый</p>\n<p>второй</p>", once);
-        Assert.Equal(once, typograf.Process(once));
+        Assert.Equal(once, typographer.Process(once));
     }
 
     [Fact]
     public void UseP_DoesNotWrapExistingBlockMarkup()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None, UseP = true });
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None, UseP = true });
         string source = "<ul>\n<li>раз</li>\n</ul>";
 
-        Assert.Equal(source, typograf.Process(source));
+        Assert.Equal(source, typographer.Process(source));
     }
 
     [Fact]
     public void UseP_DoesNotBreakInlineMarkup()
         => Assert.Equal(
             "<p>раз <b>два</b></p>\n<p>три</p>",
-            new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None, UseP = true })
+            new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None, UseP = true })
                 .Process("раз <b>два</b>\n\nтри"));
 
     [Fact]
     public void MaxNobr_SecondPassNestsNobrTag()
     {
-        var typograf = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None, MaxNobr = 2 });
-        string once = typograf.Process($"в{Chars.Nbsp}доме на горе");
-        string twice = typograf.Process(once);
+        var typographer = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None, MaxNobr = 2 });
+        string once = typographer.Process($"в{Chars.Nbsp}доме на горе");
+        string twice = typographer.Process(once);
 
         Assert.Equal($"<nobr>в{Chars.Nbsp}доме</nobr> на горе", once);
         Assert.Equal($"<nobr><nobr>в{Chars.Nbsp}доме</nobr></nobr> на горе", twice);

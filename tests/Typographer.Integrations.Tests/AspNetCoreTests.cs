@@ -13,21 +13,21 @@ public class AspNetCoreTests
     {
         TagHelperOutput output = MakeOutput("<p>Он - человек</p>");
 
-        await new TypografTagHelper(HtmlTypograf.Default).ProcessAsync(MakeContext(), output);
+        await new TypographerTagHelper(HtmlTypographer.Default).ProcessAsync(MakeContext(), output);
 
         string result = output.Content.GetContent();
         Assert.Contains("—", result);
         Assert.DoesNotContain(" - ", result);
     }
 
-    // Сам элемент <typograf> — инструкция шаблонизатору, а не разметка страницы,
+    // Сам элемент <typographer> — инструкция шаблонизатору, а не разметка страницы,
     // и в выводе его быть не должно.
     [Fact]
     public async Task ProcessAsync_RemovesOwnTag()
     {
         TagHelperOutput output = MakeOutput("текст");
 
-        await new TypografTagHelper(HtmlTypograf.Default).ProcessAsync(MakeContext(), output);
+        await new TypographerTagHelper(HtmlTypographer.Default).ProcessAsync(MakeContext(), output);
 
         Assert.Null(output.TagName);
     }
@@ -37,7 +37,7 @@ public class AspNetCoreTests
     {
         TagHelperOutput output = MakeOutput("<a href=\"http://a.example/x--y\">ссылка</a>");
 
-        await new TypografTagHelper(HtmlTypograf.Default).ProcessAsync(MakeContext(), output);
+        await new TypographerTagHelper(HtmlTypographer.Default).ProcessAsync(MakeContext(), output);
 
         Assert.Contains("http://a.example/x--y", output.Content.GetContent());
     }
@@ -45,7 +45,7 @@ public class AspNetCoreTests
     [Fact]
     public void ToHtmlContent_ReturnsReadyMarkup()
     {
-        IHtmlContent content = HtmlTypograf.Default.ToHtmlContent("Он - человек");
+        IHtmlContent content = HtmlTypographer.Default.ToHtmlContent("Он - человек");
 
         Assert.Contains(Nbsp + "—", content.ToString());
     }
@@ -53,12 +53,12 @@ public class AspNetCoreTests
     [Fact]
     public void ToHtmlContent_NullGivesEmptyMarkup()
     {
-        Assert.Equal(string.Empty, HtmlTypograf.Default.ToHtmlContent(null).ToString());
+        Assert.Equal(string.Empty, HtmlTypographer.Default.ToHtmlContent(null).ToString());
     }
 
     private static TagHelperOutput MakeOutput(string childHtml)
         => new(
-            "typograf",
+            "typographer",
             [],
             (useCachedResult, encoder) =>
             {

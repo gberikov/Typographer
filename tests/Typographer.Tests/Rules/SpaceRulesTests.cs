@@ -4,7 +4,7 @@ namespace Typographer.Tests.Rules;
 
 public class SpaceRulesTests
 {
-    private static string Run(string source) => new TextTypograf(new TextOptions
+    private static string Run(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Common.Space.DelRepeatSpace)
@@ -93,8 +93,8 @@ public class SpaceRulesTests
     [Fact]
     public void DoesNotTurnLessThanIntoTagStart()
     {
-        string textResult = TextTypograf.Default.Process("дом < ? и лес");
-        string htmlResult = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default })
+        string textResult = TextTypographer.Default.Process("дом < ? и лес");
+        string htmlResult = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default })
             .Process("дом < ? и лес");
 
         Assert.Equal(textResult, htmlResult);
@@ -104,7 +104,7 @@ public class SpaceRulesTests
     [Fact]
     public void DoesNotTurnLessThanIntoCommentStart()
     {
-        string htmlResult = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.Default })
+        string htmlResult = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.Default })
             .Process("текст < !-- не комментарий");
 
         Assert.DoesNotContain("<!--", htmlResult);

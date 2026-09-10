@@ -11,10 +11,10 @@ namespace Typographer.Tests.Rules;
 public class RewriteRulesTests
 {
     private static string Run(string source, params RuleId[] rules)
-        => new TextTypograf(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new TextTypographer(new TextOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     private static string Html(string source, params RuleId[] rules)
-        => new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
+        => new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(rules) }).Process(source);
 
     [Fact]
     public void YearsCollapseToDoubleLetter()

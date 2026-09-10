@@ -9,11 +9,11 @@ public class MarkdigTests
     private const string Nbsp = "\u00A0";
 
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
-        .UseTypograf()
+        .UseTypographer()
         .Build();
 
     [Fact]
-    public void UseTypograf_AddsDashAndNbsp()
+    public void UseTypographer_AddsDashAndNbsp()
     {
         Assert.Equal(
             $"<p>Он{Nbsp}— человек</p>\n",
@@ -23,7 +23,7 @@ public class MarkdigTests
     // Ради этого случая куски абзаца и собираются в одну строку: поодиночке вторая
     // кавычка не знает, что слева от неё что-то было, и открылась бы второй раз.
     [Fact]
-    public void UseTypograf_QuotesAroundMarkupFaceOppositeWays()
+    public void UseTypographer_QuotesAroundMarkupFaceOppositeWays()
     {
         Assert.Equal(
             "<p>«<strong>слово</strong>»</p>\n",
@@ -31,7 +31,7 @@ public class MarkdigTests
     }
 
     [Fact]
-    public void UseTypograf_LeavesCodeIntact()
+    public void UseTypographer_LeavesCodeIntact()
     {
         Assert.Equal(
             "<p><code>a - b</code></p>\n",
@@ -39,13 +39,13 @@ public class MarkdigTests
     }
 
     [Fact]
-    public void UseTypograf_LeavesCodeBlockIntact()
+    public void UseTypographer_LeavesCodeBlockIntact()
     {
         Assert.Contains("a - b", Markdown.ToHtml("```\na - b\n```", Pipeline));
     }
 
     [Fact]
-    public void UseTypograf_LeavesLinkUrlIntact()
+    public void UseTypographer_LeavesLinkUrlIntact()
     {
         string html = Markdown.ToHtml("[текст - тут](http://a.example/x--y)", Pipeline);
 
@@ -65,14 +65,14 @@ public class MarkdigTests
     [InlineData("<samp>x - y</samp>")]
     // Вложенный одноимённый элемент зону раньше времени не закрывает.
     [InlineData("<code>вло<code>a - b</code>жен</code>")]
-    public void UseTypograf_LeavesProtectedHtmlZoneIntact(string markdown)
+    public void UseTypographer_LeavesProtectedHtmlZoneIntact(string markdown)
     {
         Assert.Contains(markdown, Markdown.ToHtml(markdown, Pipeline), StringComparison.Ordinal);
     }
 
     // Текст ВОКРУГ защищённой зоны типографируется как обычно.
     [Fact]
-    public void UseTypograf_ProcessesTextAroundProtectedZone()
+    public void UseTypographer_ProcessesTextAroundProtectedZone()
     {
         string html = Markdown.ToHtml("Слово - слово и <code>a - b</code> и снова - снова", Pipeline);
 
@@ -83,7 +83,7 @@ public class MarkdigTests
 
     // Прочая строчная разметка прозрачна: зоной она не является.
     [Fact]
-    public void UseTypograf_TreatsPlainInlineMarkupAsUnprotected()
+    public void UseTypographer_TreatsPlainInlineMarkupAsUnprotected()
     {
         Assert.Contains(
             $"<b>жир{Nbsp}— жир</b>",
@@ -93,7 +93,7 @@ public class MarkdigTests
 
     // Одиночный тег содержимого не открывает и защиту не включает.
     [Fact]
-    public void UseTypograf_SelfClosingTagOpensNoZone()
+    public void UseTypographer_SelfClosingTagOpensNoZone()
     {
         Assert.Contains(
             $"слово{Nbsp}— слово",
@@ -103,7 +103,7 @@ public class MarkdigTests
 
     // Закрывающий тег без открывающего не создаёт защищённую зону для следующего текста.
     [Fact]
-    public void UseTypograf_StrayClosingTagOpensNoZone()
+    public void UseTypographer_StrayClosingTagOpensNoZone()
     {
         Assert.Contains(
             $"слово{Nbsp}— слово",
@@ -114,7 +114,7 @@ public class MarkdigTests
     // Имя пользовательского элемента читается целиком, включая дефис: code-example не
     // является элементом code и содержимое не защищает.
     [Fact]
-    public void UseTypograf_SimilarTagNameOpensNoProtectedZone()
+    public void UseTypographer_SimilarTagNameOpensNoProtectedZone()
     {
         Assert.Contains(
             $"<code-example>слово{Nbsp}— слово</code-example>",
@@ -124,7 +124,7 @@ public class MarkdigTests
 
     // В сыром содержимом script похожая на тег строка не меняет границы защищённой зоны.
     [Fact]
-    public void UseTypograf_TagInsideScriptDoesNotExtendProtectedZone()
+    public void UseTypographer_TagInsideScriptDoesNotExtendProtectedZone()
     {
         string markdown = "До <script>var x = '<code>';</script> после - после";
         string html = Markdown.ToHtml(markdown, Pipeline);
@@ -136,7 +136,7 @@ public class MarkdigTests
     // Сырой элемент, вложенный в другую защищённую зону, сам задаёт границы своего
     // содержимого: похожий на тег текст внутри JavaScript не меняет глубину внешнего code.
     [Fact]
-    public void UseTypograf_TagInsideNestedScriptDoesNotExtendProtectedZone()
+    public void UseTypographer_TagInsideNestedScriptDoesNotExtendProtectedZone()
     {
         const string markdown =
             "До <code><script>var x = '<code>';</script>a - b</code> после - после";
@@ -149,7 +149,7 @@ public class MarkdigTests
     // Закрывающий тег внешней зоны, записанный строкой внутри script, не снимает защиту:
     // JavaScript и следующий текст code остаются байт в байт.
     [Fact]
-    public void UseTypograf_ClosingTagInsideNestedScriptDoesNotEndProtectedZone()
+    public void UseTypographer_ClosingTagInsideNestedScriptDoesNotEndProtectedZone()
     {
         const string markdown =
             "До <code><script>var x = '</code>'; a - b;</script>a - b</code> после - после";
@@ -165,7 +165,7 @@ public class MarkdigTests
     // HTML в подписи изображения живёт внутри собственного контейнера дерева и не может
     // открыть защищённую зону для текста, который следует после изображения.
     [Fact]
-    public void UseTypograf_HtmlInImageLabelDoesNotProtectFollowingText()
+    public void UseTypographer_HtmlInImageLabelDoesNotProtectFollowingText()
     {
         string html = Markdown.ToHtml("![<code>подпись](image.png) текст - текст", Pipeline);
 
@@ -178,20 +178,20 @@ public class MarkdigTests
     [InlineData("<code>x</code> текст", "<code>x</code> текст")]
     [InlineData("текст <code>x</code>", "текст <code>x</code>")]
     [InlineData("<code></code> текст", "<code></code> текст")]
-    public void UseTypograf_TrimKeepsSpaceNextToProtectedZone(string markdown, string expected)
+    public void UseTypographer_TrimKeepsSpaceNextToProtectedZone(string markdown, string expected)
     {
-        var typograf = new TextTypograf(new TextOptions
+        var typographer = new TextTypographer(new TextOptions
         {
             Rules = RuleSet.Default.With(RuleId.Common.Space.TrimLeft, RuleId.Common.Space.TrimRight),
         });
-        MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypograf(typograf).Build();
+        MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypographer(typographer).Build();
 
         Assert.Contains(expected, Markdown.ToHtml(markdown, pipeline), StringComparison.Ordinal);
     }
 
     // Защищённый объект слева даёт закрывающий контекст прямой кавычке.
     [Fact]
-    public void UseTypograf_ProtectedZoneProvidesContextForQuote()
+    public void UseTypographer_ProtectedZoneProvidesContextForQuote()
         => Assert.Contains("<code>x</code>»", Markdown.ToHtml("<code>x</code>\"", Pipeline));
 
     [Fact]

@@ -8,7 +8,7 @@ public class NbspRulesTests
     /// <summary>Неразрывный пробел строкой: атрибут теста требует константного выражения.</summary>
     private const string Nbsp = "\u00A0";
 
-    private static string Run(string source) => new TextTypograf(new TextOptions
+    private static string Run(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Common.Nbsp.AfterShortWord)
@@ -16,7 +16,7 @@ public class NbspRulesTests
             .With(RuleId.Ru.Nbsp.Initials),
     }).Process(source);
 
-    private static string Years(string source) => new TextTypograf(new TextOptions
+    private static string Years(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.Default,
     }).Process(source);

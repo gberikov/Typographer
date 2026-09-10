@@ -11,15 +11,15 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// перенастраивать их в рантайме нечего, а <c>IOptionsMonitor</c> добавил бы зависимость
 /// ради значения, которое никогда не меняется.
 /// </remarks>
-public static class TypografServiceCollectionExtensions
+public static class TypographerServiceCollectionExtensions
 {
-    /// <summary>Регистрирует <see cref="HtmlTypograf"/> и <see cref="TextTypograf"/> одиночками.</summary>
+    /// <summary>Регистрирует <see cref="HtmlTypographer"/> и <see cref="TextTypographer"/> одиночками.</summary>
     /// <param name="services">Коллекция служб.</param>
     /// <param name="html">Настройки типографа HTML; <c>null</c> — настройки по умолчанию.</param>
     /// <param name="text">Настройки типографа текста; <c>null</c> — настройки по умолчанию.</param>
     /// <returns>Та же коллекция служб, чтобы вызовы выстраивались в цепочку.</returns>
     /// <exception cref="ArgumentNullException">Коллекция служб равна <c>null</c>.</exception>
-    public static IServiceCollection AddTypograf(
+    public static IServiceCollection AddTypographer(
         this IServiceCollection services,
         HtmlOptions? html = null,
         TextOptions? text = null)
@@ -29,8 +29,8 @@ public static class TypografServiceCollectionExtensions
             throw new ArgumentNullException(nameof(services));
         }
 
-        services.TryAddSingleton(new HtmlTypograf(html));
-        services.TryAddSingleton(new TextTypograf(text));
+        services.TryAddSingleton(new HtmlTypographer(html));
+        services.TryAddSingleton(new TextTypographer(text));
         return services;
     }
 }

@@ -9,4 +9,4 @@ if (args.Length > 0 && args[0] == "bind")
     return;
 }
 
-BenchmarkRunner.Run<TypografBenchmarks>();
+BenchmarkRunner.Run<TypographerBenchmarks>();

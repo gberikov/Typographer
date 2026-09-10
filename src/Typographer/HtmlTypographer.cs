@@ -5,21 +5,21 @@ using Typographer.Internal.Scan;
 namespace Typographer;
 
 /// <summary>Типограф для HTML-фрагментов. Иммутабелен и потокобезопасен.</summary>
-public sealed class HtmlTypograf
+public sealed class HtmlTypographer
 {
     private readonly HtmlOptions _options;
 
     /// <summary>Создаёт типограф с указанными настройками.</summary>
     /// <param name="options">Настройки; null — настройки по умолчанию.</param>
     /// <exception cref="ArgumentOutOfRangeException">Предел длины результата отрицателен.</exception>
-    public HtmlTypograf(HtmlOptions? options = null)
+    public HtmlTypographer(HtmlOptions? options = null)
     {
         _options = options ?? HtmlOptions.Default;
         Throw.IfNegative(_options.MaxOutputLength, nameof(HtmlOptions.MaxOutputLength));
     }
 
     /// <summary>Типограф с настройками по умолчанию.</summary>
-    public static HtmlTypograf Default { get; } = new();
+    public static HtmlTypographer Default { get; } = new();
 
     /// <summary>Типографирует HTML-фрагмент.</summary>
     /// <param name="html">Исходный фрагмент.</param>

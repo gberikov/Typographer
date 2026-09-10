@@ -46,8 +46,8 @@ public static class RuleCatalog
     public static string? ExampleOf(RuleId rule)
     {
         RuleId carrier = rule.Equals(Carrier) ? SecondCarrier : Carrier;
-        var without = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(carrier) });
-        var with = new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(carrier, rule) });
+        var without = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(carrier) });
+        var with = new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(carrier, rule) });
 
         foreach (string sample in Samples)
         {

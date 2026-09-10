@@ -23,7 +23,7 @@
     <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="all" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <!-- Ссылка на пакет регистрации, а не на ядро: тег-хелпер создаётся контейнером,
-         и без AddTypograf() его нечем удовлетворить. Ядро приходит транзитивно. -->
+         и без AddTypographer() его нечем удовлетворить. Ядро приходит транзитивно. -->
     <ProjectReference Include="../Typographer.DependencyInjection/Typographer.DependencyInjection.csproj" />
   </ItemGroup>
 

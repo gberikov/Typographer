@@ -62,12 +62,12 @@ public class RulePairTests
         var found = new SortedSet<string>(StringComparer.Ordinal);
         var report = new StringBuilder();
 
-        ForEachPair(NotIdempotent, (name, typograf) =>
+        ForEachPair(NotIdempotent, (name, typographer) =>
         {
             foreach (string sample in Samples)
             {
-                string once = typograf.Process(sample);
-                if (!string.Equals(once, typograf.Process(once), StringComparison.Ordinal))
+                string once = typographer.Process(sample);
+                if (!string.Equals(once, typographer.Process(once), StringComparison.Ordinal))
                 {
                     found.Add(name);
                     if (!KnownNotIdempotent.Contains(name))
@@ -75,7 +75,7 @@ public class RulePairTests
                         report.AppendLine($"НОВАЯ пара: {name}");
                         report.AppendLine($"  вход: {RuleCatalog.Show(sample)}");
                         report.AppendLine($"  раз:  {RuleCatalog.Show(once)}");
-                        report.AppendLine($"  два:  {RuleCatalog.Show(typograf.Process(once))}");
+                        report.AppendLine($"  два:  {RuleCatalog.Show(typographer.Process(once))}");
                     }
 
                     return;
@@ -98,11 +98,11 @@ public class RulePairTests
     {
         var report = new StringBuilder();
 
-        ForEachPair(MarkupChanging, (name, typograf) =>
+        ForEachPair(MarkupChanging, (name, typographer) =>
         {
             foreach (string sample in Samples)
             {
-                string result = typograf.Process(sample);
+                string result = typographer.Process(sample);
                 if (!string.Equals(MarkupOf(sample), MarkupOf(result), StringComparison.Ordinal))
                 {
                     report.AppendLine($"{name}");
@@ -116,7 +116,7 @@ public class RulePairTests
         Assert.True(report.Length == 0, report.ToString());
     }
 
-    private static void ForEachPair(string[] excluded, Action<string, HtmlTypograf> check)
+    private static void ForEachPair(string[] excluded, Action<string, HtmlTypographer> check)
     {
         for (int a = 0; a < Rules.Length; a++)
         {
@@ -134,7 +134,7 @@ public class RulePairTests
 
                 check(
                     $"{Rules[a].Name} + {Rules[b].Name}",
-                    new HtmlTypograf(new HtmlOptions { Rules = RuleSet.None.With(Rules[a], Rules[b]) }));
+                    new HtmlTypographer(new HtmlOptions { Rules = RuleSet.None.With(Rules[a], Rules[b]) }));
             }
         }
     }

@@ -11,7 +11,7 @@ namespace Typographer.Markdig;
 /// <c>Typographer.Markdig</c> имя <c>Markdig</c> разрешается в это же пространство,
 /// и обратиться к типам библиотеки через <c>Markdig.Syntax.X</c> было бы нельзя.
 /// </remarks>
-internal static class BlockTypograf
+internal static class BlockTypographer
 {
     /// <summary>Разделитель, которым в собранной строке представлена вырезанная разметка.</summary>
     /// <remarks>
@@ -25,8 +25,8 @@ internal static class BlockTypograf
 
     /// <summary>Типографирует текстовые куски блока целиком, как один связный текст.</summary>
     /// <param name="root">Корень строчных элементов блока.</param>
-    /// <param name="typograf">Типограф обычного текста.</param>
-    public static void Apply(ContainerInline root, TextTypograf typograf)
+    /// <param name="typographer">Типограф обычного текста.</param>
+    public static void Apply(ContainerInline root, TextTypographer typographer)
     {
         List<LiteralInline?> literals = [];
         List<bool> editable = [];
@@ -50,7 +50,7 @@ internal static class BlockTypograf
             }
         }
 
-        string[] result = typograf.Process(string.Join(Separator, parts)).Split(Object);
+        string[] result = typographer.Process(string.Join(Separator, parts)).Split(Object);
 
         // Правило могло съесть разделитель вместе с соседним пробелом или размножить его.
         // Раскладывать нечего — блок остаётся как был.

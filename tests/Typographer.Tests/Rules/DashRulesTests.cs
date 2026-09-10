@@ -5,7 +5,7 @@ namespace Typographer.Tests.Rules;
 
 public class DashRulesTests
 {
-    private static string Run(string source) => new TextTypograf(new TextOptions
+    private static string Run(string source) => new TextTypographer(new TextOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Ru.Dash.Main)
@@ -60,7 +60,7 @@ public class DashRulesTests
     [InlineData("текст -  5")]
     [InlineData("текст -   5")]
     public void SpacesBeforeNumberDoNotChangeHyphenDecision(string source)
-        => Assert.Equal("текст - 5", new TextTypograf(new TextOptions
+        => Assert.Equal("текст - 5", new TextTypographer(new TextOptions
         {
             Rules = RuleSet.None
                 .With(RuleId.Ru.Dash.Main)
@@ -73,7 +73,7 @@ public class DashRulesTests
 
     [Fact]
     public void YearRangeRecognizedAcrossInlineTag()
-        => Assert.Equal("<b>1941</b>—1945", HtmlTypograf.Default.Process("<b>1941</b>-1945"));
+        => Assert.Equal("<b>1941</b>—1945", HtmlTypographer.Default.Process("<b>1941</b>-1945"));
 
     [Fact]
     public void SpacedHyphenAfterTagDoesNotPatchIntoMarkup()
@@ -81,7 +81,7 @@ public class DashRulesTests
         // Правило тире патчит пробел слева от дефиса, а он может лежать ЗА тегом — в чужой
         // части общего буфера. Патч левее своего текстового узла переписал бы «>» тега
         // неразрывным пробелом и сломал разметку, которую гарантия 3 обещает байт в байт.
-        string result = new HtmlTypograf(new HtmlOptions
+        string result = new HtmlTypographer(new HtmlOptions
         {
             Rules = RuleSet.None.With(RuleId.Ru.Dash.Main),
         }).Process("раз <b>- два</b>");

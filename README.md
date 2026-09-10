@@ -19,8 +19,8 @@
 ```csharp
 using Typographer;
 
-string html = Typograf.Html("Он сказал: \"Привет!\" - и махнул рукой.");
-string text = Typograf.PlainText("Он сказал: \"Привет!\" - и махнул рукой.");
+string html = Typographer.Html("Он сказал: \"Привет!\" - и махнул рукой.");
+string text = Typographer.PlainText("Он сказал: \"Привет!\" - и махнул рукой.");
 ```
 
 Настраиваемый вариант — свой набор правил, кодирование сущностей, перенос строк и абзацы:
@@ -29,7 +29,7 @@ string text = Typograf.PlainText("Он сказал: \"Привет!\" - и ма
 using Typographer;
 using Typographer.Rules;
 
-var typograf = new HtmlTypograf(new HtmlOptions
+var typographer = new HtmlTypographer(new HtmlOptions
 {
     Rules = RuleSet.Default.Without(RuleId.Ru.Nbsp.Initials),
     Entities = EntityMode.Named,
@@ -37,15 +37,15 @@ var typograf = new HtmlTypograf(new HtmlOptions
     MaxNobr = 3,
 });
 
-string html = typograf.Process("Он сказал: \"Привет!\" - и махнул рукой.\nВторая строка.");
+string html = typographer.Process("Он сказал: \"Привет!\" - и махнул рукой.\nВторая строка.");
 ```
 
-Для обычного текста — `TextTypograf` и `TextOptions` (без `Entities`, `UseBr`, `UseP`,
+Для обычного текста — `TextTypographer` и `TextOptions` (без `Entities`, `UseBr`, `UseP`,
 `MaxNobr`: они имеют смысл только в HTML, поэтому в `TextOptions` их физически нет):
 
 ```csharp
-var typograf = new TextTypograf(new TextOptions { Rules = RuleSet.Minimal });
-string text = typograf.Process("Он сказал: \"Привет!\" - и махнул рукой.");
+var typographer = new TextTypographer(new TextOptions { Rules = RuleSet.Minimal });
+string text = typographer.Process("Он сказал: \"Привет!\" - и махнул рукой.");
 ```
 
 Обе точки входа умеют писать результат прямо в приёмник без промежуточной строки:
@@ -54,7 +54,7 @@ string text = typograf.Process("Он сказал: \"Привет!\" - и мах
 using System.Buffers;
 
 var writer = new ArrayBufferWriter<char>();
-HtmlTypograf.Default.Process("Он сказал: \"Привет!\"".AsSpan(), writer);
+HtmlTypographer.Default.Process("Он сказал: \"Привет!\"".AsSpan(), writer);
 ```
 
 ### Наборы правил
@@ -105,19 +105,19 @@ BOM (`U+FEFF`) удаляется только в начале документ�
 | Пакет | Зачем | Зависимости | Платформы |
 |---|---|---|---|
 | `Typographer` | ядро: HTML и обычный текст, правила, пресеты | нет на `net8.0` и `net10.0`; `System.Memory` на `netstandard2.0` | `netstandard2.0`, `net8.0`, `net10.0` |
-| `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0`, `net8.0`, `net10.0` |
-| `Typographer.AspNetCore` | тег-хелпер `<typograf>` и `IHtmlContent` | ASP.NET Core | `net8.0`, `net10.0` |
+| `Typographer.DependencyInjection` | `AddTypographer()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0`, `net8.0`, `net10.0` |
+| `Typographer.AspNetCore` | тег-хелпер `<typographer>` и `IHtmlContent` | ASP.NET Core | `net8.0`, `net10.0` |
 | `Typographer.Markdig` | типографика Markdown | `Markdig` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `dotnet-typographer` | утилита командной строки | ядро | `net10.0` |
 
 ### Контейнер
 
 ```csharp
-services.AddTypograf();                                        // настройки по умолчанию
-services.AddTypograf(new HtmlOptions { Entities = EntityMode.Named });
+services.AddTypographer();                                        // настройки по умолчанию
+services.AddTypographer(new HtmlOptions { Entities = EntityMode.Named });
 ```
 
-Регистрируются одиночками `HtmlTypograf` и `TextTypograf`. Своя регистрация, сделанная
+Регистрируются одиночками `HtmlTypographer` и `TextTypographer`. Своя регистрация, сделанная
 раньше, побеждает: внутри `TryAddSingleton`.
 
 ### ASP.NET Core
@@ -125,21 +125,21 @@ services.AddTypograf(new HtmlOptions { Entities = EntityMode.Named });
 ```cshtml
 @addTagHelper *, Typographer.AspNetCore
 
-<typograf><p>Он - человек и "цитата"</p></typograf>
+<typographer><p>Он - человек и "цитата"</p></typographer>
 ```
 
-Тег-хелпер типографирует содержимое и исчезает сам. Требует `services.AddTypograf()`.
+Тег-хелпер типографирует содержимое и исчезает сам. Требует `services.AddTypographer()`.
 Там, где удобнее вызов, а не элемент:
 
 ```cshtml
-@inject HtmlTypograf Typograf
-@Typograf.ToHtmlContent(Model.Text)
+@inject HtmlTypographer Typographer
+@Typographer.ToHtmlContent(Model.Text)
 ```
 
 ### Markdown
 
 ```csharp
-MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypograf().Build();
+MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypographer().Build();
 string html = Markdown.ToHtml(source, pipeline);
 ```
 
