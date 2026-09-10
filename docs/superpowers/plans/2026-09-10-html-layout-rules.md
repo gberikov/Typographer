@@ -1,6 +1,6 @@
 # План 2d: правила фаз Layout и Emit
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Реализовать последние одиннадцать правил — группы `common/html/*` и `ru/optalign/*`, — доведя реестр с 96 записей до 107 и закрыв состав правил спецификации целиком.
 
@@ -109,7 +109,7 @@
 на нём стоят прогоны гарантии 3, которые сравнивают ЧИСЛО тегов до и после, а эти правила
 теги добавляют или снимают законно.
 
-- [ ] **Step 1: Красный тест на состав реестра**
+- [x] **Step 1: Красный тест на состав реестра**
 
 ```csharp
 [Fact]
@@ -147,12 +147,12 @@ public void MarkupChangingRulesAreAllOutOfDefault()
 }
 ```
 
-- [ ] **Step 2: Прогнать, убедиться, что не компилируется**
+- [x] **Step 2: Прогнать, убедиться, что не компилируется**
 
 Run: `dotnet test tests/Typographer.Tests --framework net10.0`
 Expected: ошибки компиляции — `RuleId.Common.Html` и `RuleId.Ru.OptAlign` не существуют.
 
-- [ ] **Step 3: Реестр**
+- [x] **Step 3: Реестр**
 
 Одиннадцать записей в `RuleId.Registry` с индексами 97–107, имена из таблицы. Новые классы
 `Common.Html` и `Ru.OptAlign` с XML-комментариями на русском; у двух нереализуемых правил
@@ -173,7 +173,7 @@ public static readonly RuleId[] MarkupChanging =
 ];
 ```
 
-- [ ] **Step 4: Маска фазы Layout**
+- [x] **Step 4: Маска фазы Layout**
 
 ```csharp
 // RuleSet.cs, рядом с BindPhase
@@ -181,12 +181,12 @@ public static readonly RuleId[] MarkupChanging =
 internal static RuleSet LayoutPhase { get; } = FromPhase(RulePhase.Layout);
 ```
 
-- [ ] **Step 5: Прогнать тесты**
+- [x] **Step 5: Прогнать тесты**
 
 Run: `dotnet test tests/Typographer.Tests --framework net10.0`
 Expected: PASS. Правила зарегистрированы, но ни одна фаза их не читает — вывод не меняется.
 
-- [ ] **Step 6: Коммит**
+- [x] **Step 6: Коммит**
 
 ```bash
 rtk git add src/Typographer/Rules tests/Typographer.Tests/Rules/RuleSetTests.cs
@@ -219,7 +219,7 @@ rtk git commit -m "feat: реестр правил закрыт на 107 зап�
 потому что тогда фаза `Emit` начнёт КОДИРОВАТЬ каждую прямую кавычку обратно в `&quot;`, чего
 не просил никто.
 
-- [ ] **Step 1: Красный тест**
+- [x] **Step 1: Красный тест**
 
 ```csharp
 // tests/Typographer.Tests/Rules/HtmlRulesTests.cs
@@ -258,12 +258,12 @@ public class HtmlRulesTests
 }
 ```
 
-- [ ] **Step 2: Прогнать, убедиться, что падает**
+- [x] **Step 2: Прогнать, убедиться, что падает**
 
 Run: `dotnet test tests/Typographer.Tests --framework net10.0`
 Expected: FAIL — `&quot;` доходит до вывода без изменений.
 
-- [ ] **Step 3: Реализация**
+- [x] **Step 3: Реализация**
 
 ```csharp
 // Preparer.Run, рядом с веткой EntityTable.TryDecode
@@ -313,12 +313,12 @@ private static bool TryDecodeQuot(ReadOnlySpan<char> source, out int length)
 `bool quot = rules.Contains(RuleId.Common.Html.Quot);` вычисляется один раз перед циклом,
 рядом с уже существующим `replaceNbsp`.
 
-- [ ] **Step 4: Прогнать тесты**
+- [x] **Step 4: Прогнать тесты**
 
 Run: `dotnet test tests/Typographer.Tests --framework net10.0`
 Expected: PASS.
 
-- [ ] **Step 5: Коммит**
+- [x] **Step 5: Коммит**
 
 ```bash
 rtk git add src/Typographer tests/Typographer.Tests
@@ -349,7 +349,7 @@ rtk git commit -m "feat: правило common/html/quot"
 когда включено хоть одно его правило — все пять вне `Default`, и обычный вызов за них не
 платит. Тот же приём, что у `DocumentSpaceRules.IsEnabled`.
 
-- [ ] **Step 1: Красный тест на каркас прохода**
+- [x] **Step 1: Красный тест на каркас прохода**
 
 ```csharp
 // tests/Typographer.Tests/Rules/InlineMarkupTests.cs
@@ -374,10 +374,10 @@ public class InlineMarkupTests
 }
 ```
 
-- [ ] **Step 2: Прогнать** — Expected: PASS вырожденно (правило ещё ничего не делает).
+- [x] **Step 2: Прогнать** — Expected: PASS вырожденно (правило ещё ничего не делает).
       Зафиксировать вывод: тест закрепляет то, что не должно сломаться в задачах 4 и 5.
 
-- [ ] **Step 3: Состояние и проход**
+- [x] **Step 3: Состояние и проход**
 
 ```csharp
 // src/Typographer/Internal/Layout/InlineMarkupWriter.cs
@@ -499,14 +499,14 @@ internal static class InlineMarkupWriter
 }
 ```
 
-- [ ] **Step 4: Заглушки правил**
+- [x] **Step 4: Заглушки правил**
 
 `LinkRules.TryApply` и `OptAlignRules.TryApply` создаются возвращающими `false`, с
 XML-комментарием «правила добавляют задачи 4 и 5». `OptAlignRules.IsOptAlignTag` возвращает
 `false`. Заглушка честнее условной компиляции: диспетчер уже вызывает правила в нужном месте
 и в нужном порядке.
 
-- [ ] **Step 5: Вызов из фазы Layout**
+- [x] **Step 5: Вызов из фазы Layout**
 
 ```csharp
 // LayoutWriter.Run, в самом начале
@@ -536,12 +536,12 @@ RunLayout(source, options, canWrapParagraphs, ref buffer);
 Тело нынешнего `Run` переименовывается в `RunLayout` с той же сигнатурой; больше в нём
 ничего не меняется.
 
-- [ ] **Step 6: Прогнать все тесты**
+- [x] **Step 6: Прогнать все тесты**
 
 Run: `dotnet test tests/Typographer.Tests`
 Expected: PASS, ни один существующий тест не изменил поведения.
 
-- [ ] **Step 7: Коммит**
+- [x] **Step 7: Коммит**
 
 ```bash
 rtk git add src/Typographer tests/Typographer.Tests
@@ -582,7 +582,7 @@ rtk git commit -m "feat: проход фазы Layout для разметки в
 слова, читает вперёд и проверяет форму целиком. Иначе локальная часть уже была бы записана в
 буфер, и правилу пришлось бы её оттуда выковыривать.
 
-- [ ] **Step 1: Красный тест**
+- [x] **Step 1: Красный тест**
 
 ```csharp
     [Theory]
@@ -616,9 +616,9 @@ rtk git commit -m "feat: проход фазы Layout для разметки в
     }
 ```
 
-- [ ] **Step 2: Прогнать** — Expected: FAIL на всех положительных случаях.
+- [x] **Step 2: Прогнать** — Expected: FAIL на всех положительных случаях.
 
-- [ ] **Step 3: Реализация**
+- [x] **Step 3: Реализация**
 
 ```csharp
 // src/Typographer/Internal/Layout/LinkRules.cs
@@ -776,14 +776,14 @@ internal static class LinkRules
 }
 ```
 
-- [ ] **Step 4: Прогнать тесты**
+- [x] **Step 4: Прогнать тесты**
 
 Run: `dotnet test tests/Typographer.Tests`
 Expected: PASS. Прогон гарантии 3 (`TagCountUnchanged_AllRules`) обязан считать эти правила
 законно добавляющими теги — он берёт набор `RuleSet.All.Without(RuleId.Registry.MarkupChanging)`,
 и правка этого теста входит в задачу 8.
 
-- [ ] **Step 5: Коммит**
+- [x] **Step 5: Коммит**
 
 ```bash
 rtk git add src/Typographer tests/Typographer.Tests
@@ -825,15 +825,15 @@ rtk git commit -m "feat: автоссылки для веб-адресов и п
 оборачивается. Тег висячей пунктуации содержит ровно один символ, вкладывать в него нечего,
 поэтому признак снимается первым же закрывающим тегом.
 
-- [ ] **Step 1: Красный тест** — по строкам таблицы плюс отдельный тест на два прогона подряд.
-- [ ] **Step 2: Прогнать** — Expected: FAIL на всех положительных случаях.
-- [ ] **Step 3: Реализация.** `TryApply` спрашивает три правила по символу-триггеру:
+- [x] **Step 1: Красный тест** — по строкам таблицы плюс отдельный тест на два прогона подряд.
+- [x] **Step 2: Прогнать** — Expected: FAIL на всех положительных случаях.
+- [x] **Step 3: Реализация.** `TryApply` спрашивает три правила по символу-триггеру:
       `Chars.Laquo` и `Chars.Bdquo` — кавычка, `(` — скобка, `,` — запятая. Для кавычки и
       скобки различаются два случая: начало строки (`state.AtLineStart` — класс `-n-`) и
       середина (пробел слева уже записан в буфер — он усекается и переписывается тегом
       `-sp-`). Запятая оборачивается, только если слева буква или цифра, а справа пробел.
-- [ ] **Step 4: Прогнать** — Expected: PASS, включая тест на два прогона.
-- [ ] **Step 5: Коммит** — `feat: висячая пунктуация`.
+- [x] **Step 4: Прогнать** — Expected: PASS, включая тест на два прогона.
+- [x] **Step 5: Коммит** — `feat: висячая пунктуация`.
 
 ---
 
@@ -857,11 +857,11 @@ rtk git commit -m "feat: автоссылки для веб-адресов и п
 Правило и опция складываются по «или»: `bool useBr = options.UseBr || rules.Contains(Nbr);`
 и то же для абзацев. Решение 1 шапки объясняет, почему второго механизма не заводится.
 
-- [ ] **Step 1: Красный тест** — по строкам таблицы.
-- [ ] **Step 2: Прогнать** — Expected: FAIL: правила ничего не меняют.
-- [ ] **Step 3: Реализация** — две строки в `RunLayout`.
-- [ ] **Step 4: Прогнать** — Expected: PASS, вместе с существующими тестами опций.
-- [ ] **Step 5: Коммит** — `feat: правила common/html/nbr и common/html/p`.
+- [x] **Step 1: Красный тест** — по строкам таблицы.
+- [x] **Step 2: Прогнать** — Expected: FAIL: правила ничего не меняют.
+- [x] **Step 3: Реализация** — две строки в `RunLayout`.
+- [x] **Step 4: Прогнать** — Expected: PASS, вместе с существующими тестами опций.
+- [x] **Step 5: Коммит** — `feat: правила common/html/nbr и common/html/p`.
 
 ---
 
@@ -889,12 +889,12 @@ rtk git commit -m "feat: автоссылки для веб-адресов и п
 Гарантия 3 получает своё единственное исключение, гарантия 5 — второе новое (решение 4
 шапки): амперсанд, ставший `&amp;`, на втором прогоне станет `&amp;amp;`.
 
-- [ ] **Step 1: Красный тест** — по строкам таблицы плюс тест, фиксирующий НЕидемпотентность
+- [x] **Step 1: Красный тест** — по строкам таблицы плюс тест, фиксирующий НЕидемпотентность
       («&amp;» второго прогона), — по образцу `UseBr_SecondPassNestsBrTag`.
-- [ ] **Step 2: Прогнать** — Expected: FAIL.
-- [ ] **Step 3: Реализация** — ветка в начале `EncodeDocument`.
-- [ ] **Step 4: Прогнать** — Expected: PASS.
-- [ ] **Step 5: Коммит** — `feat: правило common/html/escape`.
+- [x] **Step 2: Прогнать** — Expected: FAIL.
+- [x] **Step 3: Реализация** — ветка в начале `EncodeDocument`.
+- [x] **Step 4: Прогнать** — Expected: PASS.
+- [x] **Step 5: Коммит** — `feat: правило common/html/escape`.
 
 ---
 
@@ -911,7 +911,7 @@ rtk git commit -m "feat: автоссылки для веб-адресов и п
 - Consumes: все правила задач 1–7, `RuleId.Registry.MarkupChanging`.
 - Produces: актуальный раздел 6 спецификации, гарантии 3 и 5 с исключениями, прогоны гарантий на наборе `All` без правил, меняющих разметку.
 
-- [ ] **Step 1: Прогоны гарантий**
+- [x] **Step 1: Прогоны гарантий**
 
 `MarkupIntegrityTests.TagCountUnchanged_AllRules` берёт
 `RuleSet.All.Without(RuleId.Registry.MarkupChanging)`: тест проверяет сохранность
@@ -920,14 +920,14 @@ rtk git commit -m "feat: автоссылки для веб-адресов и п
 `RuleId.Common.Html.Nbr` и `RuleId.Common.Html.Escape` — они неидемпотентны по построению, и
 это записано в спецификации, а не выдаётся за дефект.
 
-- [ ] **Step 2: Корпус**
+- [x] **Step 2: Корпус**
 
 `HardCases` пополняется четырьмя строками на взаимодействие новых правил с существующими:
 `"Сайт http://example.com/a-b?x=1&y=2 и почта user@example.com"` (уже есть — проверить, что
 не сломался), `"«Цитата» в начале и (скобка) в середине, раз, два"`,
 `"<a href=\"#\">http://a.ru</a> и m@e.com"`, `"&quot;цитата&quot; и &amp;quot;"`.
 
-- [ ] **Step 3: Раздел 6 спецификации**
+- [x] **Step 3: Раздел 6 спецификации**
 
 Строка `common/html/*` получает «Prepare / Layout / Emit» вместо «Protect / Layout / Emit» и
 сноску про два нереализуемых правила. Абзац «Зарегистрированы, но пока НЕ РЕАЛИЗОВАНЫ»
@@ -936,24 +936,24 @@ rtk git commit -m "feat: автоссылки для веб-адресов и п
 `common/html/stripTags`, `common/html/processingAttrs`. Правило
 `ru/typo/switchingKeyboardLayout` остаётся отложенным.
 
-- [ ] **Step 4: Гарантии 3 и 5**
+- [x] **Step 4: Гарантии 3 и 5**
 
 Гарантия 3 получает исключение `common/html/escape` — единственное. Гарантия 5 получает
 `common/html/nbr` и `common/html/escape` рядом с `UseBr`, `MaxNobr` и `replaceNbsp`.
 
-- [ ] **Step 5: Снимок оракула**
+- [x] **Step 5: Снимок оракула**
 
 В `docs/oracle/lebedev.md` дописывается, что закрыл план 2d: строка
 `Сайт www.example.com и почта mail@example.com` — оракул ссылок не ставит и мы в `Default`
 тоже, но правила теперь есть и включаются по имени. Адрес без схемы (`www.example.com`) не
 распознаётся ни одним из наших правил — это факт, а не дефект.
 
-- [ ] **Step 6: Прогнать всё**
+- [x] **Step 6: Прогнать всё**
 
 Run: `dotnet test tests/Typographer.Tests` и `rtk dotnet build src/Typographer -c Release`
 Expected: PASS, ноль предупреждений на всех трёх целевых платформах.
 
-- [ ] **Step 7: Коммит**
+- [x] **Step 7: Коммит**
 
 ```bash
 rtk git add docs tests
