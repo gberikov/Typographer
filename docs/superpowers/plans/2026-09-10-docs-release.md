@@ -87,7 +87,7 @@ DocFX 2.78.5, GitHub Actions, GitHub Pages, NuGet.
 - Produces: `RulesDocument.Build()` — текст справочника; используется задачей 3 как
   страница сайта.
 
-- [ ] **Step 1: Создать ветку**
+- [x] **Step 1: Создать ветку**
 
 ```bash
 rtk git switch develop
@@ -95,7 +95,7 @@ rtk git pull --ff-only origin develop
 rtk git switch -c feature/docs-release
 ```
 
-- [ ] **Step 2: Написать сопоставление правила с описанием и примером**
+- [x] **Step 2: Написать сопоставление правила с описанием и примером**
 
 Создать `tests/Typographer.Tests/Rules/RuleCatalog.cs`:
 
@@ -253,7 +253,7 @@ internal static class RuleCatalog
 }
 ```
 
-- [ ] **Step 3: Написать сборку текста справочника**
+- [x] **Step 3: Написать сборку текста справочника**
 
 Создать `tests/Typographer.Tests/Rules/RulesDocument.cs`:
 
@@ -324,7 +324,7 @@ internal static class RulesDocument
 }
 ```
 
-- [ ] **Step 4: Написать падающий тест**
+- [x] **Step 4: Написать падающий тест**
 
 Создать `tests/Typographer.Tests/Rules/RulesDocumentTests.cs`:
 
@@ -383,7 +383,7 @@ public class RulesDocumentTests
 }
 ```
 
-- [ ] **Step 5: Убедиться, что тест падает, и сгенерировать файл**
+- [x] **Step 5: Убедиться, что тест падает, и сгенерировать файл**
 
 Выполнить: `dotnet test tests/Typographer.Tests`
 Ожидается: `RulesDocumentIsUpToDate` падает — файла `docs/rules.md` ещё нет
@@ -397,7 +397,7 @@ TYPOGRAPHER_UPDATE_RULES=1 dotnet test tests/Typographer.Tests
 
 Ожидается: падение с текстом «docs/rules.md перезаписан» — это успех режима перегенерации.
 
-- [ ] **Step 6: Прочитать сгенерированный файл глазами**
+- [x] **Step 6: Прочитать сгенерированный файл глазами**
 
 Открыть `docs/rules.md`. Проверить по трём пунктам:
 
@@ -412,12 +412,12 @@ TYPOGRAPHER_UPDATE_RULES=1 dotnet test tests/Typographer.Tests
 в `HardCases.All` короткий вход, показывающий правило, и перегенерировать: тестовые данные
 и есть источник примеров, и пополнять надо их, а не справочник.
 
-- [ ] **Step 7: Убедиться, что тесты проходят**
+- [x] **Step 7: Убедиться, что тесты проходят**
 
 Выполнить: `dotnet test tests/Typographer.Tests`
 Ожидается: PASS, все тесты, включая три новых.
 
-- [ ] **Step 8: Коммит**
+- [x] **Step 8: Коммит**
 
 ```bash
 rtk git add tests/Typographer.Tests/Rules docs/rules.md
@@ -444,7 +444,7 @@ rtk git commit -m "docs: справочник правил генерирует�
 - Consumes: ничего.
 - Produces: страницы, на которые ссылается `docs/toc.yml` задачи 3.
 
-- [ ] **Step 1: Написать главную страницу**
+- [x] **Step 1: Написать главную страницу**
 
 Создать `docs/index.md`:
 
@@ -473,7 +473,7 @@ Typograf.Html("Он - человек и \"цитата\"");
 и не выбрасывает исключений ни на каком входе, кроме объявленного `OutputTooLargeException`.
 ```
 
-- [ ] **Step 2: Написать быстрый старт**
+- [x] **Step 2: Написать быстрый старт**
 
 Создать `docs/quickstart.md`:
 
@@ -561,7 +561,7 @@ dotnet-typographer --help
 ```
 ```
 
-- [ ] **Step 3: Написать страницу архитектуры**
+- [x] **Step 3: Написать страницу архитектуры**
 
 Создать `docs/architecture.md`:
 
@@ -629,7 +629,7 @@ dotnet-typographer --help
 | Фаззинг | падение конвейера на произвольном входе |
 ```
 
-- [ ] **Step 4: Написать рецепты**
+- [x] **Step 4: Написать рецепты**
 
 Создать `docs/recipes.md`:
 
@@ -744,7 +744,7 @@ var typograf = new HtmlTypograf(new HtmlOptions { MaxOutputLength = 1_000_000 })
 выключите правило точечно через `Without`.
 ```
 
-- [ ] **Step 5: Написать страницу источников**
+- [x] **Step 5: Написать страницу источников**
 
 Создать `docs/sources.md`:
 
@@ -782,14 +782,14 @@ var typograf = new HtmlTypograf(new HtmlOptions { MaxOutputLength = 1_000_000 })
 и не нормализует чужую разметку.
 ```
 
-- [ ] **Step 6: Проверить ссылки**
+- [x] **Step 6: Проверить ссылки**
 
 Выполнить: `rtk ls docs`
 Ожидается: `index.md`, `quickstart.md`, `architecture.md`, `recipes.md`, `sources.md`,
 `rules.md`, `spec.md`, `perf.md`, каталог `oracle`. Все относительные ссылки со страниц
 ведут на существующие файлы.
 
-- [ ] **Step 7: Коммит**
+- [x] **Step 7: Коммит**
 
 ```bash
 rtk git add docs
@@ -810,7 +810,7 @@ rtk git commit -m "docs: быстрый старт, архитектура, ре
 - Consumes: страницы задачи 2 и `docs/rules.md` задачи 1.
 - Produces: сайт по адресу `https://gberikov.github.io/Typographer/`.
 
-- [ ] **Step 1: Написать конфигурацию DocFX**
+- [x] **Step 1: Написать конфигурацию DocFX**
 
 Создать `docs/docfx.json`:
 
@@ -855,7 +855,7 @@ rtk git commit -m "docs: быстрый старт, архитектура, ре
 Планы из `superpowers/` исключены намеренно: это рабочие документы разработки, а не
 документация библиотеки, и на сайте они только мешали бы поиску.
 
-- [ ] **Step 2: Написать навигацию**
+- [x] **Step 2: Написать навигацию**
 
 Создать `docs/toc.yml`:
 
@@ -878,7 +878,7 @@ rtk git commit -m "docs: быстрый старт, архитектура, ре
   href: api/
 ```
 
-- [ ] **Step 3: Проверить сборку сайта локально**
+- [x] **Step 3: Проверить сборку сайта локально**
 
 ```bash
 rtk dotnet tool install --global docfx --version 2.78.5
@@ -890,7 +890,7 @@ rtk docfx docs/docfx.json
 `GenerateDocumentationFile` выключен (утилита командной строки); для остальных их быть
 не должно.
 
-- [ ] **Step 4: Закрыть результат сборки от git**
+- [x] **Step 4: Закрыть результат сборки от git**
 
 В `.gitignore` добавить:
 
@@ -902,7 +902,7 @@ docs/api/
 `docs/api` — сгенерированные DocFX YAML-файлы по коду; в репозитории им делать нечего,
 они пересобираются на каждой сборке сайта.
 
-- [ ] **Step 5: Написать workflow**
+- [x] **Step 5: Написать workflow**
 
 Создать `.github/workflows/docs.yml`:
 
@@ -955,7 +955,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-- [ ] **Step 6: Включить GitHub Pages**
+- [x] **Step 6: Включить GitHub Pages**
 
 Страницы репозитория ещё не включены (`gh api repos/gberikov/Typographer/pages` отвечает
 404), а `actions/deploy-pages` работает только при источнике «GitHub Actions»:
@@ -967,7 +967,7 @@ rtk gh api -X POST repos/gberikov/Typographer/pages -f build_type=workflow
 Ожидается: JSON с `"build_type": "workflow"`. Повторный вызов даёт 409 — это тоже успех,
 значит страницы уже включены.
 
-- [ ] **Step 7: Проверить workflow на пул-реквесте**
+- [x] **Step 7: Проверить workflow на пул-реквесте**
 
 `workflow_dispatch` не сработает, пока файл не дойдёт до ветки по умолчанию (`master`), —
 это уже проверено в плане 3 на фаззинге. Чтобы проверить сборку сайта до слияния, временно
@@ -985,7 +985,7 @@ on:
 пропущена. После этого триггер `pull_request` из файла УБРАТЬ и закоммитить — постоянно
 собирать сайт на каждом пул-реквесте незачем.
 
-- [ ] **Step 8: Коммит**
+- [x] **Step 8: Коммит**
 
 ```bash
 rtk git add docs/docfx.json docs/toc.yml .github/workflows/docs.yml .gitignore
@@ -1003,7 +1003,7 @@ rtk git commit -m "docs: сайт DocFX на GitHub Pages"
 - Consumes: пять упаковываемых проектов и MinVer.
 - Produces: workflow, публикующий пакеты и создающий релиз на GitHub.
 
-- [ ] **Step 1: Написать workflow**
+- [x] **Step 1: Написать workflow**
 
 Создать `.github/workflows/release.yml`:
 
@@ -1071,7 +1071,7 @@ jobs:
 Символьные пакеты (`.snupkg`) отдельной строкой не публикуются: `dotnet nuget push`
 отправляет их сам вместе с одноимённым `.nupkg`.
 
-- [ ] **Step 2: Проверить упаковку локально**
+- [x] **Step 2: Проверить упаковку локально**
 
 Выполнить: `rtk dotnet pack -c Release -o artifacts/packages`
 
@@ -1082,7 +1082,7 @@ jobs:
 rtk ls artifacts/packages
 ```
 
-- [ ] **Step 3: Записать, чего не хватает для публикации**
+- [x] **Step 3: Записать, чего не хватает для публикации**
 
 Ключ NuGet в секретах репозитория не задан (`gh secret list` пуст), и завести его может
 только владелец: ключ выпускается на nuget.org и в репозиторий кладётся руками.
@@ -1096,7 +1096,7 @@ rtk ls artifacts/packages
 workflow останавливается с понятной ошибкой, а не публикует половину.
 ```
 
-- [ ] **Step 4: Коммит**
+- [x] **Step 4: Коммит**
 
 ```bash
 rtk git add .github/workflows/release.yml README.md
@@ -1115,7 +1115,7 @@ rtk git commit -m "ci: публикация пакетов в NuGet по тег�
 - Consumes: всё сделанное задачами 1–4.
 - Produces: ничего для кода.
 
-- [ ] **Step 1: Убрать устаревший статус из README**
+- [x] **Step 1: Убрать устаревший статус из README**
 
 В `README.md` блок «Статус» сейчас утверждает, что работают двенадцать правил, а остальные
 из 107 придут позже. Это перестало быть правдой ещё в плане 2. Заменить блок на:
@@ -1127,7 +1127,7 @@ rtk git commit -m "ci: публикация пакетов в NuGet по тег�
 > и отложено `ru/typo/switchingKeyboardLayout`. Публикации в NuGet ещё не было.
 ```
 
-- [ ] **Step 2: Добавить ссылку на документацию**
+- [x] **Step 2: Добавить ссылку на документацию**
 
 В `README.md` сразу после значка CI добавить строку:
 
@@ -1135,7 +1135,7 @@ rtk git commit -m "ci: публикация пакетов в NuGet по тег�
 Документация: <https://gberikov.github.io/Typographer/> · [справочник правил](docs/rules.md)
 ```
 
-- [ ] **Step 3: Отметить план в очереди**
+- [x] **Step 3: Отметить план в очереди**
 
 В `docs/superpowers/plans/2026-09-08-typographer-core.md`, таблица «Очередь планов»,
 строку про план 5 привести к виду:
@@ -1144,19 +1144,19 @@ rtk git commit -m "ci: публикация пакетов в NuGet по тег�
 | 5. Документация и релиз ✅ | Генератор `docs/rules.md` из метаданных, сайт DocFX на GitHub Pages, публикация в NuGet по тегу. План — `2026-09-10-docs-release.md` | 2, 4 |
 ```
 
-- [ ] **Step 4: Прогнать всё**
+- [x] **Step 4: Прогнать всё**
 
 Выполнить: `rtk dotnet build -c Release` и `dotnet test -c Release`
 Ожидается: сборка без предупреждений, все тесты зелёные.
 
-- [ ] **Step 5: Коммит**
+- [x] **Step 5: Коммит**
 
 ```bash
 rtk git add README.md docs
 rtk git commit -m "docs: актуальный статус и ссылка на сайт документации"
 ```
 
-- [ ] **Step 6: Завершение работы**
+- [x] **Step 6: Завершение работы**
 
 Открыть PR в `develop`, дождаться зелёного `build` и слить через PR — прямой push в
 `develop` защита ветки не пропустит.

@@ -2,14 +2,15 @@
 
 [![CI](https://github.com/gberikov/Typographer/actions/workflows/ci.yml/badge.svg)](https://github.com/gberikov/Typographer/actions/workflows/ci.yml)
 
+Документация: <https://gberikov.github.io/Typographer/> · [справочник правил](docs/rules.md)
+
 Типограф для русского языка на .NET: кавычки-ёлочки, тире, неразрывные пробелы, работает
 и с обычным текстом, и с HTML-фрагментами.
 
-> Статус: ядро шестифазного конвейера и двенадцать правил типографики работают и покрыты
-> тестами (кавычки, тире, дефис, многоточие, апостроф, пробелы вокруг пунктуации,
-> неразрывные пробелы после коротких слов, в сокращениях и при инициалах). Ещё два
-> зарегистрированных правила (`ru/punctuation/ano`, `ru/typo/switchingKeyboardLayout`) и
-> оставшаяся часть из 107 правил спецификации придут в следующих версиях.
+> Статус: реестр закрыт — 107 правил, шесть фаз конвейера, пять пакетов. Не реализованы
+> три правила, которые не могут быть реализованы без нарушения гарантий
+> (`common/punctuation/quoteLink`, `common/html/stripTags`, `common/html/processingAttrs`),
+> и отложено `ru/typo/switchingKeyboardLayout`. Публикации в NuGet ещё не было.
 
 ## Использование
 
