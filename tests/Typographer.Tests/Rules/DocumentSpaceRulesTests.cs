@@ -31,6 +31,19 @@ public class DocumentSpaceRulesTests
     public void ReplacesTabWithFourSpaces()
         => Assert.Equal("текст    ещё", Run("текст\tещё", RuleId.Common.Space.ReplaceTab));
 
+    // Вместе с удалением повторов пробелов табуляция даёт один пробел, а не четыре:
+    // четыре схлопнулись бы на следующем прогоне и нарушили идемпотентность.
+    [Fact]
+    public void ReplacesTabWithSingleSpaceWhenRepeatsAreDeleted()
+    {
+        Assert.Equal(
+            "текст ещё",
+            Run("текст\tещё", RuleId.Common.Space.ReplaceTab, RuleId.Common.Space.DelRepeatSpace));
+        Assert.Equal(
+            "текст ещё",
+            Text("текст\tещё", RuleId.Common.Space.ReplaceTab, RuleId.Common.Space.DelRepeatSpace));
+    }
+
     [Fact]
     public void RemovesBlanksAtLineEdges()
     {

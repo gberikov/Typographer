@@ -489,3 +489,7 @@ fuzz/bin/
 fuzz/corpus/
 fuzz/crashes/
 libfuzzer-dotnet
+
+# Сайт документации DocFX
+docs/_site/
+docs/api/
