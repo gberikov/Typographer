@@ -66,6 +66,9 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     /// </summary>
     public static RuleSet Gost { get; } = Default.Without(RuleId.Common.Space.DelBeforePercent);
 
+    /// <summary>Все правила фазы Bind. Нужна самой фазе: без пересечения проход не запускается.</summary>
+    internal static RuleSet BindPhase { get; } = FromPhase(RulePhase.Bind);
+
     /// <summary>Количество включённых правил.</summary>
     public int Count => BitCount(_low) + BitCount(_high);
 
@@ -74,6 +77,16 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
         => rule.Index < 64
             ? (_low & (1UL << rule.Index)) != 0
             : (_high & (1UL << (rule.Index - 64))) != 0;
+
+    /// <summary>Проверяет, есть ли правило, включённое и здесь, и в переданном множестве.</summary>
+    /// <param name="other">Множество, с которым сравнивается это.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="other"/> — null.</exception>
+    public bool Overlaps(RuleSet other)
+    {
+        Throw.IfNull(other, nameof(other));
+
+        return (_low & other._low) != 0 || (_high & other._high) != 0;
+    }
 
     /// <summary>Возвращает новое множество с добавленными правилами.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="rules"/> — null.</exception>
@@ -134,6 +147,20 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     private static RuleSet FromRules(RuleId[] rules) => None.With(rules);
+
+    private static RuleSet FromPhase(RulePhase phase)
+    {
+        RuleSet set = None;
+        foreach (RuleId rule in RuleId.Registry.All)
+        {
+            if (rule.Phase == phase)
+            {
+                set = set.With(rule);
+            }
+        }
+
+        return set;
+    }
 
     private static int BitCount(ulong value)
     {
