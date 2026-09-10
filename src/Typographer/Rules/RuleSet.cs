@@ -39,24 +39,33 @@ public sealed class RuleSet : IReadOnlyCollection<RuleId>
     /// <summary>
     /// Поведение веб-сервиса Артемия Лебедева. Отличия от <see cref="Default"/> сняты
     /// снимком сервиса (<c>docs/oracle/lebedev.md</c>): диапазон лет он оставляет с дефисом,
-    /// удвоенный восклицательный знак не трогает, длинные числа разбивает по разрядам.
+    /// удвоенный восклицательный знак не трогает, длинные числа разбивает по разрядам,
+    /// адресное сокращение от следующего слова не отбивает («ул. Ленина», «г. Москва»)
+    /// и пробел перед знаком процента не съедает, а делает неразрывным.
     /// </summary>
     public static RuleSet Lebedev { get; } = Default
-        .Without(RuleId.Ru.Dash.Years, RuleId.Ru.Punctuation.Exclamation)
+        .Without(
+            RuleId.Ru.Dash.Years,
+            RuleId.Ru.Punctuation.Exclamation,
+            RuleId.Ru.Nbsp.Addr,
+            RuleId.Common.Space.DelBeforePercent)
         .With(RuleId.Common.Number.DigitGrouping);
 
     /// <summary>
     /// Паритет дефолтов с JS-typograf: к <see cref="Default"/> добавлены правила, которые
     /// там включены по умолчанию, а у нас признаны меняющими смысл, — расстановка запятых
     /// перед «а» и «но», исправление раскладки, дефис в омонимичных частицах и разбиение
-    /// разрядов.
+    /// разрядов. В обратную сторону расхождение одно: неразрывный пробел между числом и
+    /// следующим словом в JS-typograf по умолчанию выключен, а у нас включён по ГОСТ 9.4.
     /// </summary>
-    public static RuleSet Typograf { get; } = Default.With(
-        RuleId.Ru.Punctuation.Ano,
-        RuleId.Ru.Typo.SwitchingKeyboardLayout,
-        RuleId.Ru.Dash.To,
-        RuleId.Ru.Dash.KakTo,
-        RuleId.Common.Number.DigitGrouping);
+    public static RuleSet Typograf { get; } = Default
+        .With(
+            RuleId.Ru.Punctuation.Ano,
+            RuleId.Ru.Typo.SwitchingKeyboardLayout,
+            RuleId.Ru.Dash.To,
+            RuleId.Ru.Dash.KakTo,
+            RuleId.Common.Number.DigitGrouping)
+        .Without(RuleId.Common.Nbsp.AfterNumber);
 
     /// <summary>
     /// Строго по ГОСТ Р 7.0.110-2025. Отличие от <see cref="Default"/> одно: пробел перед

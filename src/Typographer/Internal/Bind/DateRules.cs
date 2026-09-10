@@ -28,6 +28,8 @@ internal static class DateRules
         Span<char> token, ReadOnlySpan<char> previous, char boundary,
         RuleSet rules, ref BindState state, ref CharBuffer buffer)
     {
+        _ = boundary;
+
         if (state.TokenOverflow)
         {
             return;
@@ -40,7 +42,7 @@ internal static class DateRules
 
         if (rules.Contains(RuleId.Ru.Date.Weekday))
         {
-            TryLowercase(token, previous, boundary, ref state, ref buffer);
+            TryLowercase(token, previous, ref state, ref buffer);
         }
     }
 
@@ -101,12 +103,16 @@ internal static class DateRules
 
     /// <summary>
     /// Название месяца или дня недели с прописной буквы становится строчным.
-    /// Месяц — когда слева стоит число: «2 Мая». День недели — когда справа запятая или
-    /// слева уже стоит месяц: «Понедельник, 9 сентября», «9 сентября, Понедельник».
-    /// Иначе слово может быть именем собственным или началом предложения.
+    /// Месяц — когда слева стоит число: «2 Мая». День недели — когда слева стоит месяц:
+    /// «2 мая, Понедельник».
     /// </summary>
+    /// <remarks>
+    /// Признак «справа запятая» проверялся и был отвергнут: он понижает регистр и в начале
+    /// предложения, где прописная буква стоит законно. Снимок оракула на строке
+    /// «Понедельник, 9 сентября 2026 года» показал ровно это.
+    /// </remarks>
     private static bool TryLowercase(
-        Span<char> token, ReadOnlySpan<char> previous, char boundary,
+        Span<char> token, ReadOnlySpan<char> previous,
         ref BindState state, ref CharBuffer buffer)
     {
         ReadOnlySpan<char> current = token.Slice(0, state.TokenLength);
@@ -116,8 +122,7 @@ internal static class DateRules
         }
 
         bool month = Dictionaries.IsMonth(current) && state.PrevKind == TokenKind.Number && state.PrevLength > 0;
-        bool weekday = Dictionaries.IsWeekday(current)
-            && (boundary == ',' || Dictionaries.IsMonth(previous));
+        bool weekday = Dictionaries.IsWeekday(current) && Dictionaries.IsMonth(previous);
 
         if (!month && !weekday)
         {

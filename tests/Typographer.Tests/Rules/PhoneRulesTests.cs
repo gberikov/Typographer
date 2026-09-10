@@ -48,6 +48,8 @@ public class PhoneRulesTests
     [InlineData("1234567890")]
     // Двенадцатая цифра подряд отменяет разбор: это артикул.
     [InlineData("артикул 89991234567890")]
+    // Цифры продолжаются за разделителем: длинное число, разбитое по разрядам.
+    [InlineData("89 991 234 567 890")]
     // Одна цифра и слово: «8 марта» — дата, а не номер.
     [InlineData("8 марта")]
     public void OtherDigitRunsAreUntouched(string source)

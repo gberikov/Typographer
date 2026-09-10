@@ -26,6 +26,27 @@ public class IdempotencyTests
         Assert.Equal(once, typograf.Process(once));
     }
 
+    // Набор Default проверяет то, чем пользуются; набор All — то, что вообще написано.
+    // Правила вне Default (деньги, ударение, повтор слова) меняют текст сильнее прочих, и
+    // разрыв идемпотентности вероятнее всего именно там.
+    // Исключение — common/nbsp/replaceNbsp: оно снимает неразрывные пробелы ПЕРЕД
+    // типографированием, чтобы правила расставили свои. Пробел, поставленный однократным
+    // превращением («- » в тире, «руб.» в знак рубля), на втором прогоне восстановить уже
+    // нечем: исходной формы в тексте нет. Это свойство самого правила, а не дефект; см.
+    // docs/spec.md, гарантия 5.
+    [Theory]
+    [MemberData(nameof(HardCases.All), MemberType = typeof(HardCases))]
+    public void SecondPassChangesNothing_AllRules(string source)
+    {
+        var typograf = new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.All.Without(RuleId.Common.Nbsp.ReplaceNbsp),
+        });
+        string once = typograf.Process(source);
+
+        Assert.Equal(once, typograf.Process(once));
+    }
+
     // Входы подобраны так, чтобы вывод содержал сущность РЯДОМ со знаком, по которому
     // принимает решение следующее правило: «&nbsp;» сразу за запятой и «&hellip;» сразу за
     // запятой. Пока фазы Prepare не было, второй прогон видел на этом месте амперсанд, не

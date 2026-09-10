@@ -215,6 +215,30 @@ public class RuleSetTests
     }
 
     [Fact]
+    public void PresetsDivergeOnBindRules()
+    {
+        // Оракул не отбивает адресное сокращение от следующего слова и оставляет пробел
+        // перед знаком процента; JS-typograf не связывает число со следующим словом.
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Ru.Nbsp.Addr));
+        Assert.False(RuleSet.Lebedev.Contains(RuleId.Common.Space.DelBeforePercent));
+        Assert.True(RuleSet.Default.Contains(RuleId.Ru.Nbsp.Addr));
+
+        Assert.False(RuleSet.Typograf.Contains(RuleId.Common.Nbsp.AfterNumber));
+        Assert.True(RuleSet.Default.Contains(RuleId.Common.Nbsp.AfterNumber));
+    }
+
+    [Fact]
+    public void LebedevKeepsAddressAbbreviationLoose()
+    {
+        Assert.Equal(
+            "ул. Ленина",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("ул. Ленина"));
+        Assert.Equal(
+            $"ул.{Chars.Nbsp}Ленина",
+            new TextTypograf(new TextOptions { Rules = RuleSet.Default }).Process("ул. Ленина"));
+    }
+
+    [Fact]
     public void GostKeepsDashInYearRangeAndLebedevDoesNot()
     {
         // Расхождение снято снимком оракула: он оставляет дефис, ГОСТ 14.3 требует тире.

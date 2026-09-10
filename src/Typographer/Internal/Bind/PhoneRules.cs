@@ -76,6 +76,21 @@ internal static class PhoneRules
             return false;
         }
 
+        // Цифры продолжаются за разделителем: это не номер, а длинное число, разбитое по
+        // разрядам, — «89 991 234 567 890». Правило common/number/digitGrouping ставит там
+        // ровно те же разделители, что и человек внутри номера, и без этой проверки первые
+        // одиннадцать цифр артикула превращались в телефон.
+        int tail = last + 1;
+        while (tail < end && IsSeparator(document[tail]))
+        {
+            tail++;
+        }
+
+        if (tail < end && char.IsDigit(document[tail]))
+        {
+            return false;
+        }
+
         char space = state.NoWrap ? ' ' : Chars.Nbsp;
         if (plus)
         {
