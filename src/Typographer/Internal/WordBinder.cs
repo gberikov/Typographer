@@ -58,6 +58,14 @@ internal struct BindState
     /// <summary>Пробел, закрывающий текущий токен, писать неразрывным.</summary>
     public bool GlueForward;
 
+    /// <summary>
+    /// Разбор идёт внутри элемента nobr или nowrap. Тег там уже запрещает перенос, и
+    /// неразрывный пробел не нужен: он лишь оставляет невидимый символ на месте пробела.
+    /// Признак живёт по сегментам документа, а не по токенам, и <see cref="Reset"/> его
+    /// не трогает.
+    /// </summary>
+    public bool NoWrap;
+
     /// <summary>Сколько ДОПОЛНИТЕЛЬНЫХ символов документа проглотило символьное правило.</summary>
     public int Skip;
 
@@ -76,6 +84,7 @@ internal struct BindState
         PrevKind = TokenKind.Word;
         SafeFrom = 0;
         GlueForward = false;
+        NoWrap = false;
         Skip = 0;
     }
 
@@ -164,10 +173,25 @@ internal static class WordBinder
         Span<char> previous = stackalloc char[MaxToken];
         var state = new BindState();
         var scanner = new MarkupScanner(document);
+        bool nowrapRule = rules.Contains(RuleId.Common.Nbsp.Nowrap);
+        int nowrapDepth = 0;
 
         while (scanner.TryRead(out Segment segment))
         {
             ReadOnlySpan<char> slice = document.Slice(segment.Start, segment.Length);
+
+            if (segment.Kind == SegmentKind.Markup && IsNoWrapTag(slice, ref nowrapDepth))
+            {
+                // Тег nobr завершает слово, как блочный: он граница ЗОНЫ, а решение о
+                // неразрывном пробеле принимается по зоне. Иначе слово, начатое внутри
+                // nobr, уносило бы это решение за закрывающий тег.
+                FlushToken('\0', rules, ref token, ref previous, ref state, ref buffer);
+                state.NoWrap = nowrapRule && nowrapDepth > 0;
+                buffer.Write(slice);
+                state.Reset();
+                state.SafeFrom = buffer.Length;
+                continue;
+            }
 
             if (segment.Kind == SegmentKind.Markup && !segment.IsBlock)
             {
@@ -249,7 +273,7 @@ internal static class WordBinder
                 // патчит именно её. Пробел, слева от которого токена не было, кандидатом не
                 // становится: «дом . А.» — связывать пробел после одинокой точки не с чем.
                 state.SpaceIndex = flushed ? buffer.Length : -1;
-                buffer.Write(state.GlueForward ? Chars.Nbsp : c);
+                buffer.Write(state.NoWrap ? ' ' : state.GlueForward ? Chars.Nbsp : c);
                 state.GlueForward = false;
                 continue;
             }
@@ -292,6 +316,23 @@ internal static class WordBinder
         state.PrevSpaceIndex = state.SpaceIndex;
         state.PrevKind = state.Kind;
         state.ResetToken();
+        return true;
+    }
+
+    /// <summary>
+    /// Тег открывает или закрывает элемент nobr или nowrap; вложенность при этом
+    /// пересчитывается. Внутри такого элемента правила неразрывного пробела не работают, а
+    /// уже стоящие неразрывные пробелы становятся обычными: перенос запрещён самим тегом.
+    /// </summary>
+    private static bool IsNoWrapTag(ReadOnlySpan<char> tag, ref int depth)
+    {
+        if (!Tags.TryReadName(tag, out ReadOnlySpan<char> name, out bool closing)
+            || !(Tags.NameIs(name, "nobr") || Tags.NameIs(name, "nowrap")))
+        {
+            return false;
+        }
+
+        depth = closing ? Math.Max(0, depth - 1) : depth + 1;
         return true;
     }
 

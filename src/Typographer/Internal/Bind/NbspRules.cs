@@ -30,6 +30,12 @@ internal static class NbspRules
     {
         _ = previous;
 
+        // Внутри nobr и nowrap перенос уже запрещён тегом: склеивать нечего.
+        if (state.NoWrap)
+        {
+            return;
+        }
+
         bool hasDot = token[token.Length - 1] == '.';
         ReadOnlySpan<char> letters = hasDot ? token.Slice(0, token.Length - 1) : token;
         bool initial = rules.Contains(RuleId.Ru.Nbsp.Initials) && !state.TokenOverflow && IsInitial(token);

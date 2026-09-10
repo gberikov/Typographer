@@ -348,22 +348,7 @@ internal static class LayoutWriter
 
     private static void UpdateElementDepth(ReadOnlySpan<char> tag, ref int depth)
     {
-        if (tag.Length < 3 || tag[0] != '<' || tag[1] is '!' or '?')
-        {
-            return;
-        }
-
-        bool closing = tag[1] == '/';
-        int nameStart = closing ? 2 : 1;
-        int nameEnd = nameStart;
-        while (nameEnd < tag.Length
-               && !char.IsWhiteSpace(tag[nameEnd])
-               && tag[nameEnd] is not ('/' or '>'))
-        {
-            nameEnd++;
-        }
-
-        if (nameEnd == nameStart)
+        if (!Tags.TryReadName(tag, out ReadOnlySpan<char> name, out bool closing))
         {
             return;
         }
@@ -374,29 +359,17 @@ internal static class LayoutWriter
             return;
         }
 
-        ReadOnlySpan<char> name = tag.Slice(nameStart, nameEnd - nameStart);
-        if (!IsSelfClosing(tag) && !IsVoidTag(name))
+        if (!Tags.IsSelfClosing(tag) && !IsVoidTag(name))
         {
             depth++;
         }
-    }
-
-    private static bool IsSelfClosing(ReadOnlySpan<char> tag)
-    {
-        int index = tag.Length - 2;
-        while (index >= 0 && char.IsWhiteSpace(tag[index]))
-        {
-            index--;
-        }
-
-        return index >= 0 && tag[index] == '/';
     }
 
     private static bool IsVoidTag(ReadOnlySpan<char> name)
     {
         foreach (string tag in VoidTags)
         {
-            if (name.Equals(tag.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            if (Tags.NameIs(name, tag))
             {
                 return true;
             }
