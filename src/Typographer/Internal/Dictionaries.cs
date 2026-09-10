@@ -7,7 +7,27 @@ internal static class Dictionaries
     /// Короткое слово — предлог, союз или частица длиной до трёх букв,
     /// после которого перенос строки нежелателен. ГОСТ Р 7.0.110-2025, 9.4.
     /// </summary>
-    public static bool IsShortWord(ReadOnlySpan<char> word) => word.Length is > 0 and <= 3;
+    /// <remarks>
+    /// Проверяются именно БУКВЫ, а не длина: токен фазы Bind включает точки и дефисы, и без
+    /// этой проверки «А-» в «А- б» считалось бы коротким словом и получало неразрывный пробел.
+    /// </remarks>
+    public static bool IsShortWord(ReadOnlySpan<char> word)
+    {
+        if (word.Length is 0 or > 3)
+        {
+            return false;
+        }
+
+        foreach (char c in word)
+        {
+            if (!char.IsLetter(c))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Проверяет, что слово может быть частью устойчивого сокращения:

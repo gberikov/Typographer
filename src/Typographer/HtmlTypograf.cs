@@ -76,16 +76,28 @@ public sealed class HtmlTypograf
         {
             Preparer.RunDocument(source, _options.Rules, ref prepared);
             bool canWrapParagraphs = TextScanner.RunDocument(prepared.AsSpan(), _options.Rules, ref scanned);
-            WordBinder.RunDocument(ref scanned, _options.Rules);
+
+            // Фаза Bind пишет документ, а не патчит его на месте: её правила меняют длину
+            // текста. Четвёртого буфера ради этого не заводится — буфер фазы Prepare после
+            // фазы Scan мёртв, и Bind пишет в него. Когда ни одно правило фазы не включено,
+            // проход не запускается вовсе, и дальше идёт буфер фазы Scan.
+            ref CharBuffer bound = ref scanned;
+            if (WordBinder.IsEnabled(_options.Rules))
+            {
+                prepared.Truncate(0);
+                WordBinder.RunDocument(scanned.AsSpan(), _options.Rules, ref prepared);
+                bound = ref prepared;
+            }
+
             // Нормализация пробельного письма — отдельный документный проход, и он стоит
             // ещё одного буфера. Поэтому запускается, только если хоть одно её правило
             // включено: все они вне Default, и обычный вызов за них не платит.
             if (DocumentSpaceRules.IsEnabled(_options.Rules))
             {
-                var normalized = new CharBuffer(scanned.Length + 8);
+                var normalized = new CharBuffer(bound.Length + 8);
                 try
                 {
-                    DocumentSpaceRules.RunDocument(scanned.AsSpan(), _options.Rules, ref normalized);
+                    DocumentSpaceRules.RunDocument(bound.AsSpan(), _options.Rules, ref normalized);
                     LayoutWriter.Run(normalized.AsSpan(), _options, canWrapParagraphs, ref laidOut);
                 }
                 finally
@@ -95,7 +107,7 @@ public sealed class HtmlTypograf
             }
             else
             {
-                LayoutWriter.Run(scanned.AsSpan(), _options, canWrapParagraphs, ref laidOut);
+                LayoutWriter.Run(bound.AsSpan(), _options, canWrapParagraphs, ref laidOut);
             }
             Emitter.EncodeDocument(laidOut.AsSpan(), _options.Entities, ref output);
         }

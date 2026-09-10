@@ -48,6 +48,29 @@ public class BindAcrossMarkupTests
     }
 
     [Fact]
+    public void WritingPassCopiesEverythingItDoesNotChange()
+    {
+        // Фаза стала пишущей: документ обязан выйти байт в байт, если ни одно правило не
+        // сработало. Проверяется на входе, где есть все виды сегментов сразу.
+        const string source = "<p title=\"a - b\">раз<!-- к --><code>x  y</code>два</p>";
+        Assert.Equal(source, new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None.With(RuleId.Ru.Nbsp.Initials),
+        }).Process(source));
+    }
+
+    [Fact]
+    public void RecycledBufferDoesNotLeakPreviousPhase()
+        // Ради экономии буферов фаза пишет в буфер фазы Prepare. Если его забыли обнулить,
+        // вывод начнётся с копии подготовленного документа — тест ловит именно это.
+        => Assert.Equal(
+            $"в{Chars.Nbsp}доме",
+            new TextTypograf(new TextOptions
+            {
+                Rules = RuleSet.None.With(RuleId.Common.Nbsp.AfterShortWord),
+            }).Process("в доме"));
+
+    [Fact]
     public void InitialSplitByTagBindsToSurname()
     {
         // Инициал в конце документа связывается с фамилией назад — через тег.
