@@ -59,6 +59,30 @@ internal static class Dictionaries
     /// <summary>Слово — сокращение года.</summary>
     public static bool IsYearAbbreviation(ReadOnlySpan<char> word) => Contains(YearAbbreviations, word);
 
+    /// <summary>Разряды числа словом: «тыс.», «млн», «млрд», «трлн» — с точкой и без.</summary>
+    private static readonly string[] Magnitudes =
+    [
+        "тыс.", "тыс", "млн", "млн.", "млрд", "млрд.", "трлн", "трлн.",
+    ];
+
+    /// <summary>Слово — название разряда числа.</summary>
+    public static bool IsMagnitude(ReadOnlySpan<char> word) => Contains(Magnitudes, word);
+
+    /// <summary>Денежные сокращения: рубли, копейки, доллары — с точкой и без.</summary>
+    private static readonly string[] MoneyAbbreviations =
+    [
+        "руб.", "руб", "коп.", "коп", "р.", "к.", "долл.", "долл",
+    ];
+
+    /// <summary>Слово — денежное сокращение.</summary>
+    public static bool IsMoneyAbbreviation(ReadOnlySpan<char> word) => Contains(MoneyAbbreviations, word);
+
+    /// <summary>Единицы разрешения печати и экрана.</summary>
+    private static readonly string[] Resolutions = ["dpi", "lpi", "ppi"];
+
+    /// <summary>Слово — единица разрешения.</summary>
+    public static bool IsResolution(ReadOnlySpan<char> word) => Contains(Resolutions, word);
+
     /// <summary>Слово — название месяца.</summary>
     public static bool IsMonth(ReadOnlySpan<char> word) => Contains(MonthNames, word);
 

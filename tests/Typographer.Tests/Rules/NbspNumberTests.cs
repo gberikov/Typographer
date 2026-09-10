@@ -36,4 +36,27 @@ public class NbspNumberTests
     [InlineData("5 г.", "5 г.")]
     public void YearBindsToAbbreviation(string source, string expected)
         => Assert.Equal(expected, Run(source, RuleId.Ru.Nbsp.Year));
+
+    [Theory]
+    [InlineData("10 млн", "10 млн")]
+    [InlineData("5 тыс. рублей", "5 тыс. рублей")]
+    [InlineData("3 млрд", "3 млрд")]
+    [InlineData("много млн", "много млн")]
+    public void NumberBindsToMagnitude(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Ru.Nbsp.Mln));
+
+    [Theory]
+    [InlineData("100 руб.", "100 руб.")]
+    [InlineData("50 коп.", "50 коп.")]
+    [InlineData("5 000 р.", "5 000 р.")]
+    [InlineData("руб. за штуку", "руб. за штуку")]
+    public void NumberBindsToMoneyAbbreviation(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Ru.Nbsp.RubleKopek));
+
+    [Theory]
+    [InlineData("600 dpi", "600 dpi")]
+    [InlineData("150 lpi", "150 lpi")]
+    [InlineData("600 dpiX", "600 dpiX")]
+    public void NumberBindsToResolution(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Nbsp.Dpi));
 }

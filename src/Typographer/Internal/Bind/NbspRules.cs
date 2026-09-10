@@ -40,7 +40,10 @@ internal static class NbspRules
             && !state.TokenOverflow
             && (rules.Contains(RuleId.Common.Nbsp.AfterNumber)
                 || (rules.Contains(RuleId.Ru.Nbsp.DayMonth) && Dictionaries.IsMonth(letters))
-                || (rules.Contains(RuleId.Ru.Nbsp.Year) && Dictionaries.IsYearAbbreviation(token))))
+                || (rules.Contains(RuleId.Ru.Nbsp.Year) && Dictionaries.IsYearAbbreviation(token))
+                || (rules.Contains(RuleId.Ru.Nbsp.Mln) && Dictionaries.IsMagnitude(token))
+                || (rules.Contains(RuleId.Ru.Nbsp.RubleKopek) && Dictionaries.IsMoneyAbbreviation(token))
+                || (rules.Contains(RuleId.Common.Nbsp.Dpi) && Dictionaries.IsResolution(token))))
         {
             buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
         }
