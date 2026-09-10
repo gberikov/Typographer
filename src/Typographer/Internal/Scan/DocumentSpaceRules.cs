@@ -35,7 +35,8 @@ internal static class DocumentSpaceRules
     /// <param name="rules">Набор включённых правил.</param>
     /// <param name="buffer">Приёмник.</param>
     public static void Run(ReadOnlySpan<char> source, RuleSet rules, ref CharBuffer buffer)
-        => WriteNode(source, rules, atDocumentStart: true, atDocumentEnd: true, ref buffer);
+        => WriteNode(
+            source, rules, atDocumentStart: true, atDocumentEnd: true, atLineStart: true, ref buffer);
 
     /// <summary>
     /// Нормализация документа: правила применяются к текстовым узлам, разметка и защищённые
@@ -59,18 +60,22 @@ internal static class DocumentSpaceRules
             // Край документа — это край ДОКУМЕНТА, а не узла: обрезать текст после
             // закрывающего тега значило бы съесть пробел, который автор поставил между
             // разметкой и словом.
+            // Начало строки — свойство ДОКУМЕНТА, а не узла: узел, начавшийся сразу за
+            // тегом, стоит посреди строки, и пробел в его начале поставил автор между
+            // разметкой и словом. Без этого «P.<b>S.</b> текст» терял пробел за тегом.
             WriteNode(
                 slice,
                 rules,
                 atDocumentStart: segment.Start == 0,
                 atDocumentEnd: segment.Start + segment.Length == html.Length,
+                atLineStart: buffer.Length == 0 || buffer.CharAt(buffer.Length - 1) == '\n',
                 ref buffer);
         }
     }
 
     private static void WriteNode(
         ReadOnlySpan<char> source, RuleSet rules, bool atDocumentStart, bool atDocumentEnd,
-        ref CharBuffer buffer)
+        bool atLineStart, ref CharBuffer buffer)
     {
         int start = 0;
         int end = source.Length;
@@ -99,7 +104,7 @@ internal static class DocumentSpaceRules
         // Число переводов строки подряд, уже записанных этим узлом. Двух хватает на пустую
         // строку между абзацами; третий и дальше — повтор, который схлопывает delRepeatN.
         int newlines = 0;
-        bool atLineStart = start == 0 || (start > 0 && source[start - 1] == '\n');
+        bool lineStart = atLineStart || (start > 0 && source[start - 1] == '\n');
 
         for (int i = start; i < end; i++)
         {
@@ -119,7 +124,7 @@ internal static class DocumentSpaceRules
                 }
 
                 buffer.Write(c);
-                atLineStart = true;
+                lineStart = true;
                 continue;
             }
 
@@ -128,7 +133,7 @@ internal static class DocumentSpaceRules
                 newlines = 0;
             }
 
-            if (atLineStart && delLeading && (c == ' ' || c == '\t'))
+            if (lineStart && delLeading && (c == ' ' || c == '\t'))
             {
                 continue;
             }
@@ -140,13 +145,13 @@ internal static class DocumentSpaceRules
                     buffer.Write(' ');
                 }
 
-                atLineStart = false;
+                lineStart = false;
                 continue;
             }
 
             if (!char.IsWhiteSpace(c))
             {
-                atLineStart = false;
+                lineStart = false;
             }
 
             buffer.Write(c);
