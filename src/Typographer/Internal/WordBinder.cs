@@ -233,6 +233,18 @@ internal static class WordBinder
 
             if (IsTokenChar(c) && (state.TokenLength > 0 || c is not ('.' or '-')))
             {
+                // Телефон начинается цифрой и читает вперёд через пробелы и скобки —
+                // токеном он не выражается, поэтому спрашивается на первом символе токена.
+                if (state.TokenLength == 0
+                    && PhoneRules.TryApply(document, i, end, rules, ref state, ref buffer))
+                {
+                    i += state.Skip;
+                    state.Skip = 0;
+                    state.Reset();
+                    state.SafeFrom = buffer.Length;
+                    continue;
+                }
+
                 if (state.TokenLength == 0)
                 {
                     state.TokenStart = buffer.Length;
@@ -259,7 +271,8 @@ internal static class WordBinder
             // проглотили. То, что они записали, для токенного окна непрозрачно — окно
             // сбрасывается, а SafeFrom запрещает переписывать записанное.
             if (MarkRules.TryApply(document, i, end, rules, ref state, ref buffer)
-                || MoneyRules.TryApply(document, i, end, rules, ref state, ref buffer))
+                || MoneyRules.TryApply(document, i, end, rules, ref state, ref buffer)
+                || PhoneRules.TryApply(document, i, end, rules, ref state, ref buffer))
             {
                 i += state.Skip;
                 state.Skip = 0;
