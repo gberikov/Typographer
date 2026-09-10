@@ -9,6 +9,9 @@ namespace Typographer.Internal;
 /// </summary>
 internal struct CharBuffer
 {
+    /// <summary>Предел длины буфера: больше этого массив в .NET не бывает.</summary>
+    private const int MaxCapacity = 0X7FFFFFC7;
+
     private char[] _array;
     private int _length;
 
@@ -61,13 +64,27 @@ internal struct CharBuffer
             return;
         }
 
-        int capacity = _array.Length * 2;
+        // Рост считается в long и упирается в предел массива. В int удвоение переполняется
+        // на входе около миллиарда символов: цикл уходит в бесконечный либо Rent получает
+        // отрицательную длину — а гарантия 2 разрешает единственное исключение,
+        // OutputTooLargeException, и никакое другое.
+        long capacity = (long)_array.Length * 2;
         while (capacity < required)
         {
             capacity *= 2;
         }
 
-        char[] grown = ArrayPool<char>.Shared.Rent(capacity);
+        if (capacity > MaxCapacity)
+        {
+            capacity = MaxCapacity;
+        }
+
+        if (required > MaxCapacity)
+        {
+            throw new OutputTooLargeException(MaxCapacity);
+        }
+
+        char[] grown = ArrayPool<char>.Shared.Rent((int)capacity);
         _array.AsSpan(0, _length).CopyTo(grown);
         ArrayPool<char>.Shared.Return(_array);
         _array = grown;
