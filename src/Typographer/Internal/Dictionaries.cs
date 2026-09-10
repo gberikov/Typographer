@@ -83,6 +83,58 @@ internal static class Dictionaries
     /// <summary>Слово — единица разрешения.</summary>
     public static bool IsResolution(ReadOnlySpan<char> word) => Contains(Resolutions, word);
 
+    /// <summary>
+    /// Адресные сокращения. Точка входит в образец: она и есть признак сокращения,
+    /// без неё «с» — предлог, а «д» — буква.
+    /// </summary>
+    private static readonly string[] AddressAbbreviations =
+    [
+        "г.", "обл.", "р-н", "ул.", "пр.", "пр-т", "пер.", "пл.", "наб.", "бул.", "ш.",
+        "д.", "корп.", "стр.", "кв.", "оф.", "под.", "эт.", "пос.", "с.", "дер.", "ст.", "мкр.",
+    ];
+
+    /// <summary>Слово — адресное сокращение.</summary>
+    public static bool IsAddressAbbreviation(ReadOnlySpan<char> word) => Contains(AddressAbbreviations, word);
+
+    /// <summary>Сокращения ссылок на части текста.</summary>
+    private static readonly string[] PageAbbreviations =
+    [
+        "стр.", "с.", "гл.", "рис.", "илл.", "табл.", "п.", "пп.", "ч.", "т.",
+    ];
+
+    /// <summary>Слово — сокращение ссылки на часть текста.</summary>
+    public static bool IsPageAbbreviation(ReadOnlySpan<char> word) => Contains(PageAbbreviations, word);
+
+    /// <summary>Отсылочные сокращения.</summary>
+    private static readonly string[] ReferenceAbbreviations = ["см.", "им.", "ср.", "напр."];
+
+    /// <summary>Слово — отсылочное сокращение.</summary>
+    public static bool IsReferenceAbbreviation(ReadOnlySpan<char> word)
+        => Contains(ReferenceAbbreviations, word);
+
+    /// <summary>Формы собственности и организационные сокращения. Регистр значим.</summary>
+    private static readonly string[] Organizations =
+    [
+        "ООО", "ОАО", "ЗАО", "ПАО", "АО", "НИИ", "ПБОЮЛ", "ИП", "НПО", "КБ",
+    ];
+
+    /// <summary>
+    /// Слово — форма собственности. Сравнение с учётом регистра: «ооо» строчными —
+    /// не название формы, а звук.
+    /// </summary>
+    public static bool IsOrganization(ReadOnlySpan<char> word)
+    {
+        foreach (string candidate in Organizations)
+        {
+            if (word.Equals(candidate.AsSpan(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Слово — название месяца.</summary>
     public static bool IsMonth(ReadOnlySpan<char> word) => Contains(MonthNames, word);
 

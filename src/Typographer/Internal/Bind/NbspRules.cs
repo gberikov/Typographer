@@ -57,7 +57,11 @@ internal static class NbspRules
         }
 
         bool glue = !state.TokenOverflow && boundary is ' ' or Chars.Nbsp
-            && ((rules.Contains(RuleId.Common.Nbsp.AfterShortWord)
+            && ((rules.Contains(RuleId.Ru.Nbsp.Addr) && Dictionaries.IsAddressAbbreviation(token))
+                || (rules.Contains(RuleId.Ru.Nbsp.Page) && Dictionaries.IsPageAbbreviation(token))
+                || (rules.Contains(RuleId.Ru.Nbsp.See) && Dictionaries.IsReferenceAbbreviation(token))
+                || (rules.Contains(RuleId.Ru.Nbsp.Ooo) && Dictionaries.IsOrganization(token))
+                || (rules.Contains(RuleId.Common.Nbsp.AfterShortWord)
                     && !hasDot && state.Kind == TokenKind.Word && Dictionaries.IsShortWord(letters))
                 || (rules.Contains(RuleId.Ru.Nbsp.Abbr)
                     && hasDot && Dictionaries.IsAbbreviationPart(letters))
