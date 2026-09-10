@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  # Доверенная публикация: nuget.org меняет OIDC-токен прогона на короткоживущий ключ.
+  id-token: write
 
 jobs:
   publish:
@@ -29,17 +31,21 @@ jobs:
       - run: dotnet pack -c Release -o artifacts/packages
       - run: ls -l artifacts/packages
 
+      # Ключ живёт час и выдаётся в обмен на токен прогона: nuget.org сверяет владельца,
+      # репозиторий и имя файла workflow с доверенной политикой. Шаг стоит прямо перед
+      # пушем — запрошенный раньше ключ успел бы истечь на долгой сборке.
+      - name: Вход в NuGet по OIDC
+        id: nuget-login
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: NuGet/login@v1
+        with:
+          user: gberikov
+
       - name: Публикация в NuGet
         if: startsWith(github.ref, 'refs/tags/')
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          if [ -z "$NUGET_API_KEY" ]; then
-            echo "::error::Секрет NUGET_API_KEY не задан — публиковать нечем."
-            exit 1
-          fi
           dotnet nuget push "artifacts/packages/*.nupkg" \
-            --api-key "$NUGET_API_KEY" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
 
