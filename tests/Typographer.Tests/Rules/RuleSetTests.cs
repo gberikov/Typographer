@@ -1,3 +1,4 @@
+using Typographer.Internal;
 using Typographer.Rules;
 
 namespace Typographer.Tests.Rules;
@@ -218,11 +219,13 @@ public class RuleSetTests
     {
         // Расхождение снято снимком оракула: он оставляет дефис, ГОСТ 14.3 требует тире.
         // Приоритет источников ставит ГОСТ выше практики, поэтому в Default тире.
+        // Неразрывный пробел перед «гг.» ставит ru/nbsp/year, он включён в обоих пресетах и
+        // к спору о тире отношения не имеет — оракул ставит его там же.
         Assert.Equal(
-            "1941—1945 гг.",
+            $"1941—1945{Chars.Nbsp}гг.",
             new TextTypograf(new TextOptions { Rules = RuleSet.Gost }).Process("1941-1945 гг."));
         Assert.Equal(
-            "1941-1945 гг.",
+            $"1941-1945{Chars.Nbsp}гг.",
             new TextTypograf(new TextOptions { Rules = RuleSet.Lebedev }).Process("1941-1945 гг."));
     }
 }

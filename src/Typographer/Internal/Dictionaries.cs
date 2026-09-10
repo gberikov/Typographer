@@ -53,6 +53,12 @@ internal static class Dictionaries
         "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье",
     ];
 
+    /// <summary>Сокращение года: «г.», «гг.» и те же без точки.</summary>
+    private static readonly string[] YearAbbreviations = ["г.", "гг.", "г", "гг"];
+
+    /// <summary>Слово — сокращение года.</summary>
+    public static bool IsYearAbbreviation(ReadOnlySpan<char> word) => Contains(YearAbbreviations, word);
+
     /// <summary>Слово — название месяца.</summary>
     public static bool IsMonth(ReadOnlySpan<char> word) => Contains(MonthNames, word);
 

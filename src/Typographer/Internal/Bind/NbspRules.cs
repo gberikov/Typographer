@@ -30,6 +30,20 @@ internal static class NbspRules
 
         bool hasDot = token[token.Length - 1] == '.';
         ReadOnlySpan<char> letters = hasDot ? token.Slice(0, token.Length - 1) : token;
+
+        // Склейка НАЗАД по предыдущему токену: число слева, не число справа. Три правила
+        // делают одно действие и различаются только предикатом, поэтому спрашиваются
+        // подряд, а не через выбор первого сработавшего. Правое условие «не число» нужно,
+        // чтобы «2026 2027» осталось с обычным пробелом: перечисление чисел рвать можно.
+        if (state.SpaceIndex >= 0 && state.PrevLength > 0
+            && state.PrevKind == TokenKind.Number && state.Kind != TokenKind.Number
+            && !state.TokenOverflow
+            && (rules.Contains(RuleId.Common.Nbsp.AfterNumber)
+                || (rules.Contains(RuleId.Ru.Nbsp.DayMonth) && Dictionaries.IsMonth(letters))
+                || (rules.Contains(RuleId.Ru.Nbsp.Year) && Dictionaries.IsYearAbbreviation(token))))
+        {
+            buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
+        }
         bool initial = rules.Contains(RuleId.Ru.Nbsp.Initials) && !state.TokenOverflow && IsInitial(token);
 
         // Инициал связывает себя не только со следующим словом, но и с предыдущим —
