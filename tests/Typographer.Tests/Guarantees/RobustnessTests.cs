@@ -45,6 +45,18 @@ public class RobustnessTests
         Assert.Throws<OutputTooLargeException>(() => typograf.Process(new string('а', 100)));
     }
 
+    // Отрицательный предел раньше молча означал «без ограничения»: проверка смотрела
+    // только на положительные. Тот, кто вычислил предел арифметикой и получил минус,
+    // должен узнать об этом сразу, а не получить типограф без предела.
+    [Fact]
+    public void NegativeLimitIsRejected()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new HtmlTypograf(new HtmlOptions { MaxOutputLength = -1 }));
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new TextTypograf(new TextOptions { MaxOutputLength = -1 }));
+    }
+
     // Предел — это предел РЕЗУЛЬТАТА, а не промежуточного состояния конвейера. Сканер
     // пишет две точки, прежде чем свернуть их в многоточие вместе с третьей, и предел,
     // применённый к этой записи, срабатывал на входе, который в него укладывается.

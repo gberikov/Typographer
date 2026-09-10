@@ -10,8 +10,6 @@ internal struct QuoteStack
 
     private int _depth;
 
-    public readonly int Depth => _depth;
-
     public readonly bool IsEmpty => _depth == 0;
 
     /// <summary>Открывает следующий уровень и возвращает открывающую кавычку.</summary>

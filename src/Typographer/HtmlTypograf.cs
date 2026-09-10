@@ -11,7 +11,12 @@ public sealed class HtmlTypograf
 
     /// <summary>Создаёт типограф с указанными настройками.</summary>
     /// <param name="options">Настройки; null — настройки по умолчанию.</param>
-    public HtmlTypograf(HtmlOptions? options = null) => _options = options ?? HtmlOptions.Default;
+    /// <exception cref="ArgumentOutOfRangeException">Предел длины результата отрицателен.</exception>
+    public HtmlTypograf(HtmlOptions? options = null)
+    {
+        _options = options ?? HtmlOptions.Default;
+        Throw.IfNegative(_options.MaxOutputLength, nameof(HtmlOptions.MaxOutputLength));
+    }
 
     /// <summary>Типограф с настройками по умолчанию.</summary>
     public static HtmlTypograf Default { get; } = new();

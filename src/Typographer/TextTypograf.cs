@@ -11,7 +11,12 @@ public sealed class TextTypograf
 
     /// <summary>Создаёт типограф с указанными настройками.</summary>
     /// <param name="options">Настройки; null — настройки по умолчанию.</param>
-    public TextTypograf(TextOptions? options = null) => _options = options ?? TextOptions.Default;
+    /// <exception cref="ArgumentOutOfRangeException">Предел длины результата отрицателен.</exception>
+    public TextTypograf(TextOptions? options = null)
+    {
+        _options = options ?? TextOptions.Default;
+        Throw.IfNegative(_options.MaxOutputLength, nameof(TextOptions.MaxOutputLength));
+    }
 
     /// <summary>Типограф с настройками по умолчанию.</summary>
     public static TextTypograf Default { get; } = new();

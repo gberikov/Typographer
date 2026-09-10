@@ -16,7 +16,7 @@ namespace Typographer.Tests.Rules;
 /// «common/space/afterColon» и «Common.Space.AfterColon» — соглашение, а не закон, и
 /// проверять его на 107 правилах дороже, чем обойти дерево типов.
 /// </remarks>
-internal static class RuleCatalog
+public static class RuleCatalog
 {
     // Правило-носитель: само по себе на образцах ничего не меняет (метка порядка байт
     // есть ровно в одном входе), но заставляет конвейер работать. Для него самого носителем

@@ -36,15 +36,15 @@
 | `common/punctuation/quoteLink` | Вынос кавычек за пределы ссылки. НЕ РЕАЛИЗУЕТСЯ: правило перемещает текст через границу тега, а гарантия 3 спецификации обещает разметку байт в байт. Имя зарегистрировано ради паритета с JS-typograf, чтобы RuleId@) его узнавал, а справочник правил был полным. | — | — |
 | `common/space/afterColon` | Пробел после двоеточия. | Default, Lebedev, Typograf, Gost | `текст:ещё и раз;два` → `текст: ещё и раз;два` |
 | `common/space/afterComma` | Пробел после запятой. | Default, Lebedev, Typograf, Gost | `он сказал,"да"` → `он сказал, "да"` |
-| `common/space/afterExclamationMark` | Пробел после восклицательного знака. | Default, Lebedev, Typograf, Gost | — |
-| `common/space/afterQuestionMark` | Пробел после вопросительного знака. | Default, Lebedev, Typograf, Gost | — |
+| `common/space/afterExclamationMark` | Пробел после восклицательного знака. | Default, Lebedev, Typograf, Gost | `Ура!Победа и Как?Так и знак №№ 5` → `Ура! Победа и Как?Так и знак №№ 5` |
+| `common/space/afterQuestionMark` | Пробел после вопросительного знака. | Default, Lebedev, Typograf, Gost | `Ура!Победа и Как?Так и знак №№ 5` → `Ура!Победа и Как? Так и знак №№ 5` |
 | `common/space/afterSemicolon` | Пробел после точки с запятой. | Default, Lebedev, Typograf, Gost | `текст:ещё и раз;два` → `текст:ещё и раз; два` |
 | `common/space/beforeBracket` | Пробел перед открывающей скобкой. | Default, Lebedev, Typograf, Gost | `слово(текст) и [ ещё ]` → `слово (текст) и [ ещё ]` |
 | `common/space/bracket` | Удаление лишних пробелов внутри круглых скобок. | Default, Lebedev, Typograf, Gost | `он ( в скобках ) и стрелка -> и обратно <-` → `он (в скобках) и стрелка -> и обратно <-` |
 | `common/space/delBeforeDot` | Удаление пробела перед точкой. | Default, Lebedev, Typograf, Gost | `текст. ..` → `текст...` |
 | `common/space/delBeforePercent` | Удаление пробела перед знаком процента, промилле и продецимилле. | Default, Typograf | `10 км/ч, 100 %, 25 °C, № 5, § 3` → `10 км/ч, 100%, 25 °C, № 5, § 3` |
-| `common/space/delBeforePunctuation` | Удаление пробелов перед знаками пунктуации. | Default, Lebedev, Typograf, Gost | `текст ! и текст ? и текст , и текст !!` → `текст! и текст? и текст, и текст!!` |
-| `common/space/delBetweenExclamationMarks` | Удаление пробелов между восклицательными знаками. | Default, Lebedev, Typograf, Gost | — |
+| `common/space/delBeforePunctuation` | Удаление пробелов перед знаками пунктуации. | Default, Lebedev, Typograf, Gost | `Ура ! ! ! и Что?... и Ох!...` → `Ура!!! и Что?... и Ох!...` |
+| `common/space/delBetweenExclamationMarks` | Удаление пробелов между восклицательными знаками. | Default, Lebedev, Typograf, Gost | `Ура ! ! ! и Что?... и Ох!...` → `Ура !!! и Что?... и Ох!...` |
 | `common/space/delLeadingBlanks` | Удаление пробелов в начале строки. Вне Default. | — | ` ` → `` |
 | `common/space/delRepeatN` | Удаление повторяющихся переводов строки. Вне Default. | — | `⏎⏎⏎` → `⏎⏎` |
 | `common/space/delRepeatSpace` | Удаление повторяющихся пробелов. | Default, Lebedev, Typograf, Gost | `текст -  5` → `текст - 5` |
@@ -81,10 +81,10 @@
 | `ru/punctuation/ano` | Расстановка запятых перед «а» и «но». Вне Default: правило само расставляет знаки, то есть меняет текст, а не оформление. Включается по имени или через пресет Typograf. | Typograf | `Пушкин А.` → `Пушкин, А.` |
 | `ru/punctuation/exclamation` | Удвоенный восклицательный знак сводится к одному. | Default, Typograf, Gost | `де Голль и NN 5 и Что?.. Ура!!!` → `де Голль и NN 5 и Что?.. Ура!` |
 | `ru/punctuation/exclamationQuestion` | Восклицательный знак с вопросительным ставятся в принятом порядке. | Default, Lebedev, Typograf, Gost | `Что!? Ура!... Текст?..Как` → `Что?! Ура!... Текст?..Как` |
-| `ru/punctuation/hellipQuestion` | Многоточие после знака конца предложения сокращается до двух точек. | Default, Lebedev, Typograf, Gost | — |
+| `ru/punctuation/hellipQuestion` | Многоточие после знака конца предложения сокращается до двух точек. | Default, Lebedev, Typograf, Gost | `Вопрос?… и ответ!… и просто…` → `Вопрос?.. и ответ!.. и просто…` |
 | `ru/space/afterHellip` | Пробел после многоточия и его сочетаний со знаком конца предложения. | Default, Lebedev, Typograf, Gost | `раз,...два` → `раз,... два` |
 | `ru/space/year` | Пробел между числом и словом «год». | Default, Lebedev, Typograf, Gost | `3.14 и 25-ый дом в 2026году` → `3.14 и 25-ый дом в 2026 году` |
-| `ru/symbols/NN` | Сдвоенный знак номера сводится к одному. | Default, Lebedev, Typograf, Gost | — |
+| `ru/symbols/NN` | Сдвоенный знак номера сводится к одному. | Default, Lebedev, Typograf, Gost | `Ура!Победа и Как?Так и знак №№ 5` → `Ура!Победа и Как?Так и знак № 5` |
 
 ## Фаза Bind (33)
 

@@ -59,6 +59,13 @@ internal struct BindState
     public bool GlueForward;
 
     /// <summary>
+    /// Позиция последнего неразрывного пробела, поставленного склейкой ВПЕРЁД, -1 — такого
+    /// не было. Нужна на случай, когда этот пробел оказался последним символом документа:
+    /// связывать его не с чем, и он остаётся невидимым мусором в конце текста.
+    /// </summary>
+    public int GlueIndex;
+
+    /// <summary>
     /// Разбор идёт внутри элемента nobr или nowrap. Тег там уже запрещает перенос, и
     /// неразрывный пробел не нужен: он лишь оставляет невидимый символ на месте пробела.
     /// Признак живёт по сегментам документа, а не по токенам, и <see cref="Reset"/> его
@@ -84,6 +91,7 @@ internal struct BindState
         PrevKind = TokenKind.Word;
         SafeFrom = 0;
         GlueForward = false;
+        GlueIndex = -1;
         NoWrap = false;
         Skip = 0;
     }
@@ -138,6 +146,10 @@ internal static class WordBinder
     /// </summary>
     private const int MaxToken = 32;
 
+    /// <summary>Промилле и продецимилле — единицы, стоящие после числа через пробел.</summary>
+    private const char Permille = '\u2030';
+    private const char PerTenThousand = '\u2031';
+
     /// <summary>Хоть одно правило фазы включено, и проход имеет смысл запускать.</summary>
     public static bool IsEnabled(RuleSet rules) => rules.Overlaps(RuleSet.BindPhase);
 
@@ -153,6 +165,20 @@ internal static class WordBinder
 
         BindSegment(source, 0, source.Length, rules, ref token, ref previous, ref state, ref buffer);
         FlushToken('\0', rules, ref token, ref previous, ref state, ref buffer);
+        UnglueTrailingSpace(ref state, ref buffer);
+    }
+
+    /// <summary>
+    /// Неразрывный пробел, оказавшийся последним символом документа, снова становится
+    /// обычным: справа от него связывать нечего, а в тексте он остаётся невидимым мусором.
+    /// Патчится только СВОЙ пробел, поставленный склейкой; авторский не трогается.
+    /// </summary>
+    private static void UnglueTrailingSpace(ref BindState state, ref CharBuffer buffer)
+    {
+        if (state.GlueIndex >= 0 && state.GlueIndex == buffer.Length - 1)
+        {
+            buffer.PatchAt(state.GlueIndex, ' ');
+        }
     }
 
     /// <summary>
@@ -218,6 +244,7 @@ internal static class WordBinder
         }
 
         FlushToken('\0', rules, ref token, ref previous, ref state, ref buffer);
+        UnglueTrailingSpace(ref state, ref buffer);
     }
 
     /// <summary>
@@ -287,9 +314,34 @@ internal static class WordBinder
                 // патчит именно её. Пробел, слева от которого токена не было, кандидатом не
                 // становится: «дом . А.» — связывать пробел после одинокой точки не с чем.
                 state.SpaceIndex = flushed ? buffer.Length : -1;
+                bool glued = !state.NoWrap && state.GlueForward;
+                if (glued)
+                {
+                    state.GlueIndex = buffer.Length;
+                }
+
                 buffer.Write(state.NoWrap ? ' ' : state.GlueForward ? Chars.Nbsp : c);
                 state.GlueForward = false;
                 continue;
+            }
+
+            // Знак единицы измерения после числа: «25 °C», «50 %», «10 ‰». ГОСТ 9.6 требует
+            // между числом и единицей неразрывный пробел. Обычная склейка этого не делает:
+            // знак не буква и не цифра, токеном он не становится, а следующая за ним буква
+            // («C» в «°C») от числа уже отрезана самим знаком. Решение принимается здесь,
+            // пока позиция пробела перед знаком ещё известна.
+            // Пробел обязан стоять ВПЛОТНУЮ к знаку: SpaceIndex указывает на пробел перед
+            // текущим токеном, и в «угле 30°15» это пробел перед «30», к градусу отношения
+            // не имеющий. Условие «последний записанный символ и есть тот пробел» отделяет
+            // «25 °C» от «30°15».
+            if (c is Chars.Degree or '%' or Permille or PerTenThousand
+                && state.SpaceIndex == buffer.Length - 1
+                && state.SpaceIndex >= state.SafeFrom
+                && state.PrevKind == TokenKind.Number && state.PrevLength > 0
+                && !state.NoWrap
+                && rules.Contains(RuleId.Common.Nbsp.AfterNumber))
+            {
+                buffer.PatchAt(state.SpaceIndex, Chars.Nbsp);
             }
 
             buffer.Write(c);
