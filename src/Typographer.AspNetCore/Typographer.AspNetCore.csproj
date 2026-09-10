@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Typographer.AspNetCore</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <PackageId>Typographer.AspNetCore</PackageId>
+    <Description>Тег-хелпер и IHtmlContent для типографа в ASP.NET Core.</Description>
+    <PackageTags>typography;russian;typograf;aspnetcore;taghelper</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/gberikov/Typographer</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="all" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- Ссылка на пакет регистрации, а не на ядро: тег-хелпер создаётся контейнером,
+         и без AddTypograf() его нечем удовлетворить. Ядро приходит транзитивно. -->
+    <ProjectReference Include="../Typographer.DependencyInjection/Typographer.DependencyInjection.csproj" />
+  </ItemGroup>
+
+</Project>

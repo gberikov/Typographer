@@ -99,6 +99,63 @@ BOM (`U+FEFF`) удаляется только в начале документ�
 | `net8.0` | текущая LTS |
 | `net10.0` | актуальная LTS, `Span`/`SearchValues`, AOT |
 
+## Пакеты
+
+| Пакет | Зачем | Зависимости | Платформы |
+|---|---|---|---|
+| `Typographer` | ядро: HTML и обычный текст, правила, пресеты | нет на `net8.0` и `net10.0`; `System.Memory` на `netstandard2.0` | `netstandard2.0`, `net8.0`, `net10.0` |
+| `Typographer.DependencyInjection` | `AddTypograf()` | `Microsoft.Extensions.DependencyInjection.Abstractions` | `netstandard2.0`, `net8.0`, `net10.0` |
+| `Typographer.AspNetCore` | тег-хелпер `<typograf>` и `IHtmlContent` | ASP.NET Core | `net8.0`, `net10.0` |
+| `Typographer.Markdig` | типографика Markdown | `Markdig` | `netstandard2.0`, `net8.0`, `net10.0` |
+| `dotnet-typographer` | утилита командной строки | ядро | `net10.0` |
+
+### Контейнер
+
+```csharp
+services.AddTypograf();                                        // настройки по умолчанию
+services.AddTypograf(new HtmlOptions { Entities = EntityMode.Named });
+```
+
+Регистрируются одиночками `HtmlTypograf` и `TextTypograf`. Своя регистрация, сделанная
+раньше, побеждает: внутри `TryAddSingleton`.
+
+### ASP.NET Core
+
+```cshtml
+@addTagHelper *, Typographer.AspNetCore
+
+<typograf><p>Он - человек и "цитата"</p></typograf>
+```
+
+Тег-хелпер типографирует содержимое и исчезает сам. Требует `services.AddTypograf()`.
+Там, где удобнее вызов, а не элемент:
+
+```cshtml
+@inject HtmlTypograf Typograf
+@Typograf.ToHtmlContent(Model.Text)
+```
+
+### Markdown
+
+```csharp
+MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseTypograf().Build();
+string html = Markdown.ToHtml(source, pipeline);
+```
+
+Правки вносятся в дерево документа после разбора, а не в готовый HTML: рендерер кодирует
+прямую кавычку в `&quot;`, и в отрендеренном HTML ёлочки уже не появились бы. Поэтому код,
+адреса ссылок и встроенный HTML остаются нетронутыми, а кавычки вокруг разметки —
+`"**слово**"` — смотрят в разные стороны.
+
+### Командная строка
+
+```bash
+dotnet tool install --global dotnet-typographer
+echo 'Он - человек' | dotnet-typographer
+dotnet-typographer --entities named --in-place статья.html
+dotnet-typographer --help
+```
+
 ## Разработка
 
 ```
