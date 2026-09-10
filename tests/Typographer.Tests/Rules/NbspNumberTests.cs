@@ -59,4 +59,39 @@ public class NbspNumberTests
     [InlineData("600 dpiX", "600 dpiX")]
     public void NumberBindsToResolution(string source, string expected)
         => Assert.Equal(expected, Run(source, RuleId.Common.Nbsp.Dpi));
+
+    /// <summary>
+    /// Разряды, разбитые пробелами самим автором. Правило числится за фазой Scan, но вторая
+    /// его половина работает в фазе Bind: пробел разделяет два токена, а токенов фаза Scan
+    /// не знает. Поэтому правило проверяется В ОДИНОЧКУ — так ловится случай, когда проход
+    /// фазы Bind вовсе не запускался и правило молча ничего не делало.
+    /// </summary>
+    [Theory]
+    [InlineData("1 000 000", "1\u00A0000\u00A0000")]
+    [InlineData("Цена 1 000 рублей", "Цена 1\u00A0000 рублей")]
+    // Точка конца предложения входит в токен, но разряд от этого разрядом быть не перестаёт.
+    [InlineData("1 000 000.", "1\u00A0000\u00A0000.")]
+    // Перечисление чисел разрядами не является: рвать его можно.
+    [InlineData("в 1941 1945", "в 1941 1945")]
+    // Нумерованный пункт и следующее за ним число — тоже не разряды одного числа.
+    [InlineData("1. 000", "1. 000")]
+    // Разряд — ровно три цифры; «1 0000» набрано с ошибкой, и додумывать её мы не беремся.
+    [InlineData("1 0000", "1 0000")]
+    public void AuthorsDigitGroupsBecomeNonBreaking(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Number.DigitGrouping));
+
+    /// <summary>
+    /// Знак единицы измерения после числа (ГОСТ 9.6). Обычная склейка сюда не достаёт: знак
+    /// не буква и не цифра, токеном он не становится, а буква за ним от числа уже отрезана.
+    /// </summary>
+    [Theory]
+    [InlineData("25 °C", "25\u00A0°C")]
+    [InlineData("50 %", "50\u00A0%")]
+    [InlineData("10 ‰", "10\u00A0‰")]
+    // Пробел обязан стоять вплотную к знаку: в «30 15°» градус относится к «15».
+    [InlineData("угол 30 15°", "угол 30 15°")]
+    // Слева не число — связывать нечего.
+    [InlineData("около °C", "около °C")]
+    public void UnitSignBindsToNumber(string source, string expected)
+        => Assert.Equal(expected, Run(source, RuleId.Common.Nbsp.AfterNumber));
 }

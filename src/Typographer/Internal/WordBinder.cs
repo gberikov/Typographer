@@ -59,6 +59,14 @@ internal struct BindState
     public bool GlueForward;
 
     /// <summary>
+    /// Между пробелом в позиции <see cref="SpaceIndex"/> и текущей позицией не записано
+    /// ничего, кроме строчной разметки. Строчный тег для правил прозрачен: «25 &lt;b&gt;°C&lt;/b&gt;»
+    /// — то же самое, что «25 °C». Простого сравнения с концом буфера для этого мало:
+    /// байты тега уже записаны, и пробел перестаёт быть последним символом.
+    /// </summary>
+    public bool SpaceAdjacent;
+
+    /// <summary>
     /// Позиция последнего неразрывного пробела, поставленного склейкой ВПЕРЁД, -1 — такого
     /// не было. Нужна на случай, когда этот пробел оказался последним символом документа:
     /// связывать его не с чем, и он остаётся невидимым мусором в конце текста.
@@ -72,6 +80,13 @@ internal struct BindState
     /// не трогает.
     /// </summary>
     public bool NoWrap;
+
+    /// <summary>
+    /// Курсор внутри веб-адреса: слева был «://», справа ещё не встретилась граница адреса
+    /// (см. <see cref="Url"/>). Признак тот же, что у <see cref="ScanState.InsideUrl"/>:
+    /// адрес — машинный идентификатор, и телефон, дата или «м2» в его пути — не текст.
+    /// </summary>
+    public bool InsideUrl;
 
     /// <summary>Сколько ДОПОЛНИТЕЛЬНЫХ символов документа проглотило символьное правило.</summary>
     public int Skip;
@@ -92,7 +107,9 @@ internal struct BindState
         SafeFrom = 0;
         GlueForward = false;
         GlueIndex = -1;
+        SpaceAdjacent = false;
         NoWrap = false;
+        InsideUrl = false;
         Skip = 0;
     }
 
@@ -106,11 +123,13 @@ internal struct BindState
     {
         ResetToken();
         SpaceIndex = -1;
+        SpaceAdjacent = false;
         PrevLength = 0;
         PrevTokenStart = 0;
         PrevSpaceIndex = -1;
         PrevKind = TokenKind.Word;
         GlueForward = false;
+        InsideUrl = false;
     }
 
     /// <summary>Токен закрыт: накопитель пуст, предыдущий токен остаётся.</summary>
@@ -151,7 +170,15 @@ internal static class WordBinder
     private const char PerTenThousand = '\u2031';
 
     /// <summary>Хоть одно правило фазы включено, и проход имеет смысл запускать.</summary>
-    public static bool IsEnabled(RuleSet rules) => rules.Overlaps(RuleSet.BindPhase);
+    /// <remarks>
+    /// Разбиение разрядов числится за фазой Scan и там же разбивает «1000000», но вторая
+    /// его половина — сделать неразрывными пробелы, которые в «1 000 000» уже стоят, —
+    /// работает только здесь: пробел разделяет два токена, а токенов фаза Scan не знает.
+    /// Поэтому правило включает и этот проход, иначе в одиночку оно молча не срабатывало
+    /// бы, а в пресете работало за счёт соседей.
+    /// </remarks>
+    public static bool IsEnabled(RuleSet rules)
+        => rules.Overlaps(RuleSet.BindPhase) || rules.Contains(RuleId.Common.Number.DigitGrouping);
 
     /// <summary>Фаза Bind по обычному тексту: весь вход — один текстовый сегмент.</summary>
     /// <param name="source">Текст после фазы Scan.</param>
@@ -223,9 +250,11 @@ internal static class WordBinder
             {
                 // Строчный тег для слова прозрачен: ни буквы, ни границы он не даёт. Но
                 // байты тега уже в выводе между частями слова — переписывать токен через
-                // них нельзя, и SafeFrom это запрещает.
+                // них нельзя, и SafeFrom это запрещает. Адрес тег, наоборот, обрывает —
+                // как и в фазе Scan.
                 buffer.Write(slice);
                 state.SafeFrom = buffer.Length;
+                state.InsideUrl = false;
                 continue;
             }
 
@@ -254,9 +283,36 @@ internal static class WordBinder
         ReadOnlySpan<char> document, int start, int end, RuleSet rules,
         ref Span<char> token, ref Span<char> previous, ref BindState state, ref CharBuffer buffer)
     {
+        // Взгляд вперёд у границ адреса не выходит за сегмент: дальше лежит разметка.
+        ReadOnlySpan<char> segment = document.Slice(0, end);
+
         for (int i = start; i < end; i++)
         {
             char c = document[i];
+
+            // Веб-адрес копируется как есть: телефон, дата и «м2» в его пути — не текст.
+            // Границы те же, что у фазы Scan (см. Url). Токен схемы закрывается на
+            // двоеточии, а окно сбрасывается: «https» — не слово перед следующим токеном,
+            // а хвост адреса вроде «?v=1.5» — не число, к которому вяжется слово за ним.
+            if (state.InsideUrl)
+            {
+                if (!Url.Ends(segment, i, document[i - 1]))
+                {
+                    buffer.Write(c);
+                    continue;
+                }
+
+                state.InsideUrl = false;
+                state.SafeFrom = buffer.Length;
+            }
+            else if (Url.Starts(segment, i))
+            {
+                FlushToken(c, rules, ref token, ref previous, ref state, ref buffer);
+                state.Reset();
+                state.InsideUrl = true;
+                buffer.Write(c);
+                continue;
+            }
 
             if (IsTokenChar(c) && (state.TokenLength > 0 || c is not ('.' or '-')))
             {
@@ -288,6 +344,9 @@ internal static class WordBinder
                     state.TokenOverflow = true;
                 }
 
+                // Символ токена разрывает соседство пробела со знаком единицы: в «30 15°»
+                // градус относится к «15», а пробел — к тому, что стояло перед ним.
+                state.SpaceAdjacent = false;
                 buffer.Write(c);
                 continue;
             }
@@ -314,6 +373,7 @@ internal static class WordBinder
                 // патчит именно её. Пробел, слева от которого токена не было, кандидатом не
                 // становится: «дом . А.» — связывать пробел после одинокой точки не с чем.
                 state.SpaceIndex = flushed ? buffer.Length : -1;
+                state.SpaceAdjacent = true;
                 bool glued = !state.NoWrap && state.GlueForward;
                 if (glued)
                 {
@@ -332,11 +392,12 @@ internal static class WordBinder
             // пока позиция пробела перед знаком ещё известна.
             // Пробел обязан стоять ВПЛОТНУЮ к знаку: SpaceIndex указывает на пробел перед
             // текущим токеном, и в «угле 30°15» это пробел перед «30», к градусу отношения
-            // не имеющий. Условие «последний записанный символ и есть тот пробел» отделяет
-            // «25 °C» от «30°15».
+            // не имеющий. Соседство хранит SpaceAdjacent, а не сравнение с концом буфера:
+            // между пробелом и знаком может лежать строчный тег, для правил прозрачный.
+            // Требования «правее SafeFrom» тут нет — по той же причине, по какой его нет
+            // у склейки назад: патчится ПРОБЕЛ, записанный этим проходом, а не разметка.
             if (c is Chars.Degree or '%' or Permille or PerTenThousand
-                && state.SpaceIndex == buffer.Length - 1
-                && state.SpaceIndex >= state.SafeFrom
+                && state.SpaceIndex >= 0 && state.SpaceAdjacent
                 && state.PrevKind == TokenKind.Number && state.PrevLength > 0
                 && !state.NoWrap
                 && rules.Contains(RuleId.Common.Nbsp.AfterNumber))
@@ -346,6 +407,7 @@ internal static class WordBinder
 
             buffer.Write(c);
             state.SpaceIndex = -1;
+            state.SpaceAdjacent = false;
             state.GlueForward = false;
         }
     }

@@ -264,6 +264,15 @@ internal static class RewriteRules
             return false;
         }
 
+        // Усечение отменяет всё, что стояло правее from, — в том числе неразрывный пробел,
+        // поставленный склейкой вперёд. Позиция того пробела остаётся в состоянии фазы, и
+        // после перезаписи она указывает уже на чужой символ: в «1990 г. г.» слияние в
+        // «гг.» ставило на её место точку, и снятие хвостового пробела съедало эту точку.
+        if (state.GlueIndex >= from)
+        {
+            state.GlueIndex = -1;
+        }
+
         buffer.Truncate(from);
         buffer.Write(replacement);
         replacement.CopyTo(token);

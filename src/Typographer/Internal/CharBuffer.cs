@@ -58,7 +58,9 @@ internal struct CharBuffer
 
     private void EnsureCapacity(int additional)
     {
-        int required = _length + additional;
+        // Требуемая длина тоже считается в long: у буфера, доросшего до предела массива,
+        // сумма в int уходит в минус и проходит проверку как «места хватает».
+        long required = (long)_length + additional;
         if (required <= _array.Length)
         {
             return;

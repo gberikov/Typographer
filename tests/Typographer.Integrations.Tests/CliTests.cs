@@ -7,7 +7,7 @@ public class CliTests
     private const string Nbsp = "\u00A0";
 
     [Fact]
-    public void Run_БезФайловЧитаетСтандартныйВвод()
+    public void Run_WithoutFilesReadsStandardInput()
     {
         (int code, string output, _) = Run([], "Он - человек");
 
@@ -16,7 +16,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_ПоУмолчаниюРежимHtml()
+    public void Run_DefaultsToHtmlMode()
     {
         (_, string output, _) = Run([], "<code>a - b</code>");
 
@@ -24,7 +24,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_КлючТекстОтключаетЗащитуРазметки()
+    public void Run_TextOptionDisablesMarkupProtection()
     {
         (_, string output, _) = Run(["--text"], "<code>a - b</code>");
 
@@ -32,7 +32,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_КлючEntitiesМеняетВидСущностей()
+    public void Run_EntitiesOptionChangesEntityForm()
     {
         (int code, string output, _) = Run(["--entities", "named"], "\"цитата\"");
 
@@ -41,7 +41,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_ПресетNoneНичегоНеМеняет()
+    public void Run_NonePresetChangesNothing()
     {
         (_, string output, _) = Run(["--rules", "none"], "Он - человек");
 
@@ -49,7 +49,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_КлючDisableВыключаетПравило()
+    public void Run_DisableOptionTurnsRuleOff()
     {
         (int code, string output, _) = Run(["--disable", "ru/dash/main"], "Он - человек");
 
@@ -58,7 +58,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_НеизвестноеПравилоЭтоОшибка()
+    public void Run_UnknownRuleIsError()
     {
         (int code, _, string error) = Run(["--disable", "ru/нет/такого"], "текст");
 
@@ -67,7 +67,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_НеизвестныйКлючЭтоОшибка()
+    public void Run_UnknownOptionIsError()
     {
         (int code, _, string error) = Run(["--чего-нет"], "текст");
 
@@ -76,7 +76,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_КлючБезЗначенияЭтоОшибка()
+    public void Run_OptionWithoutValueIsError()
     {
         (int code, _, string error) = Run(["--entities"], "текст");
 
@@ -85,7 +85,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_СправкаПечатаетсяВВыводИДаётНоль()
+    public void Run_HelpGoesToOutputAndReturnsZero()
     {
         (int code, string output, _) = Run(["--help"]);
 
@@ -94,7 +94,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_ВерсияПечатаетсяВВывод()
+    public void Run_VersionGoesToOutput()
     {
         (int code, string output, _) = Run(["--version"]);
 
@@ -103,7 +103,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_СписокПравилСодержитИменаJsTypograf()
+    public void Run_RuleListContainsJsTypografNames()
     {
         (int code, string output, _) = Run(["--list-rules"]);
 
@@ -112,7 +112,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_ФайлЧитаетсяИПишетсяВВывод()
+    public void Run_FileIsReadAndWrittenToOutput()
     {
         string path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         File.WriteAllText(path, "Он - человек");
@@ -130,7 +130,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_КлючInPlaceПерезаписываетФайл()
+    public void Run_InPlaceOptionOverwritesFile()
     {
         string path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         File.WriteAllText(path, "Он - человек");
@@ -149,7 +149,7 @@ public class CliTests
     }
 
     [Fact]
-    public void Run_ОтсутствующийФайлЭтоОшибка()
+    public void Run_MissingFileIsError()
     {
         (int code, _, string error) = Run([Path.Combine(Path.GetTempPath(), "нет-такого-файла.txt")]);
 

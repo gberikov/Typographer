@@ -5,7 +5,7 @@ namespace Typographer.Integrations.Tests;
 public class DependencyInjectionTests
 {
     [Fact]
-    public void AddTypograf_РегистрируетОбаТипографа()
+    public void AddTypograf_RegistersBothTypografs()
     {
         ServiceProvider provider = new ServiceCollection().AddTypograf().BuildServiceProvider();
 
@@ -14,7 +14,7 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddTypograf_РегистрируетОдиночками()
+    public void AddTypograf_RegistersAsSingletons()
     {
         ServiceProvider provider = new ServiceCollection().AddTypograf().BuildServiceProvider();
 
@@ -22,7 +22,7 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddTypograf_ПередаётНастройкиТипографу()
+    public void AddTypograf_PassesOptionsToTypograf()
     {
         ServiceProvider provider = new ServiceCollection()
             .AddTypograf(new HtmlOptions { Entities = EntityMode.Named })
@@ -34,7 +34,7 @@ public class DependencyInjectionTests
     // TryAdd, а не Add: своя регистрация типографа должна побеждать. Иначе AddTypograf,
     // вызванный библиотекой, молча затирал бы настройку приложения.
     [Fact]
-    public void AddTypograf_НеЗатираетЧужуюРегистрацию()
+    public void AddTypograf_DoesNotOverrideExistingRegistration()
     {
         var mine = new HtmlTypograf(new HtmlOptions { Entities = EntityMode.Numeric });
         ServiceProvider provider = new ServiceCollection()
@@ -46,7 +46,7 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddTypograf_NullБросаетArgumentNullException()
+    public void AddTypograf_NullThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => ((IServiceCollection)null!).AddTypograf());
     }

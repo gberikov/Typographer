@@ -40,7 +40,11 @@ internal ref struct MarkupScanner
 {
     private const string CDataPrefix = "<![CDATA[";
 
-    private static readonly string[] ProtectedTags =
+    /// <summary>
+    /// Элементы, содержимое которых копируется байт в байт. Список общий с расширением
+    /// Markdig: тот ведёт учёт зон по узлам разметки, но по тому же списку.
+    /// </summary>
+    internal static readonly string[] ProtectedTags =
         ["code", "pre", "script", "style", "textarea", "kbd", "samp"];
 
     // Элементы «сырого текста»: их содержимое не разметка вовсе. Внутри <script> угловая
@@ -235,7 +239,8 @@ internal ref struct MarkupScanner
         }
     }
 
-    private static bool IsRawTextTag(ReadOnlySpan<char> name)
+    /// <summary>Элемент сырого текста: внутри него похожая на тег строка — обычное содержимое.</summary>
+    internal static bool IsRawTextTag(ReadOnlySpan<char> name)
     {
         foreach (string tag in RawTextTags)
         {

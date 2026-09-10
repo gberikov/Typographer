@@ -9,7 +9,7 @@ public class AspNetCoreTests
     private const string Nbsp = "\u00A0";
 
     [Fact]
-    public async Task ProcessAsync_ТипографируетСодержимое()
+    public async Task ProcessAsync_TypographsContent()
     {
         TagHelperOutput output = MakeOutput("<p>Он - человек</p>");
 
@@ -23,7 +23,7 @@ public class AspNetCoreTests
     // Сам элемент <typograf> — инструкция шаблонизатору, а не разметка страницы,
     // и в выводе его быть не должно.
     [Fact]
-    public async Task ProcessAsync_УбираетСобственныйТег()
+    public async Task ProcessAsync_RemovesOwnTag()
     {
         TagHelperOutput output = MakeOutput("текст");
 
@@ -33,7 +33,7 @@ public class AspNetCoreTests
     }
 
     [Fact]
-    public async Task ProcessAsync_РазметкуВнутриНеТрогает()
+    public async Task ProcessAsync_LeavesInnerMarkupIntact()
     {
         TagHelperOutput output = MakeOutput("<a href=\"http://a.example/x--y\">ссылка</a>");
 
@@ -43,7 +43,7 @@ public class AspNetCoreTests
     }
 
     [Fact]
-    public void ToHtmlContent_ВозвращаетГотовуюРазметку()
+    public void ToHtmlContent_ReturnsReadyMarkup()
     {
         IHtmlContent content = HtmlTypograf.Default.ToHtmlContent("Он - человек");
 
@@ -51,7 +51,7 @@ public class AspNetCoreTests
     }
 
     [Fact]
-    public void ToHtmlContent_NullДаётПустуюРазметку()
+    public void ToHtmlContent_NullGivesEmptyMarkup()
     {
         Assert.Equal(string.Empty, HtmlTypograf.Default.ToHtmlContent(null).ToString());
     }

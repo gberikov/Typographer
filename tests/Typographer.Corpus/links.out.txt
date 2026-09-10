@@ -1,2 +1,2 @@
-Сайт http://example.com/a-b?x=1&y=2 и почта user@example.com.
+Сайт http://example.com/a-b?x=1&y=2 и почта user@example.com.
 Смотри на www.example.com — там всё есть.

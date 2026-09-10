@@ -5,12 +5,20 @@ namespace Typographer.Tests.Rules;
 
 public class NbspRulesTests
 {
+    /// <summary>Неразрывный пробел строкой: атрибут теста требует константного выражения.</summary>
+    private const string Nbsp = "\u00A0";
+
     private static string Run(string source) => new TextTypograf(new TextOptions
     {
         Rules = RuleSet.None
             .With(RuleId.Common.Nbsp.AfterShortWord)
             .With(RuleId.Ru.Nbsp.Abbr)
             .With(RuleId.Ru.Nbsp.Initials),
+    }).Process(source);
+
+    private static string Years(string source) => new TextTypograf(new TextOptions
+    {
+        Rules = RuleSet.Default,
     }).Process(source);
 
     [Fact]
@@ -72,4 +80,15 @@ public class NbspRulesTests
         // А вот пробел ПОСЛЕ него закрывает текст, и связывать его не с чем.
         Assert.EndsWith("в ", Run("дом в "), StringComparison.Ordinal);
     }
+
+    // Снятие хвостового пробела шло по позиции, записанной ДО перезаписи токена. Слияние
+    // «г. г.» в «гг.» усекает буфер, и позиция начинала указывать на точку сокращения —
+    // та молча превращалась в пробел, а точка из текста пропадала.
+    [Theory]
+    [InlineData("1990 г. г.", "1990" + Nbsp + "гг.")]
+    [InlineData("XX в. в.", "XX" + Nbsp + "вв.")]
+    // В середине текста тот же случай работал и раньше — проверяется, что и остался.
+    [InlineData("1990 г. г. и далее", "1990" + Nbsp + "гг. и" + Nbsp + "далее")]
+    public void RewriteAtEndOfDocumentKeepsItsLastCharacter(string source, string expected)
+        => Assert.Equal(expected, Years(source));
 }

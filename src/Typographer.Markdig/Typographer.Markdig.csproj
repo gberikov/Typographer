@@ -25,4 +25,18 @@
     <ProjectReference Include="../Typographer/Typographer.csproj" />
   </ItemGroup>
 
+  <!--
+    Расширение читает internal-члены ядра (InternalsVisibleTo), поэтому зависимость пакета
+    на Typographer закрепляется точной версией «[X.Y.Z]», а не «>= X.Y.Z». Иначе обновление
+    одного ядра, где internal-член переименован, роняло бы конвейер Markdig в рантайме, а
+    не при сборке.
+  -->
+  <Target Name="PinTypographerVersion" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)">
+        <ProjectVersion>[%(_ProjectReferencesWithVersions.ProjectVersion)]</ProjectVersion>
+      </_ProjectReferencesWithVersions>
+    </ItemGroup>
+  </Target>
+
 </Project>

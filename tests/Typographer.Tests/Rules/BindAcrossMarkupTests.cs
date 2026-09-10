@@ -76,4 +76,32 @@ public class BindAcrossMarkupTests
         // Инициал в конце документа связывается с фамилией назад — через тег.
         Assert.Equal($"Пушкин{Chars.Nbsp}<b>А.</b>", Run("Пушкин <b>А.</b>"));
     }
+
+    /// <summary>
+    /// Знак единицы измерения отбивается от числа и тогда, когда между ними стоит строчный
+    /// тег. Соседство пробела со знаком считалось сравнением с концом буфера, а байты тега
+    /// туда уже записаны — и «25 &lt;b&gt;°C&lt;/b&gt;» оставалось с обычным пробелом.
+    /// </summary>
+    [Theory]
+    [InlineData("25 <b>°C</b>", "25\u00A0<b>°C</b>")]
+    [InlineData("<b>25 </b>°C", "<b>25\u00A0</b>°C")]
+    [InlineData("<b>25</b> °C", "<b>25</b>\u00A0°C")]
+    [InlineData("50 <i>%</i>", "50\u00A0<i>%</i>")]
+    // Токен между пробелом и знаком соседство разрывает и через теги тоже.
+    [InlineData("30 <b>15</b>°", "30 <b>15</b>°")]
+    public void UnitSignBindsToNumberThroughInlineTag(string source, string expected)
+        => Assert.Equal(expected, new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None.With(RuleId.Common.Nbsp.AfterNumber),
+        }).Process(source));
+
+    /// <summary>
+    /// Внутри nobr неразрывный пробел не нужен: перенос запрещён самим тегом.
+    /// </summary>
+    [Fact]
+    public void UnitSignInsideNobrStaysBreakable()
+        => Assert.Equal("<nobr>25 °C</nobr>", new HtmlTypograf(new HtmlOptions
+        {
+            Rules = RuleSet.None.With(RuleId.Common.Nbsp.AfterNumber, RuleId.Common.Nbsp.Nowrap),
+        }).Process("<nobr>25 °C</nobr>"));
 }
