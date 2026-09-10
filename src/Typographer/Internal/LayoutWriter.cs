@@ -1,3 +1,5 @@
+using Typographer.Internal.Layout;
+
 namespace Typographer.Internal;
 
 /// <summary>Фаза Layout: неразрывные блоки, переносы строк и абзацы.</summary>
@@ -24,6 +26,37 @@ internal static class LayoutWriter
     /// <param name="canWrapParagraphs">Разрешено ли оборачивать абзацы: нет блочной и незакрытой разметки.</param>
     /// <param name="buffer">Приёмник.</param>
     public static void Run(
+        ReadOnlySpan<char> source, HtmlOptions options, bool canWrapParagraphs, ref CharBuffer buffer)
+    {
+        // Вставка разметки внутрь текстовых узлов идёт ПЕРВОЙ: неразрывные цепочки, переносы
+        // и абзацы считаются уже по документу с этими тегами. Ссылка пробелов не содержит,
+        // поэтому цепочки от неё не страдают, а порядок «сперва вставили, потом
+        // сгруппировали» повторяет порядок фаз и не требует второго разбора.
+        if (InlineMarkupWriter.IsEnabled(options.Rules))
+        {
+            var inlined = new CharBuffer(source.Length + (source.Length >> 2));
+            try
+            {
+                InlineMarkupWriter.Run(source, options.Rules, ref inlined);
+                RunLayout(inlined.AsSpan(), options, canWrapParagraphs, ref buffer);
+            }
+            finally
+            {
+                inlined.Dispose();
+            }
+
+            return;
+        }
+
+        RunLayout(source, options, canWrapParagraphs, ref buffer);
+    }
+
+    /// <summary>Неразрывные блоки, переносы строк и абзацы по готовому документу.</summary>
+    /// <param name="source">Документ после фаз Scan и Bind и вставки разметки в текстовые узлы.</param>
+    /// <param name="options">Настройки HTML-режима.</param>
+    /// <param name="canWrapParagraphs">Разрешено ли оборачивать абзацы.</param>
+    /// <param name="buffer">Приёмник.</param>
+    private static void RunLayout(
         ReadOnlySpan<char> source, HtmlOptions options, bool canWrapParagraphs, ref CharBuffer buffer)
     {
         // Там, где блочная разметка уже есть, абзацы не расставляются: <p> вокруг <ul> —
